@@ -177,6 +177,60 @@
     }
   }
 
+  @keyframes card-float-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes priority-scan {
+    0% {
+      transform: translateY(-120%);
+      opacity: 0;
+    }
+    35% {
+      opacity: .55;
+    }
+    100% {
+      transform: translateY(240%);
+      opacity: 0;
+    }
+  }
+
+  @keyframes chart-draw {
+    from {
+      stroke-dashoffset: 160;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes marker-pop {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(.2);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  @keyframes soft-pulse-ring {
+    0%, 100% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 20%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand) 0%, transparent);
+    }
+  }
+
   .auth-page {
     display: grid;
     min-block-size: 100dvh;
@@ -694,6 +748,7 @@
     padding: .35rem .62rem;
     font-size: .82rem;
     font-weight: 750;
+    transition: background-color 180ms ease, color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
   }
 
   .board-view-tabs button.active,
@@ -701,6 +756,15 @@
   .quick-views button:hover {
     background: color-mix(in srgb, var(--brand) 10%, var(--panel));
     color: var(--brand-strong);
+  }
+
+  .board-view-tabs button.active {
+    animation: soft-pulse-ring 2.8s ease-in-out infinite;
+  }
+
+  .board-view-tabs button:hover,
+  .quick-views button:hover {
+    transform: translateY(-1px);
   }
 
   .quick-views button {
@@ -742,10 +806,13 @@
     color: var(--text);
     padding: .72rem .85rem;
     text-align: start;
+    transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
   }
 
   .task-table-row:hover {
     background: color-mix(in srgb, var(--brand) 5%, var(--panel));
+    box-shadow: inset 3px 0 0 var(--brand);
+    transform: translateX(2px);
   }
 
   .task-table-row span,
@@ -781,9 +848,15 @@
     border-radius: 10px;
     background: var(--column-bg);
     padding: .55rem;
-    animation: panel-rise 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    animation: panel-rise 360ms cubic-bezier(0.23, 1, 0.32, 1) both;
     transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
   }
+
+  .column:nth-child(2) { animation-delay: 45ms; }
+  .column:nth-child(3) { animation-delay: 90ms; }
+  .column:nth-child(4) { animation-delay: 135ms; }
+  .column:nth-child(5) { animation-delay: 180ms; }
+  .column:nth-child(6) { animation-delay: 225ms; }
 
   .column.drop-target {
     outline: 2px dashed var(--brand);
@@ -829,14 +902,14 @@
     box-shadow: none;
     cursor: pointer;
     user-select: none;
-    animation: panel-rise 260ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    animation: card-float-in 360ms cubic-bezier(0.23, 1, 0.32, 1) both;
     transition: border-color 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 160ms cubic-bezier(0.23, 1, 0.32, 1), filter 160ms ease;
   }
 
   .task-card:hover {
     border-color: color-mix(in oklab, var(--brand), transparent 62%);
-    box-shadow: 0 2px 8px rgb(15 23 42 / 8%);
-    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgb(15 23 42 / 10%);
+    transform: translateY(-3px);
     filter: none;
   }
 
@@ -1222,12 +1295,14 @@
     padding: .9rem 1rem;
     box-shadow: none;
     animation: panel-rise 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
-    transition: border-color 160ms ease, transform 160ms ease;
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
   }
 
   .report-kpi:hover {
     border-color: color-mix(in srgb, currentColor 30%, var(--border));
-    transform: translateY(-2px);
+    transform: translateY(-4px);
+    filter: saturate(1.08);
+    box-shadow: 0 18px 38px rgb(15 23 42 / 12%);
   }
 
   .report-kpi-top {
@@ -1496,6 +1571,29 @@
     background: var(--brand);
   }
 
+  .task-card::after {
+    content: "";
+    position: absolute;
+    inset-block-start: .32rem;
+    inset-inline-start: .55rem;
+    inline-size: 2.1rem;
+    block-size: 1.1rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, transparent, rgb(255 255 255 / 70%), transparent);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .task-card:hover::after {
+    animation: priority-scan 900ms ease-out both;
+  }
+
+  .task-list .task-card:nth-child(2) { animation-delay: 35ms; }
+  .task-list .task-card:nth-child(3) { animation-delay: 70ms; }
+  .task-list .task-card:nth-child(4) { animation-delay: 105ms; }
+  .task-list .task-card:nth-child(5) { animation-delay: 140ms; }
+  .task-list .task-card:nth-child(n+6) { animation-delay: 175ms; }
+
   .report-team-state {
     border-radius: 999px;
     background: color-mix(in srgb, var(--success) 9%, var(--panel));
@@ -1740,9 +1838,20 @@
   .report-line-created,
   .report-line-completed,
   .report-line-overdue {
+    stroke-dasharray: 160;
+    stroke-dashoffset: 160;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
+    animation: chart-draw 900ms cubic-bezier(0.23, 1, 0.32, 1) 120ms both;
+  }
+
+  .report-line-completed {
+    animation-delay: 220ms;
+  }
+
+  .report-line-overdue {
+    animation-delay: 320ms;
   }
 
   .report-line-created { stroke: var(--brand); }
@@ -1760,7 +1869,11 @@
     border-radius: 999px;
     pointer-events: none;
     transform: translate(-50%, -50%);
+    animation: marker-pop 340ms cubic-bezier(0.23, 1, 0.32, 1) both;
   }
+
+  .report-marker-completed { animation-delay: 120ms; }
+  .report-marker-overdue { animation-delay: 200ms; }
 
   .report-marker-created { background: var(--brand); }
   .report-marker-completed { background: #16a34a; }
@@ -1803,6 +1916,7 @@
     box-shadow: 0 6px 16px rgb(15 23 42 / 16%);
     pointer-events: none;
     transform: translate(-50%, calc(-100% - .8rem));
+    animation: soft-enter 160ms cubic-bezier(0.23, 1, 0.32, 1) both;
   }
 
   .report-chart-tooltip-left {
@@ -2311,6 +2425,23 @@
 
   .task-drawer .task-modal-v2-actions {
     inset-block-end: 0;
+    justify-content: flex-end;
+    gap: .45rem;
+    padding-block: .55rem;
+  }
+
+  .task-drawer .task-modal-v2-actions .button {
+    min-inline-size: auto;
+    min-block-size: 2.25rem;
+    padding: .42rem .7rem;
+    border-radius: 6px;
+    font-size: .86rem;
+    line-height: 1.1;
+  }
+
+  .task-drawer .task-modal-v2-actions .button svg {
+    inline-size: 15px;
+    block-size: 15px;
   }
 
   dialog.task-dialog {
@@ -3374,6 +3505,7 @@
     font-size: .8rem;
     font-weight: 850;
     text-transform: uppercase;
+    animation: soft-pulse-ring 3s ease-in-out infinite;
   }
 
   .tv-live-stale {
@@ -3451,6 +3583,7 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
+    animation: soft-enter 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
   }
 
   .tv-compact-stats {
@@ -3578,7 +3711,14 @@
     border-radius: 8px;
     background: #ffffff;
     padding: .72rem .75rem .72rem .95rem;
+    animation: card-float-in 380ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
   }
+
+  .tv-task:nth-child(2) { animation-delay: 45ms; }
+  .tv-task:nth-child(3) { animation-delay: 90ms; }
+  .tv-task:nth-child(4) { animation-delay: 135ms; }
+  .tv-task:nth-child(5) { animation-delay: 180ms; }
 
   .tv-task::before {
     content: "";

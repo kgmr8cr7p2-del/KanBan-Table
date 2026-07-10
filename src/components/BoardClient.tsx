@@ -413,7 +413,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
         <div className="board-head">
           <div className="board-copy">
             <h1>{view.board.name}</h1>
-            <p className="muted">Общая рабочая доска: статусы, сроки и действия синхронизируются автоматически.</p>
           </div>
           <span className="spacer" />
           {view.permissions.canCreateTask ? (
