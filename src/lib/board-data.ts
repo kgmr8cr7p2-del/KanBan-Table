@@ -85,7 +85,7 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
       if (assignee && task.assigneeId !== assignee) return false;
       if (oilDepot && task.oilDepotId !== oilDepot) return false;
       if (tag && !task.tags.some((taskTag) => taskTag.tagId === tag)) return false;
-      if (deadline === "overdue" && (!task.deadline || task.deadline >= new Date() || isCompletedColumn(task.column.name))) return false;
+      if (deadline === "overdue" && (!task.deadline || task.deadline >= new Date() || isCompletedColumn(task.column.name) || isReviewColumn(task.column.name))) return false;
       if (deadline === "week") {
         const week = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         if (!task.deadline || task.deadline > week) return false;
@@ -236,7 +236,7 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
   const active = tasks.filter((task) => !isClosed(task));
   const completed = tasks.filter(isClosed);
   const completedInPeriod = tasks.filter(isClosedInPeriod);
-  const overdue = active.filter((task) => task.deadline && task.deadline < now);
+  const overdue = active.filter((task) => task.deadline && task.deadline < now && !isReviewColumn(task.column.name));
   const dueSoon = active.filter((task) => task.deadline && task.deadline >= now && task.deadline <= soon);
   const inProgress = active.filter((task) => isWorkColumn(task.column.name));
   const progress = tasks.length ? Math.round((completed.length / tasks.length) * 100) : 0;
@@ -253,7 +253,7 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
       priority: task.priority,
       oilDepot: task.oilDepot?.name ?? "Без нефтебазы",
       assignee: task.assignee?.name ?? "Не назначен",
-      overdue: task.deadline! < now,
+      overdue: task.deadline! < now && !isReviewColumn(task.column.name),
     }));
 
   const recentTasks = [...active]
@@ -285,7 +285,7 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
     };
     if (!isClosed(task)) member.active += 1;
     if (isClosedInPeriod(task)) member.completed += 1;
-    if (!isClosed(task) && task.deadline && task.deadline < now) member.overdue += 1;
+    if (!isClosed(task) && task.deadline && task.deadline < now && !isReviewColumn(task.column.name)) member.overdue += 1;
     team.set(task.assignee.id, member);
   }
 
@@ -341,7 +341,7 @@ function buildReports(tasks: TaskWithDetails[]) {
 function buildReport(tasks: Array<{ createdAt: Date; updatedAt: Date; deadline: Date | null; column: { name: string }; oilDepot: { name: string } | null }>, since: Date) {
   const inPeriod = tasks.filter((task) => new Date(task.createdAt) >= since);
   const completed = tasks.filter((task) => isCompletedColumn(task.column.name) && new Date(task.updatedAt) >= since);
-  const overdue = tasks.filter((task) => task.deadline && new Date(task.deadline) < new Date() && !isCompletedColumn(task.column.name));
+  const overdue = tasks.filter((task) => task.deadline && new Date(task.deadline) < new Date() && !isCompletedColumn(task.column.name) && !isReviewColumn(task.column.name));
   const byOilDepot = new Map<string, number>();
 
   for (const task of inPeriod) {
@@ -372,7 +372,7 @@ function buildPeriodReport(
   const inRange = (date?: Date | null) => !!date && date >= from && date <= to;
   const created = tasks.filter((task) => inRange(task.createdAt));
   const closed = tasks.filter((task) => inRange(task.archivedAt) || (isCompletedColumn(task.column.name) && inRange(task.updatedAt)));
-  const overdue = tasks.filter((task) => !task.archivedAt && task.deadline && task.deadline < new Date() && !isCompletedColumn(task.column.name));
+  const overdue = tasks.filter((task) => !task.archivedAt && task.deadline && task.deadline < new Date() && !isCompletedColumn(task.column.name) && !isReviewColumn(task.column.name));
 
   return {
     created: created.length,
@@ -506,7 +506,7 @@ function buildBucketReport(
   return {
     created: tasks.filter((task) => inRange(task.createdAt)).length,
     completed: tasks.filter((task) => inRange(task.archivedAt) || (isCompletedColumn(task.column.name) && inRange(task.updatedAt))).length,
-    overdue: tasks.filter((task) => !task.archivedAt && task.deadline && inRange(task.deadline) && !isCompletedColumn(task.column.name)).length,
+    overdue: tasks.filter((task) => !task.archivedAt && task.deadline && inRange(task.deadline) && !isCompletedColumn(task.column.name) && !isReviewColumn(task.column.name)).length,
   };
 }
 
@@ -558,6 +558,11 @@ function countByDepot(tasks: Array<{ oilDepot: { name: string } | null }>) {
 function isCompletedColumn(name: string) {
   const normalized = name.toLowerCase();
   return normalized.includes("готов") || normalized.includes("РіРѕС‚РѕРІ".toLowerCase()) || normalized.includes("done") || normalized.includes("complete");
+}
+
+function isReviewColumn(name: string) {
+  const normalized = name.toLowerCase();
+  return normalized.includes("провер") || normalized.includes("review") || normalized.includes("verify") || normalized.includes("approval") || normalized.includes("РїСЂРѕРІРµСЂ".toLowerCase());
 }
 
 function isWorkColumn(name: string) {

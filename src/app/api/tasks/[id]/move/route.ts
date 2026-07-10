@@ -1,4 +1,4 @@
-import { ActivityAction } from "@prisma/client";
+﻿import { ActivityAction } from "@prisma/client";
 import { requireVerifiedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { taskInclude } from "@/lib/board-data";
@@ -23,9 +23,12 @@ export async function POST(request: Request, { params }: Params) {
     if (!existing) return fail("Задача не найдена", 404);
     if (!canEditTask(user, existing)) return fail("Недостаточно прав", 403);
 
+    const returnedFromReviewToWork = isReviewColumn(existing.column.name) && isWorkColumn(destinationColumn.name);
+    const nextDeadline = returnedFromReviewToWork ? nextThursday() : undefined;
+
     const task = await prisma.task.update({
       where: { id },
-      data: { columnId, position },
+      data: { columnId, position, deadline: nextDeadline },
       include: taskInclude,
     });
 
@@ -33,8 +36,16 @@ export async function POST(request: Request, { params }: Params) {
       action: ActivityAction.STATUS_CHANGED,
       userId: user.id,
       taskId: task.id,
-      details: { column: task.column.name },
+      details: { column: task.column.name, returnedFromReviewToWork },
     });
+    if (returnedFromReviewToWork) {
+      await logActivity({
+        action: ActivityAction.DEADLINE_CHANGED,
+        userId: user.id,
+        taskId: task.id,
+        details: { deadline: nextDeadline?.toISOString(), reason: "returned_from_review" },
+      });
+    }
     await notifyTelegram("status_changed", `${task.title}: ${task.column.name}`, task.assigneeId ? [task.assigneeId] : []);
     if (!isCompletedColumn(existing.column.name) && isCompletedColumn(destinationColumn.name)) {
       triggerTaskCompletionSoundEvent();
@@ -47,5 +58,24 @@ export async function POST(request: Request, { params }: Params) {
 
 function isCompletedColumn(name: string) {
   const normalized = name.toLocaleLowerCase("ru-RU");
-  return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete");
+  return normalized.includes("готов") || normalized.includes("РіРѕС‚РѕРІ".toLocaleLowerCase("ru-RU")) || normalized.includes("done") || normalized.includes("complete");
+}
+
+function isReviewColumn(name: string) {
+  const normalized = name.toLocaleLowerCase("ru-RU");
+  return normalized.includes("провер") || normalized.includes("review") || normalized.includes("verify") || normalized.includes("approval") || normalized.includes("РїСЂРѕРІРµСЂ".toLocaleLowerCase("ru-RU"));
+}
+
+function isWorkColumn(name: string) {
+  const normalized = name.toLocaleLowerCase("ru-RU");
+  return normalized.includes("работ") || normalized.includes("progress") || normalized.includes("doing") || normalized.includes("Р°Р±РѕС‚".toLocaleLowerCase("ru-RU"));
+}
+
+function nextThursday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  const thursday = 4;
+  const daysUntilThursday = (thursday - date.getDay() + 7) % 7 || 7;
+  date.setDate(date.getDate() + daysUntilThursday);
+  return date;
 }

@@ -236,7 +236,7 @@ function buildSummary(tasks: Task[], view: View) {
 
 
 function isOverdue(task: Task) {
-  return Boolean(task.deadline && new Date(task.deadline).getTime() < startOfToday().getTime() && !isCompletedColumn(task.column?.name ?? ""));
+  return Boolean(task.deadline && new Date(task.deadline).getTime() < startOfToday().getTime() && !isCompletedColumn(task.column?.name ?? "") && !isReviewColumn(task.column?.name ?? ""));
 }
 
 function isDueSoon(task: Task) {
@@ -247,7 +247,12 @@ function isDueSoon(task: Task) {
 
 function isCompletedColumn(name: string) {
   const normalized = name.toLowerCase();
-  return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete");
+  return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete") || normalized.includes("РіРѕС‚РѕРІ".toLowerCase());
+}
+
+function isReviewColumn(name: string) {
+  const normalized = name.toLowerCase();
+  return normalized.includes("провер") || normalized.includes("review") || normalized.includes("verify") || normalized.includes("approval") || normalized.includes("РїСЂРѕРІРµСЂ".toLowerCase());
 }
 
 function isWorkColumn(name: string) {

@@ -1433,13 +1433,18 @@ function isCompletedColumn(name: string) {
   return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete") || normalized.includes("РіРѕС‚РѕРІ".toLowerCase());
 }
 
+function isReviewColumn(name: string) {
+  const normalized = name.toLowerCase();
+  return normalized.includes("провер") || normalized.includes("review") || normalized.includes("verify") || normalized.includes("approval") || normalized.includes("РїСЂРѕРІРµСЂ".toLowerCase());
+}
+
 function isWorkColumn(name: string) {
   const normalized = name.toLowerCase();
   return normalized.includes("работ") || normalized.includes("progress") || normalized.includes("doing");
 }
 
 function isOverdue(task: Task) {
-  return Boolean(task.deadline && new Date(task.deadline).getTime() < startOfToday().getTime() && !isCompletedColumn(task.column?.name ?? ""));
+  return Boolean(task.deadline && new Date(task.deadline).getTime() < startOfToday().getTime() && !isCompletedColumn(task.column?.name ?? "") && !isReviewColumn(task.column?.name ?? ""));
 }
 
 function isDueToday(task: Task) {
@@ -1458,6 +1463,7 @@ function isDueSoon(task: Task) {
 }
 
 function deadlineTone(task: Task) {
+  if (isReviewColumn(task.column?.name ?? "")) return "deadline-review";
   if (isOverdue(task)) return "deadline-overdue";
   if (isDueToday(task)) return "deadline-today";
   if (isDueSoon(task)) return "deadline-soon";
@@ -1466,6 +1472,7 @@ function deadlineTone(task: Task) {
 
 function deadlineText(task: Task) {
   if (!task.deadline) return "Без срока";
+  if (isReviewColumn(task.column?.name ?? "")) return "На согласовании";
   if (isOverdue(task)) return `Просрочено · ${dateOnly(task.deadline)}`;
   if (isDueToday(task)) return "Сегодня";
   if (isDueSoon(task)) return `Скоро · ${dateOnly(task.deadline)}`;
