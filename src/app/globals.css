@@ -378,9 +378,9 @@
     z-index: 1;
     inset-inline-start: 50%;
     inset-block-end: .35rem;
-    inline-size: 3.35rem;
-    block-size: 6.1rem;
-    color: #7d8796;
+    inline-size: 4rem;
+    block-size: 7.15rem;
+    color: #596575;
     pointer-events: none;
     opacity: 0;
     transform: translate3d(-50%, -66px, 0) rotate(0deg);
@@ -404,7 +404,7 @@
 
   .cat-paw-stripe {
     fill: none;
-    stroke: #5b6472;
+    stroke: #343e4d;
     stroke-linecap: round;
     stroke-width: 5;
     opacity: .7;
@@ -419,7 +419,7 @@
   .create-task-paw-zone[data-tracking="true"] .cat-paw {
     animation: none;
     opacity: 1;
-    transform: translate3d(calc(-50% + var(--paw-shift)), calc(-28px + var(--paw-reach)), 0) rotate(var(--paw-angle));
+    transform: translate3d(calc(-50% + var(--paw-shift)), calc(-12px + var(--paw-reach)), 0) rotate(var(--paw-angle));
     transition: opacity 120ms ease-out, transform 180ms cubic-bezier(.18, .8, .22, 1.16);
   }
 

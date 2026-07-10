@@ -27,8 +27,8 @@ export function CreateTaskPawButton({ onClick }: { onClick: () => void }) {
       zone.dataset.tracking = String(isTracking);
       if (!isTracking) return;
 
-      const angle = clamp((Math.atan2(deltaY, deltaX) * 180) / Math.PI - 90, -48, 48);
-      const shift = clamp(deltaX * 0.08, -22, 22);
+      const angle = clamp((Math.atan2(deltaY, deltaX) * 180) / Math.PI - 90, -30, 30);
+      const shift = clamp(deltaX * 0.08, -26, 26);
       const reach = clamp((distance - 90) * 0.075, 4, 30);
       zone.style.setProperty("--paw-angle", `${angle.toFixed(2)}deg`);
       zone.style.setProperty("--paw-shift", `${shift.toFixed(2)}px`);

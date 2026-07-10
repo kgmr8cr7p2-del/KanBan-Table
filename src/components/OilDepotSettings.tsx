@@ -4,7 +4,7 @@ import { Building2, Check, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
-type OilDepotItem = { id: string; name: string; active: boolean; tasks?: unknown[] };
+type OilDepotItem = { id: string; name: string; active: boolean; tasks?: unknown[]; _count?: { tasks: number } };
 
 export function OilDepotSettings({ oilDepots, canManage }: { oilDepots: OilDepotItem[]; canManage: boolean }) {
   const [items, setItems] = useState(oilDepots);
@@ -31,7 +31,7 @@ export function OilDepotSettings({ oilDepots, canManage }: { oilDepots: OilDepot
       });
       const data = await response.json();
       if (!response.ok) return setError(data.error ?? "Не удалось создать нефтебазу");
-      setItems((current) => [...current, { ...data.oilDepot, tasks: [] }]);
+      setItems((current) => [...current, { ...data.oilDepot, tasks: [], _count: { tasks: 0 } }]);
       form.reset();
     } finally {
       setIsAdding(false);
@@ -95,7 +95,7 @@ export function OilDepotSettings({ oilDepots, canManage }: { oilDepots: OilDepot
       {error ? <p className="settings-error" role="alert">{error}</p> : null}
       <div className="settings-list" aria-label="Нефтебазы">
         {items.map((item) => {
-          const taskCount = item.tasks?.length ?? 0;
+          const taskCount = item._count?.tasks ?? item.tasks?.length ?? 0;
           const isBusy = pendingId === item.id;
           return (
             <article className={`settings-row oil-depot-row ${item.active ? "is-active" : "is-paused"}`} key={item.id}>

@@ -42,6 +42,7 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
       columns: {
         orderBy: { position: "asc" },
         include: {
+          _count: { select: { tasks: true } },
           tasks: {
             where: { archivedAt: null },
             include: taskInclude,
@@ -59,7 +60,10 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
     orderBy: { name: "asc" },
   });
   const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
-  const oilDepots = await prisma.oilDepot.findMany({ orderBy: { name: "asc" } });
+  const oilDepots = await prisma.oilDepot.findMany({
+    include: { _count: { select: { tasks: true } } },
+    orderBy: { name: "asc" },
+  });
   const activityLogs = await prisma.activityLog.findMany({
     include: {
       user: { select: { id: true, name: true, email: true } },

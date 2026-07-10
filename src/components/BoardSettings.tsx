@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, Check, Columns3, Plus, Trash2 } from "lucide-react"
 import { type FormEvent, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
-type ColumnItem = { id: string; name: string; position: number; tasks: unknown[] };
+type ColumnItem = { id: string; name: string; position: number; tasks: unknown[]; _count?: { tasks: number } };
 
 export function BoardSettings({ columns, canManage }: { columns: ColumnItem[]; canManage: boolean }) {
   const [items, setItems] = useState(columns);
@@ -30,7 +30,7 @@ export function BoardSettings({ columns, canManage }: { columns: ColumnItem[]; c
       });
       const data = await response.json();
       if (!response.ok) return setError(data.error ?? "Не удалось создать колонку");
-      setItems((current) => [...current, { ...data.column, tasks: [] }]);
+      setItems((current) => [...current, { ...data.column, tasks: [], _count: { tasks: 0 } }]);
       form.reset();
     } finally {
       setIsAdding(false);
@@ -124,7 +124,7 @@ export function BoardSettings({ columns, canManage }: { columns: ColumnItem[]; c
       {error ? <p className="settings-error" role="alert">{error}</p> : null}
       <div className="settings-list" aria-label="Колонки доски">
         {items.map((column, index) => {
-          const taskCount = column.tasks.length;
+          const taskCount = column._count?.tasks ?? column.tasks.length;
           const isBusy = pendingId === column.id || pendingId === "order";
           return (
             <article className="settings-row settings-column-row" key={column.id}>
