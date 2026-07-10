@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 
-export function ProfileForm({ name, email, telegramChatId }: { name: string; email: string; telegramChatId: string }) {
+const TELEGRAM_INVITE_URL = "https://t.me/+V1kH1F871nc5MTUy";
+
+export function ProfileForm({ name, email }: { name: string; email: string }) {
   const [saved, setSaved] = useState(false);
 
   async function submit(formData: FormData) {
@@ -25,10 +27,12 @@ export function ProfileForm({ name, email, telegramChatId }: { name: string; ema
         <span className="label">Почта</span>
         <input className="input" value={email} readOnly />
       </label>
-      <label className="field">
-        <span className="label">Telegram chat ID</span>
-        <input className="input" name="telegramChatId" value={telegramChatId || "-5575713442"} readOnly />
-      </label>
+      <div className="field">
+        <span className="label">Telegram</span>
+        <a className="button secondary profile-chat-link" href={TELEGRAM_INVITE_URL} target="_blank" rel="noreferrer">
+          Войти в рабочий чат
+        </a>
+      </div>
       <button className="button">Сохранить</button>
       {saved ? <p className="chip" role="status">Профиль сохранён</p> : null}
     </form>

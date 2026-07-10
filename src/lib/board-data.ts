@@ -26,6 +26,14 @@ export const taskInclude = {
 
 export type TaskWithDetails = Prisma.TaskGetPayload<{ include: typeof taskInclude }>;
 
+const reportTaskInclude = {
+  column: true,
+  oilDepot: true,
+  assignee: { select: { id: true, name: true, email: true } },
+} satisfies Prisma.TaskInclude;
+
+type ReportTask = Prisma.TaskGetPayload<{ include: typeof reportTaskInclude }>;
+
 export async function getBoardView(user: CurrentUser, filters?: URLSearchParams) {
   await cleanupOldCompletedTasks();
 
@@ -184,10 +192,7 @@ export async function getReportsData(filters?: URLSearchParams) {
   const mode = normalizeReportMode(filters?.get("mode"));
 
   const tasks = await prisma.task.findMany({
-    include: {
-      column: true,
-      oilDepot: true,
-    },
+    include: reportTaskInclude,
   });
   const activeTasks = tasks.filter((task) => !task.archivedAt);
   const period = buildPeriodReport(tasks, from, to);
@@ -215,7 +220,96 @@ export async function getReportsData(filters?: URLSearchParams) {
       total: activeTasks.length,
       completionRate: period.created ? Math.round((period.completed / period.created) * 1000) / 10 : 0,
     },
+    dashboard: buildDashboardReport(tasks, from, to),
     byOilDepotStatus: buildCurrentOilDepotStatus(activeTasks),
+  };
+}
+
+function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
+  const now = new Date();
+  const soon = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const isClosed = (task: ReportTask) => Boolean(task.archivedAt) || isCompletedColumn(task.column.name);
+  const isClosedInPeriod = (task: ReportTask) => {
+    const closedAt = task.archivedAt ?? (isCompletedColumn(task.column.name) ? task.updatedAt : null);
+    return Boolean(closedAt && closedAt >= from && closedAt <= to);
+  };
+  const active = tasks.filter((task) => !isClosed(task));
+  const completed = tasks.filter(isClosed);
+  const completedInPeriod = tasks.filter(isClosedInPeriod);
+  const overdue = active.filter((task) => task.deadline && task.deadline < now);
+  const dueSoon = active.filter((task) => task.deadline && task.deadline >= now && task.deadline <= soon);
+  const inProgress = active.filter((task) => isWorkColumn(task.column.name));
+  const progress = tasks.length ? Math.round((completed.length / tasks.length) * 100) : 0;
+
+  const reminders = active
+    .filter((task) => task.deadline)
+    .sort((a, b) => a.deadline!.getTime() - b.deadline!.getTime())
+    .slice(0, 5)
+    .map((task) => ({
+      id: task.id,
+      taskNumber: task.taskNumber,
+      title: task.title,
+      deadline: task.deadline,
+      priority: task.priority,
+      oilDepot: task.oilDepot?.name ?? "Без нефтебазы",
+      assignee: task.assignee?.name ?? "Не назначен",
+      overdue: task.deadline! < now,
+    }));
+
+  const recentTasks = [...active]
+    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    .slice(0, 6)
+    .map((task) => ({
+      id: task.id,
+      taskNumber: task.taskNumber,
+      title: task.title,
+      status: task.column.name,
+      priority: task.priority,
+      oilDepot: task.oilDepot?.name ?? "Без нефтебазы",
+      assignee: task.assignee?.name ?? "Не назначен",
+      updatedAt: task.updatedAt,
+    }));
+
+  const team = new Map<
+    string,
+    { id: string; name: string; email: string; active: number; completed: number; overdue: number }
+  >();
+
+  for (const task of tasks) {
+    if (!task.assignee) continue;
+    const member = team.get(task.assignee.id) ?? {
+      ...task.assignee,
+      active: 0,
+      completed: 0,
+      overdue: 0,
+    };
+    if (!isClosed(task)) member.active += 1;
+    if (isClosedInPeriod(task)) member.completed += 1;
+    if (!isClosed(task) && task.deadline && task.deadline < now) member.overdue += 1;
+    team.set(task.assignee.id, member);
+  }
+
+  return {
+    totals: {
+      all: tasks.length,
+      active: active.length,
+      completed: completedInPeriod.length,
+      inProgress: inProgress.length,
+      overdue: overdue.length,
+      dueSoon: dueSoon.length,
+      unassigned: active.filter((task) => !task.assigneeId).length,
+    },
+    progress: {
+      percent: progress,
+      completed: completed.length,
+      active: active.length,
+      total: tasks.length,
+    },
+    reminders,
+    recentTasks,
+    team: Array.from(team.values())
+      .sort((a, b) => b.active - a.active || b.completed - a.completed || a.name.localeCompare(b.name, "ru"))
+      .slice(0, 6),
   };
 }
 
@@ -230,7 +324,10 @@ function parseDate(value?: string | null, endOfDay = false) {
 }
 
 function isoDate(date: Date) {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function buildReports(tasks: TaskWithDetails[]) {
@@ -301,7 +398,7 @@ function buildMonthlyReport(
   return labels.map((label, index) => {
     const start = new Date(year, index, 1, 0, 0, 0, 0);
     const end = new Date(year, index + 1, 0, 23, 59, 59, 999);
-    const report = buildPeriodReport(tasks, start, end);
+    const report = buildBucketReport(tasks, start, end);
     return {
       label,
       created: report.created,
@@ -378,7 +475,6 @@ function buildMonthBuckets(
   to: Date,
 ) {
   const items = [];
-  const labels = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
   const cursor = new Date(from.getFullYear(), from.getMonth(), 1);
   const end = new Date(to.getFullYear(), to.getMonth(), 1);
 
@@ -388,7 +484,7 @@ function buildMonthBuckets(
     const boundedStart = start < from ? from : start;
     const boundedEnd = bucketEnd > to ? to : bucketEnd;
     const report = buildBucketReport(tasks, boundedStart, boundedEnd);
-    items.push({ label: `${labels[cursor.getMonth()]} ${String(cursor.getFullYear()).slice(2)}`, ...report });
+    items.push({ label: String(cursor.getMonth() + 1), ...report });
     cursor.setMonth(cursor.getMonth() + 1);
   }
 

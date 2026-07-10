@@ -9,14 +9,20 @@ const DEFAULT_TELEGRAM_CHAT_ID = "-5575713442";
 export async function POST(request: Request) {
   try {
     const input = registerSchema.parse(await request.json());
-    if (!canRegisterEmail(input.email)) {
+    const invite = await prisma.userInvite.findUnique({
+      where: { email: input.email },
+      include: { role: true },
+    });
+
+    if (!invite && !canRegisterEmail(input.email)) {
       return fail("Эта почта не входит в список разрешённых адресов", 403);
     }
 
     const exists = await prisma.user.findUnique({ where: { email: input.email } });
     if (exists) return fail("Пользователь с такой почтой уже существует", 409);
 
-    const role = await prisma.role.findUniqueOrThrow({ where: { name: RoleName.ADMIN } });
+    const roleName = invite?.role.name ?? RoleName.EXECUTOR;
+    const role = await prisma.role.findUniqueOrThrow({ where: { name: roleName } });
     const user = await prisma.user.create({
       data: {
         name: input.name,
@@ -29,6 +35,13 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    if (invite) {
+      await prisma.userInvite.update({
+        where: { id: invite.id },
+        data: { acceptedAt: new Date() },
+      });
+    }
 
     await createSession(user.id);
     return ok({ ok: true, verified: true });

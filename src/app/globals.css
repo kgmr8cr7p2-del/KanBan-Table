@@ -36,10 +36,10 @@
     --control: #ffffff;
     --column-bg: #f4f6f9;
     --timeline-bg: #fbfcff;
-    --card-low: #ffffff;
-    --card-medium: #ffffff;
-    --card-high: #ffffff;
-    --card-critical: #ffffff;
+    --card-low: #f7fffb;
+    --card-medium: #fffaf0;
+    --card-high: #fff6f6;
+    --card-critical: #fff1f4;
     --text: #111827;
     --muted: #5f6b7a;
     --border: #dfe3ea;
@@ -201,6 +201,15 @@
     color: var(--muted);
   }
 
+  .visually-hidden {
+    position: absolute !important;
+    inline-size: 1px !important;
+    block-size: 1px !important;
+    overflow: hidden !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+  }
+
   .form {
     display: grid;
     gap: .9rem;
@@ -272,6 +281,28 @@
   .button:hover:not(:disabled) {
     background: var(--brand-strong);
     box-shadow: none;
+  }
+
+  .create-task-button {
+    position: relative;
+    overflow: visible;
+  }
+
+  .create-task-button::after {
+    content: "🐾";
+    position: absolute;
+    inset-block-start: -1.45rem;
+    inset-inline-end: -.45rem;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(12px, 10px) rotate(18deg) scale(.76);
+    transition: opacity 160ms ease, transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .create-task-button:hover::after,
+  .create-task-button:focus-visible::after {
+    opacity: 1;
+    transform: translate(0, 0) rotate(-10deg) scale(1);
   }
 
   .button.secondary {
@@ -645,10 +676,25 @@
     background: var(--brand);
   }
 
-  .priority-card-LOW { background: var(--card-low); }
-  .priority-card-MEDIUM { background: var(--card-medium); }
-  .priority-card-HIGH { background: var(--card-high); }
-  .priority-card-CRITICAL { background: var(--card-critical); }
+  .priority-card-LOW {
+    border-color: color-mix(in srgb, var(--success) 18%, var(--border));
+    background: var(--card-low);
+  }
+
+  .priority-card-MEDIUM {
+    border-color: color-mix(in srgb, var(--warning) 22%, var(--border));
+    background: var(--card-medium);
+  }
+
+  .priority-card-HIGH {
+    border-color: color-mix(in srgb, var(--danger) 22%, var(--border));
+    background: var(--card-high);
+  }
+
+  .priority-card-CRITICAL {
+    border-color: color-mix(in srgb, var(--critical) 28%, var(--border));
+    background: var(--card-critical);
+  }
 
   .priority-card-LOW::before { background: var(--success); }
   .priority-card-MEDIUM::before { background: var(--warning); }
@@ -813,9 +859,25 @@
 
   .reports-panel {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: .8rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
     margin-block-start: 1rem;
+  }
+
+  .reports-page-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .reports-page-heading > div {
+    display: grid;
+    gap: .25rem;
+  }
+
+  .reports-export-button {
+    flex: 0 0 auto;
   }
 
   .reports-filter {
@@ -872,16 +934,40 @@
     box-shadow: none;
   }
 
+  .report-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
   .report-title {
     display: flex;
-    align-items: center;
+    min-inline-size: 0;
+    align-items: flex-start;
     gap: .5rem;
     color: var(--brand);
+  }
+
+  .report-title > svg {
+    flex: 0 0 auto;
+    margin-block-start: .12rem;
+  }
+
+  .report-title > div {
+    display: grid;
+    gap: .08rem;
+    min-inline-size: 0;
   }
 
   .report-title h2 {
     color: var(--text);
     font-size: 1rem;
+  }
+
+  .report-title p {
+    color: var(--muted);
+    font-size: .72rem;
   }
 
   .report-stats {
@@ -918,103 +1004,454 @@
   }
 
   .reports-dashboard {
-    grid-template-columns: minmax(0, 1.25fr) minmax(22rem, .95fr);
-    gap: .7rem;
-  }
-
-  .report-kpi-grid {
-    grid-column: 1 / -1;
+    gap: 1rem;
   }
 
   .report-kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-    gap: .7rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .75rem;
   }
 
   .report-kpi {
+    position: relative;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) 5.2rem;
-    align-items: center;
-    gap: .75rem;
-    min-block-size: 6.1rem;
+    grid-template-columns: minmax(0, 1fr) 5.5rem;
+    grid-template-rows: auto 1fr auto;
+    gap: .45rem .7rem;
+    min-block-size: 8.2rem;
+    overflow: hidden;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--panel);
-    padding: .85rem;
+    padding: .9rem 1rem;
     box-shadow: none;
     animation: panel-rise 300ms cubic-bezier(0.23, 1, 0.32, 1) both;
-    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    transition: border-color 160ms ease, transform 160ms ease;
   }
 
   .report-kpi:hover {
-    border-color: color-mix(in srgb, currentColor 28%, var(--border));
-    box-shadow: none;
-    transform: none;
+    border-color: color-mix(in srgb, currentColor 30%, var(--border));
+    transform: translateY(-2px);
   }
 
-  .report-kpi-icon {
-    display: grid;
-    inline-size: 3.25rem;
-    block-size: 3.25rem;
-    place-items: center;
-    border-radius: 8px;
-    background: color-mix(in srgb, currentColor 14%, transparent);
-    transition: transform 180ms ease, background-color 180ms ease;
+  .report-kpi-top {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .65rem;
   }
 
-  .report-kpi:hover .report-kpi-icon {
-    transform: none;
-    background: color-mix(in srgb, currentColor 20%, transparent);
-  }
-
-  .report-kpi-body {
-    display: grid;
-    gap: .18rem;
+  .report-kpi-label {
+    display: inline-flex;
     min-inline-size: 0;
+    align-items: center;
+    gap: .45rem;
     color: var(--muted);
     font-size: .78rem;
-    font-weight: 800;
+    font-weight: 820;
   }
 
-  .report-kpi-body strong {
-    color: var(--text);
-    font-size: 1.65rem;
-    line-height: 1;
-  }
-
-  .report-kpi-body small {
-    overflow: hidden;
+  .report-kpi-label svg {
     color: currentColor;
-    font-size: .76rem;
+  }
+
+  .report-kpi-link {
+    display: grid;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text);
+  }
+
+  .report-kpi > strong {
+    align-self: end;
+    color: var(--text);
+    font-size: 2rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .report-kpi > small {
+    grid-column: 1 / -1;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    color: currentColor;
+    font-size: .72rem;
+    font-weight: 760;
+  }
+
+  .report-kpi-primary {
+    border-color: var(--brand-strong);
+    background: var(--brand-strong);
+    color: #dbeafe;
+  }
+
+  .report-kpi-primary .report-kpi-label,
+  .report-kpi-primary > strong,
+  .report-kpi-primary .report-kpi-link {
+    color: #fff;
+  }
+
+  .report-kpi-primary .report-kpi-link {
+    border-color: rgb(255 255 255 / 35%);
+  }
+
+  .report-kpi-green {
+    color: #15803d;
+  }
+
+  .report-kpi-blue {
+    color: #2563eb;
+  }
+
+  .report-kpi-red {
+    color: #be123c;
+  }
+
+  .mini-sparkline {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: end;
+    inline-size: 100%;
+    block-size: 2.4rem;
+    color: currentColor;
+    opacity: .7;
+  }
+
+  .report-kpi-primary .mini-sparkline {
+    color: #fff;
+    opacity: .65;
+  }
+
+  .report-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: .75rem;
+  }
+
+  .report-activity-card {
+    grid-column: span 8;
+  }
+
+  .report-reminders-card {
+    grid-column: span 4;
+  }
+
+  .report-team-card {
+    grid-column: span 5;
+  }
+
+  .report-progress-card {
+    grid-column: span 3;
+  }
+
+  .report-task-feed-card {
+    grid-column: span 4;
+  }
+
+  .report-depots-card {
+    grid-column: span 4;
+  }
+
+  .report-status-card {
+    grid-column: span 8;
+  }
+
+  .report-reminder-list,
+  .report-team-list,
+  .report-task-feed {
+    display: grid;
+    align-content: start;
+  }
+
+  .report-reminder,
+  .report-task-row {
+    display: grid;
+    min-inline-size: 0;
+    align-items: center;
+    gap: .6rem;
+    border-block-start: 1px solid var(--border);
+    padding-block: .62rem;
+    transition: color 160ms ease, background-color 160ms ease;
+  }
+
+  .report-reminder:first-child,
+  .report-task-row:first-child {
+    border-block-start: 0;
+  }
+
+  .report-reminder:hover,
+  .report-task-row:hover {
+    color: var(--brand);
+  }
+
+  .report-reminder {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .report-priority-mark {
+    inline-size: .45rem;
+    block-size: 2.25rem;
+    border-radius: 999px;
+    background: var(--warning);
+  }
+
+  .report-priority-low {
+    background: var(--success);
+  }
+
+  .report-priority-medium {
+    background: #d97706;
+  }
+
+  .report-priority-high {
+    background: #e11d48;
+  }
+
+  .report-priority-critical {
+    background: #7f1d1d;
+  }
+
+  .report-reminder-body,
+  .report-task-row > span:nth-child(2),
+  .report-team-person {
+    display: grid;
+    min-inline-size: 0;
+    gap: .12rem;
+  }
+
+  .report-reminder-body strong,
+  .report-task-row strong,
+  .report-team-person strong {
+    overflow: hidden;
+    color: var(--text);
+    font-size: .8rem;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .report-kpi-purple {
+  .report-reminder-body small,
+  .report-task-row small,
+  .report-team-person small {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: .68rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .report-reminder time {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--brand) 8%, var(--panel));
+    color: var(--brand);
+    padding: .28rem .45rem;
+    font-size: .66rem;
+    font-weight: 820;
+    white-space: nowrap;
+  }
+
+  .report-reminder time.is-overdue {
+    background: color-mix(in srgb, var(--danger) 10%, var(--panel));
+    color: var(--danger);
+  }
+
+  .report-team-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .65rem;
+    border-block-start: 1px solid var(--border);
+    padding-block: .55rem;
+  }
+
+  .report-team-row:first-child {
+    border-block-start: 0;
+  }
+
+  .report-team-avatar {
+    display: grid;
+    inline-size: 2rem;
+    block-size: 2rem;
+    place-items: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--avatar-color) 16%, var(--panel));
+    color: var(--avatar-color);
+    font-size: .7rem;
+    font-weight: 900;
+  }
+
+  .report-team-meter {
+    display: block;
+    block-size: .22rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--panel-2);
+  }
+
+  .report-team-meter i {
+    display: block;
+    inline-size: var(--team-load);
+    block-size: 100%;
+    border-radius: inherit;
+    background: var(--brand);
+  }
+
+  .report-team-state {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--success) 9%, var(--panel));
+    color: var(--success);
+    padding: .28rem .45rem;
+    font-size: .65rem;
+    font-weight: 820;
+    white-space: nowrap;
+  }
+
+  .report-team-state.is-alert {
+    background: color-mix(in srgb, var(--danger) 10%, var(--panel));
+    color: var(--danger);
+  }
+
+  .report-progress-card {
+    align-content: start;
+  }
+
+  .report-progress-gauge {
+    position: relative;
+    inline-size: min(15rem, 100%);
+    min-block-size: 8.25rem;
+    justify-self: center;
+  }
+
+  .report-progress-gauge svg {
+    display: block;
+    inline-size: 100%;
+    overflow: visible;
+  }
+
+  .report-progress-track,
+  .report-progress-value {
+    fill: none;
+    stroke-linecap: round;
+    stroke-width: 22;
+  }
+
+  .report-progress-track {
+    stroke: var(--panel-2);
+  }
+
+  .report-progress-value {
+    stroke: var(--brand);
+  }
+
+  .report-progress-gauge > span {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: .15rem;
+    display: grid;
+    justify-items: center;
+    line-height: 1;
+  }
+
+  .report-progress-gauge strong {
+    font-size: 1.8rem;
+  }
+
+  .report-progress-gauge small {
+    margin-block-start: .25rem;
+    color: var(--muted);
+    font-size: .7rem;
+  }
+
+  .report-progress-meta {
+    display: grid;
+    gap: .35rem;
+  }
+
+  .report-progress-meta span {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .42rem;
+    color: var(--muted);
+    font-size: .72rem;
+  }
+
+  .report-progress-meta i {
+    inline-size: .52rem;
+    block-size: .52rem;
+    border-radius: 999px;
+  }
+
+  .progress-dot-completed {
+    background: var(--brand);
+  }
+
+  .progress-dot-active {
+    background: #16a34a;
+  }
+
+  .progress-dot-unassigned {
+    background: #d97706;
+  }
+
+  .report-progress-meta strong {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .report-task-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .report-task-icon {
+    display: grid;
+    inline-size: 1.9rem;
+    block-size: 1.9rem;
+    place-items: center;
+    border-radius: 6px;
+    background: color-mix(in srgb, currentColor 11%, var(--panel));
     color: var(--brand);
   }
 
-  .report-kpi-green {
-    color: #16a34a;
+  .report-task-icon.report-priority-low {
+    color: var(--success);
   }
 
-  .report-kpi-red {
-    color: #e11d48;
-  }
-
-  .report-kpi-orange {
+  .report-task-icon.report-priority-medium {
     color: #b45309;
   }
 
-  .report-kpi-blue {
-    color: var(--brand);
+  .report-task-icon.report-priority-high,
+  .report-task-icon.report-priority-critical {
+    color: var(--danger);
   }
 
-  .mini-sparkline {
-    inline-size: 100%;
-    block-size: 2.4rem;
-    opacity: .95;
+  .report-task-row b {
+    max-inline-size: 7rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--panel-2);
+    color: var(--muted);
+    padding: .28rem .45rem;
+    font-size: .65rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .report-empty-state {
+    display: grid;
+    min-block-size: 7rem;
+    place-items: center;
+    align-content: center;
+    gap: .45rem;
+    color: var(--muted);
+    font-size: .76rem;
+    text-align: center;
   }
 
   .report-chart-card {
@@ -1218,7 +1655,7 @@
     grid-template-columns: repeat(var(--chart-count, 12), minmax(0, 1fr));
     gap: 0;
     color: var(--muted);
-    font-size: clamp(.58rem, .7vw, .76rem);
+    font-size: .68rem;
     text-align: center;
     margin-inline-start: 2.75rem;
   }
@@ -1243,6 +1680,20 @@
     grid-template-columns: minmax(10rem, .85fr) minmax(0, 1fr);
     align-items: center;
     gap: 1rem;
+  }
+
+  .report-depots-card .report-donut-wrap {
+    grid-template-columns: minmax(7rem, .72fr) minmax(0, 1fr);
+    gap: .75rem;
+  }
+
+  .report-depots-card .report-donut {
+    inline-size: min(9rem, 100%);
+  }
+
+  .report-depots-card .report-donut span {
+    inline-size: 4rem;
+    font-size: .75rem;
   }
 
   .report-donut {
@@ -1350,13 +1801,15 @@
   .report-closed-grid span {
     display: grid;
     gap: .1rem;
-    border: 1px solid color-mix(in srgb, #16a34a 28%, var(--border));
-    border-radius: 8px;
-    background: color-mix(in srgb, #16a34a 8%, var(--panel));
+    border-inline-start: 1px solid color-mix(in srgb, #16a34a 30%, var(--border));
     color: var(--muted);
     padding: .65rem .75rem;
     font-size: .82rem;
     font-weight: 800;
+  }
+
+  .report-closed-grid span:first-child {
+    border-inline-start: 0;
   }
 
   .report-closed-grid strong {
@@ -1972,7 +2425,7 @@
   }
 
   .modal-create-comments {
-    min-block-size: 6.2rem;
+    min-block-size: 10rem;
   }
 
   .checklist-draft,
@@ -2588,6 +3041,27 @@
     border-collapse: collapse;
   }
 
+  .admin-users {
+    display: grid;
+    gap: 1rem;
+    margin-block-start: 1rem;
+  }
+
+  .admin-invite-form {
+    display: grid;
+    grid-template-columns: minmax(16rem, 1fr) minmax(12rem, .35fr) auto;
+    align-items: end;
+    gap: .75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel-2);
+    padding: .85rem;
+  }
+
+  .profile-chat-link {
+    inline-size: fit-content;
+  }
+
   .table th,
   .table td {
     border-block-end: 1px solid var(--border);
@@ -2622,7 +3096,20 @@
     }
 
     .report-kpi-grid {
-      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .report-activity-card,
+    .report-status-card {
+      grid-column: span 12;
+    }
+
+    .report-reminders-card,
+    .report-team-card,
+    .report-progress-card,
+    .report-task-feed-card,
+    .report-depots-card {
+      grid-column: span 6;
     }
 
     .reports-filter {
@@ -2701,14 +3188,6 @@
       grid-template-columns: 1fr;
     }
 
-    .report-kpi {
-      grid-template-columns: auto minmax(0, 1fr);
-    }
-
-    .mini-sparkline {
-      display: none;
-    }
-
     .modal-work-grid,
     .modal-work-grid-task,
     .property-grid {
@@ -2770,6 +3249,22 @@
     }
   }
 
+  @media (width <= 780px) {
+    .report-activity-card,
+    .report-reminders-card,
+    .report-team-card,
+    .report-progress-card,
+    .report-task-feed-card,
+    .report-depots-card,
+    .report-status-card {
+      grid-column: span 12;
+    }
+
+    .report-card-head {
+      display: grid;
+    }
+  }
+
   @media (width <= 640px) {
     .reports-filter,
     .report-kpi-grid {
@@ -2778,6 +3273,37 @@
 
     .reports-period-actions {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .reports-page-heading {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .reports-export-button {
+      inline-size: 100%;
+    }
+
+    .report-kpi {
+      grid-template-columns: minmax(0, 1fr) 4.75rem;
+    }
+
+    .report-reminder {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .report-reminder time {
+      grid-column: 2;
+      justify-self: start;
+    }
+
+    .report-team-row {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .report-team-state {
+      grid-column: 2;
+      justify-self: start;
     }
 
     .content {

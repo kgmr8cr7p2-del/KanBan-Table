@@ -403,7 +403,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
           </div>
           <span className="spacer" />
           {view.permissions.canCreateTask ? (
-            <button className="button" type="button" onClick={openCreateTask}>
+            <button className="button create-task-button" type="button" onClick={openCreateTask}>
               <Plus size={17} />
               Создать
             </button>
@@ -590,7 +590,6 @@ function TaskCard({
         <span className="task-number">#{task.taskNumber}</span>
         {task.title}
       </span>
-      {task.description ? <p className="task-description">{task.description}</p> : null}
       {task.oilDepot ? (
         <div className="task-depot">
           <span className="task-depot-icon" aria-hidden="true">
@@ -602,6 +601,7 @@ function TaskCard({
           </span>
         </div>
       ) : null}
+      {task.description ? <p className="task-description">{task.description}</p> : null}
       <div className="meta-row">
         <span className={`chip priority-${task.priority}`}>{priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
         {task.assignee ? <span className="chip">{task.assignee.name}</span> : null}
@@ -1026,7 +1026,7 @@ function CreateTaskDialogV2(props: { view: View; onClose: () => void; onCreate: 
                 </span>
                 <span className="chevron">⌄</span>
               </header>
-              <p className="muted">Комментарий можно добавить после создания задачи</p>
+              <textarea className="textarea modal-comment-input" name="initialComment" placeholder="Первый комментарий к задаче" />
             </article>
           </div>
 

@@ -36,9 +36,10 @@ enum ActivityAction {
 }
 
 model Role {
-  id    String   @id @default(cuid())
-  name  RoleName @unique
-  users User[]
+  id          String       @id @default(cuid())
+  name        RoleName     @unique
+  users       User[]
+  userInvites UserInvite[]
 }
 
 model User {
@@ -60,6 +61,16 @@ model User {
   sessions           Session[]
   emailTokens        EmailVerificationToken[]
   telegramConnection TelegramConnection?
+}
+
+model UserInvite {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  roleId     String
+  role       Role      @relation(fields: [roleId], references: [id])
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Session {

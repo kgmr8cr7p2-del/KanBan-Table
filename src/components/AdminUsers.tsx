@@ -8,8 +8,14 @@ const roleLabels = {
   EXECUTOR: "Исполнитель",
 };
 
-export function AdminUsers({ users }: { users: Array<{ id: string; name: string; email: string; emailVerifiedAt: string | null; role: { name: keyof typeof roleLabels } }> }) {
+type RoleKey = keyof typeof roleLabels;
+type AdminUser = { id: string; name: string; email: string; emailVerifiedAt: string | null; role: { name: RoleKey } };
+type UserInvite = { id: string; email: string; acceptedAt: string | null; role: { name: RoleKey } };
+
+export function AdminUsers({ invites, users }: { invites: UserInvite[]; users: AdminUser[] }) {
   const [items, setItems] = useState(users);
+  const [pendingInvites, setPendingInvites] = useState(invites);
+  const [message, setMessage] = useState("");
 
   async function changeRole(id: string, role: string) {
     const response = await fetch(`/api/admin/users/${id}`, {
@@ -22,34 +28,89 @@ export function AdminUsers({ users }: { users: Array<{ id: string; name: string;
     }
   }
 
+  async function inviteUser(formData: FormData) {
+    setMessage("");
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const role = String(formData.get("role") ?? "EXECUTOR");
+    const response = await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, role }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(data.error ?? "Не удалось добавить пользователя");
+      return;
+    }
+
+    if (data.user) {
+      setItems((current) => current.map((user) => (user.id === data.user.id ? data.user : user)));
+      setMessage("Роль существующего пользователя обновлена");
+      return;
+    }
+
+    if (data.invite) {
+      setPendingInvites((current) => [data.invite, ...current.filter((invite) => invite.id !== data.invite.id)]);
+      setMessage("Приглашение сохранено");
+    }
+  }
+
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          <th>Пользователь</th>
-          <th>Почта</th>
-          <th>Статус</th>
-          <th>Роль</th>
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((user) => (
-          <tr key={user.id}>
-            <td>{user.name}</td>
-            <td>{user.email}</td>
-            <td>{user.emailVerifiedAt ? "Подтверждена" : "Ожидает"}</td>
-            <td>
-              <select className="select" value={user.role.name} onChange={(event) => changeRole(user.id, event.target.value)}>
-                {Object.entries(roleLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </td>
+    <div className="admin-users">
+      <form className="admin-invite-form" action={inviteUser}>
+        <label className="field">
+          <span className="label">Почта</span>
+          <input className="input" name="email" type="email" placeholder="name@company.ru" required />
+        </label>
+        <label className="field">
+          <span className="label">Роль</span>
+          <select className="select" name="role" defaultValue="EXECUTOR">
+            {Object.entries(roleLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="button">Добавить</button>
+      </form>
+      {message ? <p className="chip" role="status">{message}</p> : null}
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Пользователь</th>
+            <th>Почта</th>
+            <th>Статус</th>
+            <th>Роль</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {pendingInvites.map((invite) => (
+            <tr key={invite.id}>
+              <td>Ожидает регистрации</td>
+              <td>{invite.email}</td>
+              <td>Приглашен</td>
+              <td>{roleLabels[invite.role.name]}</td>
+            </tr>
+          ))}
+          {items.map((user) => (
+            <tr key={user.id}>
+              <td>{user.name}</td>
+              <td>{user.email}</td>
+              <td>{user.emailVerifiedAt ? "Подтверждена" : "Ожидает"}</td>
+              <td>
+                <select className="select" value={user.role.name} onChange={(event) => changeRole(user.id, event.target.value)}>
+                  {Object.entries(roleLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

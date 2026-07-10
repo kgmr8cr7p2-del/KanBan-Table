@@ -1,4 +1,17 @@
-import { CheckCircle2, CheckSquare, ClipboardList, Clock3, Layers3, PieChart, TrendingUp } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Building2,
+  CalendarClock,
+  CheckCircle2,
+  CheckSquare,
+  Clock3,
+  Layers3,
+  ListTodo,
+  PieChart,
+  TrendingUp,
+  UsersRound,
+} from "lucide-react";
 import type { CSSProperties } from "react";
 import { ReportLineChart } from "@/components/ReportLineChart";
 
@@ -14,144 +27,270 @@ export function ReportsPanel({ reports }: { reports: any }) {
   const topDepots = [...rows].sort((a: any, b: any) => b.total - a.total || a.name.localeCompare(b.name, "ru")).slice(0, 6);
   const closedByDepot = reports?.period?.closedByOilDepot ?? [];
   const chartData = reports?.chart ?? reports?.monthly ?? [];
+  const dashboard = reports?.dashboard ?? {};
+  const totals = dashboard.totals ?? {};
+  const progress = dashboard.progress ?? { percent: 0, completed: 0, active: 0, total: 0 };
+  const reminders = dashboard.reminders ?? [];
+  const recentTasks = dashboard.recentTasks ?? [];
+  const team = dashboard.team ?? [];
+  const maxTeamLoad = Math.max(1, ...team.map((member: any) => member.active));
   const summaryCards = [
     {
-      title: "Создано задач",
-      value: reports?.summary?.created ?? 0,
-      note: `${reports?.year?.created ?? 0} за ${reports?.selected?.year ?? "год"}`,
-      icon: ClipboardList,
-      tone: "purple",
+      title: "Всего задач",
+      value: totals.all ?? 0,
+      note: `${totals.active ?? 0} сейчас активны`,
+      icon: Layers3,
+      tone: "primary",
       metric: "created",
     },
     {
-      title: "Закрыто задач",
-      value: reports?.summary?.completed ?? 0,
-      note: `${reports?.summary?.completionRate ?? 0}% закрытия`,
+      title: "Закрыто за период",
+      value: totals.completed ?? 0,
+      note: `${progress.percent ?? 0}% общего прогресса`,
       icon: CheckCircle2,
       tone: "green",
       metric: "completed",
     },
     {
-      title: "Просрочено задач",
-      value: reports?.summary?.overdue ?? 0,
-      note: (reports?.summary?.overdue ?? 0) ? "Нужно проверить сроки" : "Просроченных задач нет",
-      icon: Clock3,
-      tone: "red",
-      metric: "overdue",
-    },
-    {
       title: "В работе",
-      value: reports?.summary?.inProgress ?? 0,
-      note: `${reports?.summary?.active ?? 0} активных задач`,
-      icon: PieChart,
-      tone: "orange",
-      metric: "created",
-    },
-    {
-      title: "Всего задач",
-      value: reports?.summary?.total ?? 0,
-      note: `Активных: ${reports?.summary?.active ?? 0}`,
-      icon: Layers3,
+      value: totals.inProgress ?? 0,
+      note: `${totals.dueSoon ?? 0} со сроком на неделе`,
+      icon: Clock3,
       tone: "blue",
       metric: "created",
+    },
+    {
+      title: "Просрочено",
+      value: totals.overdue ?? 0,
+      note: (totals.overdue ?? 0) ? "Требуют внимания" : "Все сроки под контролем",
+      icon: AlertTriangle,
+      tone: "red",
+      metric: "overdue",
     },
   ];
 
   return (
-    <section className="reports-panel reports-page-grid reports-dashboard" aria-label="Отчеты">
+    <section className="reports-panel reports-page-grid reports-dashboard" aria-label="Дашборд отчетов">
       <div className="report-kpi-grid">
         {summaryCards.map((card) => {
           const Icon = card.icon;
           return (
             <article className={`report-kpi report-kpi-${card.tone}`} key={card.title}>
-              <span className="report-kpi-icon">
-                <Icon size={24} />
+              <span className="report-kpi-top">
+                <span className="report-kpi-label">
+                  <Icon size={16} />
+                  {card.title}
+                </span>
+                <span className="report-kpi-link" aria-hidden="true">
+                  <ArrowUpRight size={15} />
+                </span>
               </span>
-              <span className="report-kpi-body">
-                <span>{card.title}</span>
-                <strong>{card.value}</strong>
-                <small>{card.note}</small>
-              </span>
+              <strong>{card.value}</strong>
+              <small>
+                <TrendingUp size={13} />
+                {card.note}
+              </small>
               <MiniSparkline data={chartData} metric={card.metric} />
             </article>
           );
         })}
       </div>
 
-      <article className="report-card report-chart-card">
-        <div className="report-title">
-          <TrendingUp size={16} />
-          <h2>Динамика задач за период</h2>
-        </div>
-        <div className="report-legend">
-          <span className="legend-created">Создано</span>
-          <span className="legend-completed">Закрыто</span>
-          <span className="legend-overdue">Просрочено</span>
-        </div>
-        <ReportLineChart data={chartData} />
-      </article>
+      <div className="report-dashboard-grid">
+        <article className="report-card report-activity-card">
+          <div className="report-card-head">
+            <div className="report-title">
+              <TrendingUp size={16} />
+              <div>
+                <h2>Динамика задач</h2>
+                <p>Создание и завершение за выбранный период</p>
+              </div>
+            </div>
+            <div className="report-legend">
+              <span className="legend-created">Создано</span>
+              <span className="legend-completed">Закрыто</span>
+              <span className="legend-overdue">Просрочено</span>
+            </div>
+          </div>
+          <ReportLineChart data={chartData} />
+        </article>
 
-      <article className="report-card report-donut-card">
-        <div className="report-title">
-          <PieChart size={16} />
-          <h2>Топ нефтебаз по количеству задач</h2>
-        </div>
-        <div className="report-donut-wrap">
-          <DepotDonut rows={topDepots} total={depotTotal} />
-          <div className="report-donut-list">
-            {topDepots.length ? (
-              topDepots.map((row: any, index: number) => (
-                <div className="report-donut-row" key={row.name}>
-                  <span className="donut-dot" style={{ "--dot-color": chartColors[index % chartColors.length] } as CSSProperties} />
-                  <span>{row.name}</span>
-                  <strong>{row.total}</strong>
-                  <small>{Math.round((row.total / depotTotal) * 1000) / 10}%</small>
+        <article className="report-card report-reminders-card">
+          <div className="report-title">
+            <CalendarClock size={16} />
+            <div>
+              <h2>Ближайшие сроки</h2>
+              <p>Задачи с ближайшим дедлайном</p>
+            </div>
+          </div>
+          <div className="report-reminder-list">
+            {reminders.length ? (
+              reminders.map((task: any) => (
+                <a className="report-reminder" href={`/board?q=${encodeURIComponent(String(task.taskNumber))}`} key={task.id}>
+                  <span className={`report-priority-mark report-priority-${String(task.priority).toLowerCase()}`} />
+                  <span className="report-reminder-body">
+                    <strong>#{task.taskNumber} {task.title}</strong>
+                    <small>{task.oilDepot} · {task.assignee}</small>
+                  </span>
+                  <time className={task.overdue ? "is-overdue" : ""} dateTime={String(task.deadline)}>
+                    {deadlineLabel(task.deadline, task.overdue)}
+                  </time>
+                </a>
+              ))
+            ) : (
+              <ReportEmpty icon={<CalendarClock size={18} />} text="Нет задач с установленным сроком" />
+            )}
+          </div>
+        </article>
+
+        <article className="report-card report-team-card">
+          <div className="report-title">
+            <UsersRound size={16} />
+            <div>
+              <h2>Загрузка команды</h2>
+              <p>Активные и завершённые задачи</p>
+            </div>
+          </div>
+          <div className="report-team-list">
+            {team.length ? (
+              team.map((member: any, index: number) => (
+                <div className="report-team-row" key={member.id}>
+                  <span
+                    className="report-team-avatar"
+                    style={{ "--avatar-color": avatarColors[index % avatarColors.length] } as CSSProperties}
+                  >
+                    {initials(member.name)}
+                  </span>
+                  <span className="report-team-person">
+                    <strong>{member.name}</strong>
+                    <small>{member.active} активных · {member.completed} закрыто</small>
+                    <span className="report-team-meter">
+                      <i style={{ "--team-load": `${Math.round((member.active / maxTeamLoad) * 100)}%` } as CSSProperties} />
+                    </span>
+                  </span>
+                  <span className={member.overdue ? "report-team-state is-alert" : "report-team-state"}>
+                    {member.overdue ? `${member.overdue} проср.` : "В норме"}
+                  </span>
                 </div>
               ))
             ) : (
-              <p className="muted">Активных задач сейчас нет.</p>
+              <ReportEmpty icon={<UsersRound size={18} />} text="Назначенных исполнителей пока нет" />
             )}
           </div>
-        </div>
-      </article>
+        </article>
 
-      <article className="report-card report-card-wide">
-        <div className="report-title">
-          <CheckSquare size={16} />
-          <h2>Текущие задачи по нефтебазам</h2>
-        </div>
-        <div className="report-status-table">
-          <div className="report-status-row report-status-head" style={{ "--status-count": statusCount } as CSSProperties}>
-            <span>Нефтебаза</span>
-            {statusColumns.map((column: string) => (
-              <span key={column}>{column}</span>
-            ))}
-            <span>Всего</span>
+        <article className="report-card report-progress-card">
+          <div className="report-title">
+            <PieChart size={16} />
+            <div>
+              <h2>Общий прогресс</h2>
+              <p>Доля завершённых задач</p>
+            </div>
           </div>
-          {rows.length ? (
-            <>
-              {rows.map((row: any) => (
-                <div className="report-status-row" key={row.name} style={{ "--status-count": statusCount } as CSSProperties}>
-                  <strong>{row.name}</strong>
-                  {row.statuses.map((status: any) => (
-                    <span key={status.name}>{status.count}</span>
-                  ))}
-                  <b>{row.total}</b>
-                </div>
+          <ProgressGauge percent={progress.percent ?? 0} />
+          <div className="report-progress-meta">
+            <span><i className="progress-dot-completed" />Закрыто <strong>{progress.completed ?? 0}</strong></span>
+            <span><i className="progress-dot-active" />Активно <strong>{progress.active ?? 0}</strong></span>
+            <span><i className="progress-dot-unassigned" />Без исполнителя <strong>{totals.unassigned ?? 0}</strong></span>
+          </div>
+        </article>
+
+        <article className="report-card report-task-feed-card">
+          <div className="report-title">
+            <ListTodo size={16} />
+            <div>
+              <h2>Актуальные задачи</h2>
+              <p>Последние обновления на доске</p>
+            </div>
+          </div>
+          <div className="report-task-feed">
+            {recentTasks.length ? (
+              recentTasks.map((task: any) => (
+                <a className="report-task-row" href={`/board?q=${encodeURIComponent(String(task.taskNumber))}`} key={task.id}>
+                  <span className={`report-task-icon report-priority-${String(task.priority).toLowerCase()}`}>
+                    <CheckSquare size={15} />
+                  </span>
+                  <span>
+                    <strong>#{task.taskNumber} {task.title}</strong>
+                    <small>{task.oilDepot} · {task.assignee}</small>
+                  </span>
+                  <b>{task.status}</b>
+                </a>
+              ))
+            ) : (
+              <ReportEmpty icon={<ListTodo size={18} />} text="Активных задач сейчас нет" />
+            )}
+          </div>
+        </article>
+
+        <article className="report-card report-depots-card">
+          <div className="report-title">
+            <Building2 size={16} />
+            <div>
+              <h2>Задачи по нефтебазам</h2>
+              <p>Доля в общей загрузке</p>
+            </div>
+          </div>
+          <div className="report-donut-wrap">
+            <DepotDonut rows={topDepots} total={depotTotal} />
+            <div className="report-donut-list">
+              {topDepots.length ? (
+                topDepots.map((row: any, index: number) => (
+                  <div className="report-donut-row" key={row.name}>
+                    <span className="donut-dot" style={{ "--dot-color": chartColors[index % chartColors.length] } as CSSProperties} />
+                    <span>{row.name}</span>
+                    <strong>{row.total}</strong>
+                    <small>{Math.round((row.total / depotTotal) * 1000) / 10}%</small>
+                  </div>
+                ))
+              ) : (
+                <ReportEmpty icon={<Building2 size={18} />} text="Активных задач сейчас нет" />
+              )}
+            </div>
+          </div>
+        </article>
+
+        <article className="report-card report-status-card">
+          <div className="report-title">
+            <CheckSquare size={16} />
+            <div>
+              <h2>Статусы по нефтебазам</h2>
+              <p>Текущая загрузка по этапам доски</p>
+            </div>
+          </div>
+          <div className="report-status-table">
+            <div className="report-status-row report-status-head" style={{ "--status-count": statusCount } as CSSProperties}>
+              <span>Нефтебаза</span>
+              {statusColumns.map((column: string) => (
+                <span key={column}>{column}</span>
               ))}
-              <div className="report-status-row report-status-total" style={{ "--status-count": statusCount } as CSSProperties}>
-                <strong>Итого</strong>
-                {statusTotals.map((status: any) => (
-                  <b key={status.name}>{status.count}</b>
+              <span>Всего</span>
+            </div>
+            {rows.length ? (
+              <>
+                {rows.map((row: any) => (
+                  <div className="report-status-row" key={row.name} style={{ "--status-count": statusCount } as CSSProperties}>
+                    <strong>{row.name}</strong>
+                    {row.statuses.map((status: any) => (
+                      <span key={status.name}>{status.count}</span>
+                    ))}
+                    <b>{row.total}</b>
+                  </div>
                 ))}
-                <b>{rows.reduce((sum: number, row: any) => sum + row.total, 0)}</b>
-              </div>
-            </>
-          ) : (
-            <p className="muted history-empty">Активных задач сейчас нет.</p>
-          )}
-        </div>
-      </article>
+                <div className="report-status-row report-status-total" style={{ "--status-count": statusCount } as CSSProperties}>
+                  <strong>Итого</strong>
+                  {statusTotals.map((status: any) => (
+                    <b key={status.name}>{status.count}</b>
+                  ))}
+                  <b>{rows.reduce((sum: number, row: any) => sum + row.total, 0)}</b>
+                </div>
+              </>
+            ) : (
+              <ReportEmpty icon={<CheckSquare size={18} />} text="Активных задач сейчас нет" />
+            )}
+          </div>
+        </article>
+      </div>
 
       <article className="report-card report-card-wide report-closed-summary">
         <div className="report-title">
@@ -179,6 +318,58 @@ export function ReportsPanel({ reports }: { reports: any }) {
 }
 
 const chartColors = ["#2563eb", "#16a34a", "#d97706", "#0f766e", "#64748b", "#dc2626"];
+const avatarColors = ["#2563eb", "#0f766e", "#b45309", "#7c3aed", "#be123c", "#0369a1"];
+
+function ReportEmpty({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <div className="report-empty-state">
+      {icon}
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function ProgressGauge({ percent }: { percent: number }) {
+  const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+  return (
+    <div className="report-progress-gauge" aria-label={`Завершено ${safePercent}% задач`}>
+      <svg viewBox="0 0 200 112" aria-hidden="true">
+        <path className="report-progress-track" d="M 20 98 A 80 80 0 0 1 180 98" pathLength="100" />
+        <path
+          className="report-progress-value"
+          d="M 20 98 A 80 80 0 0 1 180 98"
+          pathLength="100"
+          strokeDasharray={`${safePercent} ${100 - safePercent}`}
+        />
+      </svg>
+      <span>
+        <strong>{safePercent}%</strong>
+        <small>завершено</small>
+      </span>
+    </div>
+  );
+}
+
+function deadlineLabel(value: string, overdue: boolean) {
+  const deadline = new Date(value);
+  const now = new Date();
+  const day = 24 * 60 * 60 * 1000;
+  const difference = Math.ceil((deadline.getTime() - now.getTime()) / day);
+  if (overdue) return `Просрочено ${Math.max(1, Math.abs(difference))} дн.`;
+  if (difference <= 0) return "Сегодня";
+  if (difference === 1) return "Завтра";
+  if (difference <= 7) return `Через ${difference} дн.`;
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" }).format(deadline);
+}
+
+function initials(name: string) {
+  return String(name)
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "?";
+}
 
 function MiniSparkline({ data, metric }: { data: any[]; metric: string }) {
   const points = buildChartPoints(data, metric, 100, 36);

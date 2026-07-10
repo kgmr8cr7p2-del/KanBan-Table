@@ -1,3 +1,4 @@
+import { Download } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ReportsPanel } from "@/components/BoardInsights";
 import { requireVerifiedUser } from "@/lib/auth";
@@ -20,9 +21,15 @@ export default async function ReportsPage({
   return (
     <AppShell user={user}>
       <div className="content insights-page">
-        <section className="page-heading">
-          <h1>Отчеты</h1>
-          <p className="muted">Сводка по задачам, нефтебазам, статусам и закрытию задач за выбранный период.</p>
+        <section className="page-heading reports-page-heading">
+          <div>
+            <h1>Дашборд</h1>
+            <p className="muted">Приоритеты, сроки и загрузка команды в одном отчёте.</p>
+          </div>
+          <a className="button secondary reports-export-button" href="/api/export">
+            <Download size={16} />
+            Экспорт в Excel
+          </a>
         </section>
         <form className="reports-filter panel" action="/reports">
           <label className="field">

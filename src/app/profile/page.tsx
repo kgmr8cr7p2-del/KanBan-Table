@@ -15,8 +15,8 @@ export default async function ProfilePage() {
       <div className="content">
         <section className="panel">
           <h1>Профиль</h1>
-          <p className="muted">Имя, рабочая почта и Telegram chat ID для уведомлений.</p>
-          <ProfileForm name={full?.name ?? user.name} email={user.email} telegramChatId={full?.telegramConnection?.chatId ?? ""} />
+          <p className="muted">Имя, рабочая почта и ссылка на Telegram-чат для уведомлений.</p>
+          <ProfileForm name={full?.name ?? user.name} email={user.email} />
         </section>
       </div>
     </AppShell>

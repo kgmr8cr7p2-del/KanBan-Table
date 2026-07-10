@@ -10,14 +10,19 @@ export default async function AdminPage() {
     include: { role: true },
     orderBy: { createdAt: "desc" },
   });
+  const invites = await prisma.userInvite.findMany({
+    where: { acceptedAt: null },
+    include: { role: true },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <AppShell user={user}>
       <div className="content">
         <section className="panel">
           <h1>Админ-панель</h1>
-          <p className="muted">Управление ролями пользователей. Подтверждение email хранится в профиле пользователя.</p>
-          <AdminUsers users={JSON.parse(JSON.stringify(users))} />
+          <p className="muted">Добавьте email и роль. Пользователь сам зарегистрируется по этой почте, а имя укажет при регистрации.</p>
+          <AdminUsers invites={JSON.parse(JSON.stringify(invites))} users={JSON.parse(JSON.stringify(users))} />
         </section>
       </div>
     </AppShell>

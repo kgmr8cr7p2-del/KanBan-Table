@@ -50,3 +50,8 @@ export const profileSchema = z.object({
 export const userRoleSchema = z.object({
   role: z.nativeEnum(RoleName),
 });
+
+export const userInviteSchema = z.object({
+  email: z.string().email("Введите корректную почту").transform((value) => value.toLowerCase()),
+  role: z.nativeEnum(RoleName),
+});
