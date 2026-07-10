@@ -37,7 +37,7 @@ export async function GET() {
 function extractJokes(html: string) {
   return Array.from(html.matchAll(/<div\s+class=["']shortik["'][^>]*>([\s\S]*?)<\/div>/gi))
     .map((match) => sanitizeText(match[1]))
-    .filter((joke) => joke.length >= 12 && joke.length <= 420);
+    .filter((joke) => joke.length >= 12 && joke.length <= 105);
 }
 
 function sanitizeText(value: string) {

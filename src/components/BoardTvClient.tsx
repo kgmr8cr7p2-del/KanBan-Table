@@ -155,10 +155,6 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
         <WeatherPanel weather={weather} />
 
         <section className="tv-joke-card" aria-label="Случайный анекдот" aria-live="polite">
-          <span className="tv-joke-label">
-            Анекдот · обновление через 5 минут
-            {joke.sourceUrl ? <a href={joke.sourceUrl}>shortiki.com</a> : null}
-          </span>
           <strong key={joke.updatedAt}>{joke.text}</strong>
         </section>
       </header>
