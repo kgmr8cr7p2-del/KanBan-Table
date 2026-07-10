@@ -2,6 +2,9 @@
 
 import { CloudSun, Radio, Wind } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
+import { GoidaReminder } from "@/components/GoidaReminder";
+import { WeeklyReportReminder } from "@/components/WeeklyReportReminder";
 
 type View = any;
 type Task = any;
@@ -117,10 +120,10 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
 
   async function refreshJoke() {
     try {
-      const response = await fetch(`/api/jokes/shortiki?at=${Date.now()}`, { cache: "no-store" });
+      const response = await fetch(`/api/jokes/random?at=${Date.now()}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok || !data.joke) throw new Error(data.error ?? "Joke refresh failed");
-      setJoke({ text: data.joke, sourceUrl: data.sourceUrl ?? "https://shortiki.com/", updatedAt: data.updatedAt ?? String(Date.now()) });
+      setJoke({ text: data.joke, sourceUrl: null, updatedAt: data.updatedAt ?? String(Date.now()) });
     } catch {
       setJoke((current) => {
         if (current.sourceUrl) return current;
@@ -183,6 +186,9 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
         <span>Обновлено {timeOnly(lastUpdatedAt)}</span>
         <span>{view?.board?.name ?? "Team Kanban Board"}</span>
       </footer>
+      <TaskSoundNotifier />
+      <GoidaReminder />
+      <WeeklyReportReminder />
     </main>
   );
 }

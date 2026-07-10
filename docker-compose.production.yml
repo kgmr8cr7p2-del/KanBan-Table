@@ -18,6 +18,7 @@ services:
   app:
     build:
       context: .
+    image: team-kanban-board-app:latest
     container_name: team-kanban-app
     restart: unless-stopped
     environment:
@@ -43,6 +44,20 @@ services:
     networks:
       - default
       - regionfree-edge
+
+  scheduler:
+    image: team-kanban-board-app:latest
+    container_name: team-kanban-scheduler
+    restart: unless-stopped
+    command: ["node", "scripts/notification-scheduler.mjs"]
+    environment:
+      SCHEDULER_BASE_URL: http://app:3000
+      NOTIFICATION_CRON_SECRET: ${SESSION_SECRET}
+    depends_on:
+      app:
+        condition: service_started
+    networks:
+      - default
 
 volumes:
   team-kanban-postgres:

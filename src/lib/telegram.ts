@@ -6,7 +6,8 @@ type TelegramEvent =
   | "status_changed"
   | "comment_added"
   | "deadline_soon"
-  | "deadline_overdue";
+  | "deadline_overdue"
+  | "weekly_report";
 
 const titles: Record<TelegramEvent, string> = {
   task_created: "Новая задача",
@@ -15,6 +16,7 @@ const titles: Record<TelegramEvent, string> = {
   comment_added: "Новый комментарий",
   deadline_soon: "Скоро дедлайн",
   deadline_overdue: "Дедлайн просрочен",
+  weekly_report: "Еженедельный отчёт",
 };
 
 const icons: Record<TelegramEvent, string> = {
@@ -24,7 +26,24 @@ const icons: Record<TelegramEvent, string> = {
   comment_added: "💬",
   deadline_soon: "⏳",
   deadline_overdue: "🔴",
+  weekly_report: "📊",
 };
+
+export async function sendWeeklyReportMessage(message: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return { sent: 0, failed: 0, reason: "token_missing" as const };
+
+  const connections = await prisma.telegramConnection.findMany({
+    where: { enabled: true },
+  });
+
+  const chatIds = new Set([
+    ...connections.map((c) => c.chatId),
+    ...(process.env.TELEGRAM_DEFAULT_CHAT_ID ? [process.env.TELEGRAM_DEFAULT_CHAT_ID] : []),
+  ]);
+
+  return sendToChats(token, [...chatIds], message, "Telegram weekly report failed");
+}
 
 export async function notifyTelegram(event: TelegramEvent, message: string, userIds: string[] = []) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -41,22 +60,40 @@ export async function notifyTelegram(event: TelegramEvent, message: string, user
     ...(process.env.TELEGRAM_DEFAULT_CHAT_ID ? [process.env.TELEGRAM_DEFAULT_CHAT_ID] : []),
   ]);
 
-  await Promise.all(
-    [...chatIds].map((chatId) =>
-      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: formatTelegramMessage(event, message),
-          parse_mode: "HTML",
-          disable_web_page_preview: true,
-        }),
-      }).catch((error) => {
-        console.error("Telegram notification failed", error);
-      }),
-    ),
+  await sendToChats(token, [...chatIds], formatTelegramMessage(event, message), "Telegram notification failed");
+}
+
+async function sendToChats(token: string, chatIds: string[], text: string, errorLabel: string) {
+  const taskUrl = `${(process.env.APP_URL ?? "https://kanban.region-free.online").replace(/\/$/, "")}/telegram/new-task`;
+  const results = await Promise.all(
+    chatIds.map(async (chatId) => {
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text,
+            parse_mode: "HTML",
+            disable_web_page_preview: true,
+            reply_markup: {
+              inline_keyboard: [[{ text: "➕ Создать задачу", url: taskUrl }]],
+            },
+          }),
+        });
+        if (!response.ok) throw new Error(`Telegram API ${response.status}: ${await response.text()}`);
+        return true;
+      } catch (error) {
+        console.error(errorLabel, error);
+        return false;
+      }
+    }),
   );
+
+  return {
+    sent: results.filter(Boolean).length,
+    failed: results.filter((result) => !result).length,
+  };
 }
 
 function formatTelegramMessage(event: TelegramEvent, message: string) {

@@ -10,6 +10,7 @@ import { notifyTelegram } from "@/lib/telegram";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { taskSchema } from "@/lib/validators";
 import { tagConnects } from "@/lib/tags";
+import { triggerTaskCompletionSoundEvent } from "@/lib/task-sound-event";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -17,7 +18,10 @@ export async function PATCH(request: Request, { params }: Params) {
   try {
     const user = await requireVerifiedUser();
     const { id } = await params;
-    const existing = await prisma.task.findUnique({ where: { id } });
+    const existing = await prisma.task.findUnique({
+      where: { id },
+      include: { column: { select: { name: true } } },
+    });
     if (!existing) return fail("Задача не найдена", 404);
     if (!canEditTask(user, existing)) return fail("Недостаточно прав", 403);
 
@@ -54,12 +58,17 @@ export async function PATCH(request: Request, { params }: Params) {
           action,
           userId: user.id,
           taskId: task.id,
-          details: { title: task.title },
+          details: action === ActivityAction.STATUS_CHANGED
+            ? { title: task.title, column: task.column.name }
+            : { title: task.title },
         }),
       ),
     );
     if (changes.includes(ActivityAction.STATUS_CHANGED)) {
       await notifyTelegram("status_changed", `${task.title}: ${task.column.name}`, task.assigneeId ? [task.assigneeId] : []);
+      if (!isCompletedColumn(existing.column.name) && isCompletedColumn(task.column.name)) {
+        triggerTaskCompletionSoundEvent();
+      }
     }
     if (changes.includes(ActivityAction.ASSIGNEE_CHANGED)) {
       await notifyTelegram("assignee_changed", formatAssigneeChangedMessage(task, user), task.assigneeId ? [task.assigneeId] : []);
@@ -73,6 +82,11 @@ export async function PATCH(request: Request, { params }: Params) {
 function formatAssigneeChangedMessage(task: TaskWithDetails, user: { name: string; email: string }) {
   const assignee = task.assignee ? `${task.assignee.name} (${task.assignee.email})` : "не назначен";
   return [`Задача: ${task.title}`, `Назначили: ${assignee}`, `Изменил: ${user.name} (${user.email})`].join("\n");
+}
+
+function isCompletedColumn(name: string) {
+  const normalized = name.toLocaleLowerCase("ru-RU");
+  return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete");
 }
 
 export async function DELETE(_: Request, { params }: Params) {

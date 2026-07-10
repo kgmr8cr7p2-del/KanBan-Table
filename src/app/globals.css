@@ -227,29 +227,6 @@
     }
   }
 
-  @keyframes cat-paw-search {
-    0%, 58%, 100% {
-      opacity: 0;
-      transform: translate3d(-50%, -66px, 0) rotate(0deg);
-    }
-    66% {
-      opacity: 1;
-      transform: translate3d(calc(-50% - 8px), -18px, 0) rotate(-9deg);
-    }
-    73% {
-      opacity: 1;
-      transform: translate3d(calc(-50% + 9px), -9px, 0) rotate(11deg);
-    }
-    80% {
-      opacity: 1;
-      transform: translate3d(calc(-50% - 4px), -15px, 0) rotate(-5deg);
-    }
-    88% {
-      opacity: 0;
-      transform: translate3d(-50%, -52px, 0) rotate(0deg);
-    }
-  }
-
   .auth-page {
     display: grid;
     min-block-size: 100dvh;
@@ -386,7 +363,6 @@
     opacity: 0;
     transform: translate3d(-50%, -66px, 0) rotate(0deg);
     transform-origin: 50% 0;
-    animation: cat-paw-search 4.8s cubic-bezier(.22, .8, .25, 1) infinite 1.4s;
     will-change: transform, opacity;
   }
 
@@ -422,10 +398,6 @@
     opacity: 1;
     transform: translate3d(calc(-50% + var(--paw-shift)), var(--paw-reach), 0) rotate(var(--paw-angle));
     transition: opacity 120ms ease-out, transform 180ms cubic-bezier(.18, .8, .22, 1.16);
-  }
-
-  .create-task-paw-zone:focus-within .cat-paw {
-    opacity: 1;
   }
 
   .button.secondary {
@@ -3916,9 +3888,10 @@
     color: #101828;
     font-size: .94rem;
     line-height: 1.18;
+    white-space: pre-line;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
     animation: soft-enter 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
   }
 
@@ -4492,7 +4465,124 @@
     }
   }
 
+  .telegram-create-page {
+    display: grid;
+    min-block-size: 100dvh;
+    place-items: center;
+    padding: 1rem;
+    color: var(--tg-theme-text-color, var(--text));
+    background:
+      radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 32rem),
+      var(--tg-theme-secondary-bg-color, var(--bg));
+  }
+
+  .telegram-create-card {
+    inline-size: min(100%, 42rem);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+    border-radius: 1.1rem;
+    background: var(--tg-theme-bg-color, var(--panel));
+    box-shadow: 0 1.4rem 3.5rem rgb(15 23 42 / 14%);
+  }
+
+  .telegram-create-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.25rem;
+    border-block-end: 1px solid var(--border);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 8%, var(--panel)), var(--panel));
+  }
+
+  .telegram-create-head span {
+    color: var(--brand);
+    font-size: .7rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  .telegram-create-head h1 {
+    margin-block-start: .16rem;
+    font-size: clamp(1.35rem, 5vw, 1.85rem);
+    line-height: 1.1;
+  }
+
+  .telegram-create-head p {
+    margin-block-start: .35rem;
+    color: var(--tg-theme-hint-color, var(--muted));
+    font-size: .86rem;
+  }
+
+  .telegram-create-form {
+    display: grid;
+    gap: .9rem;
+    padding: 1.15rem 1.25rem 1.3rem;
+  }
+
+  .telegram-create-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .85rem;
+  }
+
+  .telegram-create-form .textarea {
+    min-block-size: 4.4rem;
+    resize: vertical;
+  }
+
+  .telegram-create-submit {
+    inline-size: 100%;
+    min-block-size: 2.9rem;
+    margin-block-start: .15rem;
+    background: var(--tg-theme-button-color, var(--brand));
+    color: var(--tg-theme-button-text-color, white);
+  }
+
+  .telegram-create-state,
+  .telegram-create-success {
+    padding: 2rem 1.25rem;
+    text-align: center;
+  }
+
+  .telegram-create-success {
+    display: grid;
+    justify-items: center;
+    gap: .65rem;
+  }
+
+  .telegram-create-success > svg {
+    color: var(--success);
+  }
+
+  .telegram-create-success p {
+    margin-block-end: .45rem;
+    color: var(--muted);
+  }
+
+  .telegram-create-success .button {
+    inline-size: min(100%, 18rem);
+  }
+
   @media (width <= 640px) {
+    .telegram-create-page {
+      align-items: start;
+      padding: 0;
+      background: var(--tg-theme-bg-color, var(--panel));
+    }
+
+    .telegram-create-card {
+      min-block-size: 100dvh;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .telegram-create-grid {
+      grid-template-columns: 1fr;
+    }
+
     .reports-filter,
     .report-kpi-grid {
       grid-template-columns: 1fr;

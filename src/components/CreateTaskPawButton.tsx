@@ -14,22 +14,46 @@ export function CreateTaskPawButton({ onClick }: { onClick: () => void }) {
     let pointerX = -10_000;
     let pointerY = -10_000;
 
+    const stopTracking = () => {
+      pointerX = -10_000;
+      pointerY = -10_000;
+      zone.dataset.tracking = "false";
+      if (animationFrame) {
+        window.cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+      }
+    };
+
     const render = () => {
       animationFrame = 0;
       const rect = zone.getBoundingClientRect();
+      if (
+        !document.hasFocus() ||
+        document.visibilityState !== "visible" ||
+        pointerX < 0 ||
+        pointerY < 0 ||
+        pointerX > window.innerWidth ||
+        pointerY > window.innerHeight
+      ) {
+        stopTracking();
+        return;
+      }
+
+      const horizontalGap = pointerX < rect.left ? rect.left - pointerX : pointerX > rect.right ? pointerX - rect.right : 0;
+      const verticalGap = pointerY < rect.top ? rect.top - pointerY : pointerY > rect.bottom ? pointerY - rect.bottom : 0;
+      const distanceToButton = Math.hypot(horizontalGap, verticalGap);
+      const isTracking = distanceToButton <= 50;
       const anchorX = rect.left + rect.width / 2;
-      const anchorY = rect.top - 34;
+      const anchorY = rect.top;
       const deltaX = pointerX - anchorX;
       const deltaY = pointerY - anchorY;
-      const distance = Math.hypot(deltaX, deltaY);
-      const isTracking = distance < 300;
 
       zone.dataset.tracking = String(isTracking);
       if (!isTracking) return;
 
-      const angle = clamp(deltaX * 0.18, -24, 24);
-      const shift = clamp(deltaX * 0.35, -48, 48);
-      const reach = clamp((deltaY - 34) * 0.28, -8, 24);
+      const angle = clamp(deltaX * 0.16, -20, 20);
+      const shift = clamp(deltaX * 0.48, -52, 52);
+      const reach = clamp(deltaY * 0.28, -10, 28);
       zone.style.setProperty("--paw-angle", `${angle.toFixed(2)}deg`);
       zone.style.setProperty("--paw-shift", `${shift.toFixed(2)}px`);
       zone.style.setProperty("--paw-reach", `${reach.toFixed(2)}px`);
@@ -43,9 +67,15 @@ export function CreateTaskPawButton({ onClick }: { onClick: () => void }) {
     };
 
     window.addEventListener("pointermove", followPointer, { passive: true });
+    window.addEventListener("blur", stopTracking);
+    document.addEventListener("mouseleave", stopTracking);
+    document.addEventListener("visibilitychange", stopTracking);
     return () => {
       window.removeEventListener("pointermove", followPointer);
-      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      window.removeEventListener("blur", stopTracking);
+      document.removeEventListener("mouseleave", stopTracking);
+      document.removeEventListener("visibilitychange", stopTracking);
+      stopTracking();
     };
   }, []);
 

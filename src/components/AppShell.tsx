@@ -3,6 +3,7 @@ import type { CurrentUser } from "@/lib/auth";
 import { AppNav } from "@/components/AppNav";
 import { GoidaReminder } from "@/components/GoidaReminder";
 import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
+import { WeeklyReportReminder } from "@/components/WeeklyReportReminder";
 
 export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
   return (
@@ -19,6 +20,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       <main className="main">{children}</main>
       <TaskSoundNotifier />
       <GoidaReminder />
+      <WeeklyReportReminder />
     </div>
   );
 }

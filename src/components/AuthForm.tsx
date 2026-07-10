@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function AuthForm({ mode }: { mode: "login" | "register" }) {
+export function AuthForm({ mode, nextPath }: { mode: "login" | "register"; nextPath?: string }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,8 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         setError(data.error ?? "Не удалось выполнить действие");
         return;
       }
-      router.push(data.verified === false ? "/verify-email" : "/board");
+      const safeNext = nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/board";
+      router.push(data.verified === false ? "/verify-email" : safeNext);
       router.refresh();
     } catch {
       setError("Не удалось связаться с сервером. Попробуйте ещё раз.");

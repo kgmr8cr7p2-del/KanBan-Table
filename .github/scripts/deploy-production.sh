@@ -31,6 +31,7 @@ restore_previous_release() {
     docker tag "${OLD_IMAGE}" "${LIVE_IMAGE}"
     cd "${APP_DIR}"
     compose up -d --no-deps --no-build --force-recreate app || true
+    compose up -d --no-deps --no-build --force-recreate scheduler || true
   fi
 }
 
@@ -75,6 +76,7 @@ docker tag "${CANDIDATE_IMAGE}" "${LIVE_IMAGE}"
 cd "${APP_DIR}"
 compose up -d --no-deps --no-build --force-recreate app
 compose exec -T app npx prisma migrate deploy
+compose up -d --no-deps --no-build --force-recreate scheduler
 
 healthy=0
 for _ in $(seq 1 30); do
