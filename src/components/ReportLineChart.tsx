@@ -67,9 +67,9 @@ export function ReportLineChart({ data }: { data: ChartItem[] }) {
             {scale.ticks.map((tick) => (
               <line className="report-chart-grid" key={tick.value} x1="0" x2="100" y1={tick.y} y2={tick.y} vectorEffect="non-scaling-stroke" />
             ))}
-            <polyline className="report-line-created" points={pointsToString(created)} fill="none" vectorEffect="non-scaling-stroke" />
-            <polyline className="report-line-completed" points={pointsToString(completed)} fill="none" vectorEffect="non-scaling-stroke" />
-            <polyline className="report-line-overdue" points={pointsToString(overdue)} fill="none" vectorEffect="non-scaling-stroke" />
+            <path className="report-line-created" d={pointsToSmoothPath(created)} fill="none" vectorEffect="non-scaling-stroke" />
+            <path className="report-line-completed" d={pointsToSmoothPath(completed)} fill="none" vectorEffect="non-scaling-stroke" />
+            <path className="report-line-overdue" d={pointsToSmoothPath(overdue)} fill="none" vectorEffect="non-scaling-stroke" />
           </svg>
 
           {[
@@ -159,6 +159,21 @@ function round(value: number) {
   return Math.round(value * 100) / 100;
 }
 
-function pointsToString(points: ChartPoint[]) {
-  return points.map((point) => `${point.x},${point.y}`).join(" ");
+function pointsToSmoothPath(points: ChartPoint[]) {
+  if (!points.length) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+
+    const previous = points[index - 1];
+    const beforePrevious = points[index - 2] ?? previous;
+    const next = points[index + 1] ?? point;
+    const controlStartX = previous.x + (point.x - beforePrevious.x) / 6;
+    const controlStartY = previous.y + (point.y - beforePrevious.y) / 6;
+    const controlEndX = point.x - (next.x - previous.x) / 6;
+    const controlEndY = point.y - (next.y - previous.y) / 6;
+
+    return `${path} C ${round(controlStartX)} ${round(controlStartY)}, ${round(controlEndX)} ${round(controlEndY)}, ${point.x} ${point.y}`;
+  }, "");
 }

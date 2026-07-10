@@ -415,6 +415,11 @@ export function BoardClient({ initialView }: { initialView: View }) {
             <h1>{view.board.name}</h1>
           </div>
           <span className="spacer" />
+          <div className="board-view-tabs board-view-tabs-inline" role="tablist" aria-label="Режим отображения">
+            <button className={viewMode === "board" ? "active" : ""} type="button" onClick={() => setViewMode("board")}>Доска</button>
+            <button className={viewMode === "list" ? "active" : ""} type="button" onClick={() => setViewMode("list")}>Список</button>
+            <button className={viewMode === "mine" ? "active" : ""} type="button" onClick={() => setViewMode("mine")}>Моя работа</button>
+          </div>
           {view.permissions.canCreateTask ? (
             <button className="button create-task-button" type="button" onClick={openCreateTask}>
               <Plus size={17} />
@@ -441,13 +446,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
           ) : null}
         </div>
         {error ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
-        <section className="board-command-center compact" aria-label="Режим доски">
-          <div className="board-view-tabs" role="tablist" aria-label="Режим отображения">
-            <button className={viewMode === "board" ? "active" : ""} type="button" onClick={() => setViewMode("board")}>Доска</button>
-            <button className={viewMode === "list" ? "active" : ""} type="button" onClick={() => setViewMode("list")}>Список</button>
-            <button className={viewMode === "mine" ? "active" : ""} type="button" onClick={() => setViewMode("mine")}>Моя работа</button>
-          </div>
-        </section>
         {viewMode === "list" ? <TaskTable tasks={visibleTasks} onOpen={openTask} /> : null}
         <section className={`board ${viewMode === "list" ? "is-hidden" : ""}`} aria-label="Канбан-доска">
           {visibleColumns.map((column: any) => (
