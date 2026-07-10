@@ -1,7 +1,11 @@
-node_modules
-.next
 .git
-.env
-.env.local
+.github
+.next
+node_modules
 uploads
+.ui-audit
+.env
+.env.*
+!.env.example
 *.log
+*.tsbuildinfo

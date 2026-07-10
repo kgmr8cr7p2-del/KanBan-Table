@@ -1,10 +1,13 @@
 node_modules
 .next
 .env
+.env.*
+!.env.example
 .env.local
 dist
 coverage
 uploads
+.ui-audit
 *.log
 
 *.tsbuildinfo
