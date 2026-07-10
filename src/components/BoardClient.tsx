@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Building2, Calendar, CheckSquare, Columns3, Download, Expand, Flag, ListChecks, Minimize2, MessageSquare, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { Archive, Building2, Calendar, CheckSquare, Columns3, Download, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
@@ -15,6 +15,14 @@ type View = any;
 type Task = any;
 const emptyFilters = { q: "", priority: "", assignee: "", deadline: "", oilDepot: "" };
 type Filters = typeof emptyFilters;
+type ViewMode = "board" | "list" | "mine";
+
+const quickViews = [
+  { label: "Все активные", filters: emptyFilters },
+  { label: "Критические", filters: { ...emptyFilters, priority: "CRITICAL" } },
+  { label: "Просрочено", filters: { ...emptyFilters, deadline: "overdue" } },
+  { label: "На неделе", filters: { ...emptyFilters, deadline: "week" } },
+];
 
 export function BoardClient({ initialView }: { initialView: View }) {
   const [view, setView] = useState(initialView);
@@ -25,6 +33,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [dropColumn, setDropColumn] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [focusMode, setFocusMode] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
   const [toasts, setToasts] = useState<Array<{ id: string; text: string }>>([]);
   const [confirmation, setConfirmation] = useState<"archive" | "delete" | null>(null);
@@ -33,6 +42,16 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const activityFingerprintRef = useRef(initialView?.activityLogs?.[0]?.id ?? "");
 
   const tasks = useMemo(() => view?.board?.columns?.flatMap((column: any) => column.tasks) ?? [], [view]);
+  const visibleColumns = useMemo(
+    () =>
+      view?.board?.columns?.map((column: any) => ({
+        ...column,
+        tasks: viewMode === "mine" ? column.tasks.filter((task: Task) => task.assigneeId === view.currentUser.id) : column.tasks,
+      })) ?? [],
+    [view, viewMode],
+  );
+  const visibleTasks = useMemo(() => visibleColumns.flatMap((column: any) => column.tasks), [visibleColumns]);
+  const boardStats = useMemo(() => buildBoardStats(tasks), [tasks]);
   const activeTask = selected ? tasks.find((task: Task) => task.id === selected.id) ?? selected : null;
   const timeline = useMemo(() => buildTimeline(tasks), [tasks]);
 
@@ -72,7 +91,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   function openTask(task: Task) {
     setSelected(task);
-    dialogRef.current?.showModal();
   }
 
   function openCreateTask() {
@@ -148,6 +166,13 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   function resetFilters() {
     const next = { ...emptyFilters };
+    filtersRef.current = next;
+    setFilters(next);
+    void refresh(next, { syncUrl: true });
+  }
+
+  function applyQuickView(nextFilters: Filters) {
+    const next = { ...nextFilters };
     filtersRef.current = next;
     setFilters(next);
     void refresh(next, { syncUrl: true });
@@ -379,6 +404,10 @@ export function BoardClient({ initialView }: { initialView: View }) {
           <Expand size={17} />
           Доска
         </button>
+        <a className="button secondary compact-button" href="/board/tv" title="TV-режим для офисного экрана">
+          <Monitor size={17} />
+          TV
+        </a>
         <a className="button secondary" href={`/api/export?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value)).toString()}`}>
           <Download size={17} />
           Excel
@@ -428,8 +457,29 @@ export function BoardClient({ initialView }: { initialView: View }) {
           ) : null}
         </div>
         {error ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
-        <section className="board" aria-label="Канбан-доска">
-          {view.board.columns.map((column: any) => (
+        <section className="board-command-center" aria-label="Операционная сводка">
+          <div className="board-kpis">
+            <BoardKpi label="Активно" value={boardStats.active} tone="blue" />
+            <BoardKpi label="В работе" value={boardStats.inProgress} tone="violet" />
+            <BoardKpi label="Просрочено" value={boardStats.overdue} tone="red" />
+            <BoardKpi label="Критические" value={boardStats.critical} tone="amber" />
+          </div>
+          <div className="board-view-tabs" role="tablist" aria-label="Режим отображения">
+            <button className={viewMode === "board" ? "active" : ""} type="button" onClick={() => setViewMode("board")}>Доска</button>
+            <button className={viewMode === "list" ? "active" : ""} type="button" onClick={() => setViewMode("list")}>Список</button>
+            <button className={viewMode === "mine" ? "active" : ""} type="button" onClick={() => setViewMode("mine")}>Моя работа</button>
+          </div>
+          <div className="quick-views" aria-label="Быстрые представления">
+            {quickViews.map((item) => (
+              <button type="button" key={item.label} onClick={() => applyQuickView(item.filters)}>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </section>
+        {viewMode === "list" ? <TaskTable tasks={visibleTasks} onOpen={openTask} /> : null}
+        <section className={`board ${viewMode === "list" ? "is-hidden" : ""}`} aria-label="Канбан-доска">
+          {visibleColumns.map((column: any) => (
             <article
               className={`column ${dropColumn === column.id ? "drop-target" : ""}`}
               key={column.id}
@@ -501,13 +551,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
         </section>
       </div>
 
-      <dialog className="task-dialog" ref={dialogRef} aria-labelledby="task-dialog-title">
-        {activeTask ? (
+      {activeTask ? (
+        <aside className="task-drawer-backdrop" aria-label="Панель задачи">
+          <div className="task-drawer" role="dialog" aria-modal="false" aria-labelledby="task-dialog-title">
           <TaskDialogV2
             task={activeTask}
             view={view}
             canDelete={view.permissions.canDeleteTask}
-            onClose={() => dialogRef.current?.close()}
+            onClose={() => setSelected(null)}
             onSave={saveTask}
             onArchive={() => setConfirmation("archive")}
             onDelete={() => setConfirmation("delete")}
@@ -516,8 +567,9 @@ export function BoardClient({ initialView }: { initialView: View }) {
             onToggleChecklistItem={toggleChecklistItem}
             onUploadFile={uploadFile}
           />
-        ) : null}
-      </dialog>
+          </div>
+        </aside>
+      ) : null}
       <dialog className="task-dialog create-task-dialog" ref={createDialogRef} aria-labelledby="create-task-title">
         <CreateTaskDialogV2 view={view} onClose={() => createDialogRef.current?.close()} onCreate={createTask} />
       </dialog>
@@ -554,6 +606,44 @@ export function BoardClient({ initialView }: { initialView: View }) {
   );
 }
 
+function BoardKpi({ label, value, tone }: { label: string; value: number; tone: string }) {
+  return (
+    <article className={`board-kpi board-kpi-${tone}`}>
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </article>
+  );
+}
+
+function TaskTable({ tasks, onOpen }: { tasks: Task[]; onOpen: (task: Task) => void }) {
+  return (
+    <section className="task-table-panel" aria-label="Список задач">
+      <div className="task-table-row task-table-head">
+        <span>Задача</span>
+        <span>Статус</span>
+        <span>Нефтебаза</span>
+        <span>Исполнитель</span>
+        <span>Срок</span>
+        <span>Приоритет</span>
+      </div>
+      {tasks.length ? (
+        tasks.map((task) => (
+          <button className="task-table-row" type="button" key={task.id} onClick={() => onOpen(task)}>
+            <strong>#{task.taskNumber} {task.title}</strong>
+            <span>{task.column?.name ?? "Без статуса"}</span>
+            <span>{task.oilDepot?.name ?? "Без нефтебазы"}</span>
+            <span>{task.assignee?.name ?? "Не назначен"}</span>
+            <span className={deadlineTone(task)}>{task.deadline ? deadlineText(task) : "Без срока"}</span>
+            <span>{priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
+          </button>
+        ))
+      ) : (
+        <div className="empty">Задач в этом представлении нет.</div>
+      )}
+    </section>
+  );
+}
+
 function TaskCard({
   task,
   dragging,
@@ -568,6 +658,7 @@ function TaskCard({
   onDragEnd: () => void;
 }) {
   const checklist = checklistProgress(task);
+  const deadlineState = task.deadline ? deadlineText(task) : "";
   return (
     <div
       className={`task-card priority-card-${task.priority} ${dragging ? "dragging" : ""}`}
@@ -608,9 +699,9 @@ function TaskCard({
       </div>
       <div className="meta-row">
         {task.deadline ? (
-          <span className="chip">
+          <span className={`chip ${deadlineTone(task)}`}>
             <Calendar size={13} />
-            {dateOnly(task.deadline)}
+            {deadlineState}
           </span>
         ) : null}
         {task.comments.length ? (
@@ -1373,6 +1464,65 @@ function readFiltersFromUrl() {
     deadline: params.get("deadline") ?? "",
     oilDepot: params.get("oilDepot") ?? "",
   };
+}
+
+function buildBoardStats(tasks: Task[]) {
+  return {
+    active: tasks.filter((task) => !isCompletedColumn(task.column?.name ?? "")).length,
+    inProgress: tasks.filter((task) => isWorkColumn(task.column?.name ?? "")).length,
+    overdue: tasks.filter((task) => isOverdue(task)).length,
+    critical: tasks.filter((task) => task.priority === "CRITICAL").length,
+  };
+}
+
+function isCompletedColumn(name: string) {
+  const normalized = name.toLowerCase();
+  return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete");
+}
+
+function isWorkColumn(name: string) {
+  const normalized = name.toLowerCase();
+  return normalized.includes("работ") || normalized.includes("progress") || normalized.includes("doing");
+}
+
+function isOverdue(task: Task) {
+  return Boolean(task.deadline && new Date(task.deadline).getTime() < startOfToday().getTime() && !isCompletedColumn(task.column?.name ?? ""));
+}
+
+function isDueToday(task: Task) {
+  if (!task.deadline) return false;
+  const deadline = new Date(task.deadline);
+  const today = startOfToday();
+  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+  return deadline >= today && deadline < tomorrow;
+}
+
+function isDueSoon(task: Task) {
+  if (!task.deadline || isOverdue(task) || isDueToday(task)) return false;
+  const deadline = new Date(task.deadline).getTime();
+  const soon = startOfToday().getTime() + 4 * 24 * 60 * 60 * 1000;
+  return deadline <= soon;
+}
+
+function deadlineTone(task: Task) {
+  if (isOverdue(task)) return "deadline-overdue";
+  if (isDueToday(task)) return "deadline-today";
+  if (isDueSoon(task)) return "deadline-soon";
+  return "deadline-normal";
+}
+
+function deadlineText(task: Task) {
+  if (!task.deadline) return "Без срока";
+  if (isOverdue(task)) return `Просрочено · ${dateOnly(task.deadline)}`;
+  if (isDueToday(task)) return "Сегодня";
+  if (isDueSoon(task)) return `Скоро · ${dateOnly(task.deadline)}`;
+  return dateOnly(task.deadline);
+}
+
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
 }
 
 function checklistProgress(task: Task) {
