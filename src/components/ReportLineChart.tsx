@@ -38,7 +38,7 @@ export function ReportLineChart({ data }: { data: ChartItem[] }) {
   function showPeriod(item: ChartItem, index: number) {
     const points = [created[index], completed[index], overdue[index]].filter(Boolean);
     const x = points[0]?.x ?? 50;
-    const y = Math.min(...points.map((point) => point.y));
+    const y = Math.max(28, Math.min(...points.map((point) => point.y)));
     setActive({
       item,
       x,

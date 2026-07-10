@@ -17,13 +17,6 @@ const emptyFilters = { q: "", priority: "", assignee: "", deadline: "", oilDepot
 type Filters = typeof emptyFilters;
 type ViewMode = "board" | "list" | "mine";
 
-const quickViews = [
-  { label: "Все активные", filters: emptyFilters },
-  { label: "Критические", filters: { ...emptyFilters, priority: "CRITICAL" } },
-  { label: "Просрочено", filters: { ...emptyFilters, deadline: "overdue" } },
-  { label: "На неделе", filters: { ...emptyFilters, deadline: "week" } },
-];
-
 export function BoardClient({ initialView }: { initialView: View }) {
   const [view, setView] = useState(initialView);
   const [filters, setFilters] = useState<Filters>(readFiltersFromUrl);
@@ -51,7 +44,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
     [view, viewMode],
   );
   const visibleTasks = useMemo(() => visibleColumns.flatMap((column: any) => column.tasks), [visibleColumns]);
-  const boardStats = useMemo(() => buildBoardStats(tasks), [tasks]);
   const activeTask = selected ? tasks.find((task: Task) => task.id === selected.id) ?? selected : null;
   const timeline = useMemo(() => buildTimeline(tasks), [tasks]);
 
@@ -166,13 +158,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   function resetFilters() {
     const next = { ...emptyFilters };
-    filtersRef.current = next;
-    setFilters(next);
-    void refresh(next, { syncUrl: true });
-  }
-
-  function applyQuickView(nextFilters: Filters) {
-    const next = { ...nextFilters };
     filtersRef.current = next;
     setFilters(next);
     void refresh(next, { syncUrl: true });
@@ -457,24 +442,11 @@ export function BoardClient({ initialView }: { initialView: View }) {
           ) : null}
         </div>
         {error ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
-        <section className="board-command-center" aria-label="Операционная сводка">
-          <div className="board-kpis">
-            <BoardKpi label="Активно" value={boardStats.active} tone="blue" />
-            <BoardKpi label="В работе" value={boardStats.inProgress} tone="violet" />
-            <BoardKpi label="Просрочено" value={boardStats.overdue} tone="red" />
-            <BoardKpi label="Критические" value={boardStats.critical} tone="amber" />
-          </div>
+        <section className="board-command-center compact" aria-label="Режим доски">
           <div className="board-view-tabs" role="tablist" aria-label="Режим отображения">
             <button className={viewMode === "board" ? "active" : ""} type="button" onClick={() => setViewMode("board")}>Доска</button>
             <button className={viewMode === "list" ? "active" : ""} type="button" onClick={() => setViewMode("list")}>Список</button>
             <button className={viewMode === "mine" ? "active" : ""} type="button" onClick={() => setViewMode("mine")}>Моя работа</button>
-          </div>
-          <div className="quick-views" aria-label="Быстрые представления">
-            {quickViews.map((item) => (
-              <button type="button" key={item.label} onClick={() => applyQuickView(item.filters)}>
-                {item.label}
-              </button>
-            ))}
           </div>
         </section>
         {viewMode === "list" ? <TaskTable tasks={visibleTasks} onOpen={openTask} /> : null}
@@ -603,15 +575,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
         ))}
       </div>
     </>
-  );
-}
-
-function BoardKpi({ label, value, tone }: { label: string; value: number; tone: string }) {
-  return (
-    <article className={`board-kpi board-kpi-${tone}`}>
-      <strong>{value}</strong>
-      <span>{label}</span>
-    </article>
   );
 }
 
@@ -1466,18 +1429,9 @@ function readFiltersFromUrl() {
   };
 }
 
-function buildBoardStats(tasks: Task[]) {
-  return {
-    active: tasks.filter((task) => !isCompletedColumn(task.column?.name ?? "")).length,
-    inProgress: tasks.filter((task) => isWorkColumn(task.column?.name ?? "")).length,
-    overdue: tasks.filter((task) => isOverdue(task)).length,
-    critical: tasks.filter((task) => task.priority === "CRITICAL").length,
-  };
-}
-
 function isCompletedColumn(name: string) {
   const normalized = name.toLowerCase();
-  return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete");
+  return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete") || normalized.includes("РіРѕС‚РѕРІ".toLowerCase());
 }
 
 function isWorkColumn(name: string) {

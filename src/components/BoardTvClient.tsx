@@ -1,7 +1,6 @@
-"use client";
+﻿"use client";
 
-import { AlertTriangle, CalendarClock, CheckCircle2, CloudSun, ExternalLink, Radio, RefreshCw, Timer, Wind } from "lucide-react";
-import type { ReactNode } from "react";
+import { CloudSun, Radio, Wind } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type View = any;
@@ -44,22 +43,34 @@ const weatherLabels: Record<number, string> = {
   95: "Гроза",
 };
 
+const officeJokes = [
+  "Админ не опаздывает. Он синхронизируется с серверным временем.",
+  "Если задача закрыта без комментария, значит комментарий был слишком эмоциональным.",
+  "Самый стабильный процесс в офисе - это очередь к кофемашине.",
+  "Хороший дедлайн видно издалека. Просроченный - с телевизора.",
+  "Планерка прошла успешно: все задачи получили новые задачи.",
+];
+
 export function BoardTvClient({ initialView }: { initialView: View }) {
   const [view, setView] = useState(initialView);
   const [weather, setWeather] = useState<Weather | null>(null);
   const [now, setNow] = useState(new Date());
-  const [boardUrl, setBoardUrl] = useState("/board");
+  const [jokeIndex, setJokeIndex] = useState(0);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
   const [connectionState, setConnectionState] = useState<"live" | "stale">("live");
 
   const tasks = useMemo(() => view?.board?.columns?.flatMap((column: any) => column.tasks) ?? [], [view]);
   const summary = useMemo(() => buildSummary(tasks, view), [tasks, view]);
-  const urgentTasks = useMemo(() => buildUrgentTasks(tasks), [tasks]);
-  const recentEvents = useMemo(() => (view?.activityLogs ?? []).slice(0, 6), [view]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
-    setBoardUrl(`${window.location.origin}/board`);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setJokeIndex((current) => (current + 1) % officeJokes.length);
+    }, 5 * 60 * 1000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -108,7 +119,12 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
             {connectionState === "live" ? "LIVE-синхронизация" : "Нет связи"}
           </span>
           <h1>Операционная доска</h1>
-          <p>{view?.board?.name ?? "Team Kanban Board"} · офисный экран задач</p>
+          <div className="tv-compact-stats">
+            <span>Активно {summary.active}</span>
+            <span>В работе {summary.inProgress}</span>
+            <span>Просрочено {summary.overdue}</span>
+            <span>Критические {summary.critical}</span>
+          </div>
         </section>
 
         <section className="tv-clock-card" aria-label="Время">
@@ -117,15 +133,12 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
         </section>
 
         <WeatherPanel weather={weather} />
-      </header>
 
-      <section className="tv-kpi-grid" aria-label="Сводка по доске">
-        <KpiCard title="Активно" value={summary.active} tone="blue" icon={<Timer size={22} />} />
-        <KpiCard title="В работе" value={summary.inProgress} tone="violet" icon={<RefreshCw size={22} />} />
-        <KpiCard title="Просрочено" value={summary.overdue} tone="red" icon={<AlertTriangle size={22} />} />
-        <KpiCard title="Критические" value={summary.critical} tone="amber" icon={<CalendarClock size={22} />} />
-        <KpiCard title="Готово" value={summary.completed} tone="green" icon={<CheckCircle2 size={22} />} />
-      </section>
+        <section className="tv-joke-card" aria-label="Анекдот">
+          <span>Анекдот дня</span>
+          <strong>{officeJokes[jokeIndex]}</strong>
+        </section>
+      </header>
 
       <section className="tv-layout">
         <section className="tv-board" aria-label="Канбан-доска для телевизора">
@@ -145,58 +158,11 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
             </article>
           ))}
         </section>
-
-        <aside className="tv-side-panel" aria-label="Фокус дня">
-          <section className="tv-panel-card">
-            <header>
-              <AlertTriangle size={18} />
-              <span>Горит сейчас</span>
-            </header>
-            <div className="tv-focus-list">
-              {urgentTasks.length ? (
-                urgentTasks.map((task) => <TvFocusTask key={task.id} task={task} />)
-              ) : (
-                <p className="tv-muted">Критичных задач и ближайших дедлайнов нет.</p>
-              )}
-            </div>
-          </section>
-
-          <section className="tv-panel-card">
-            <header>
-              <RefreshCw size={18} />
-              <span>Последние события</span>
-            </header>
-            <div className="tv-event-list">
-              {recentEvents.map((event: any) => (
-                <div className="tv-event" key={event.id}>
-                  <strong>{activityLabel(event.action)}</strong>
-                  <span>{event.task ? `#${event.task.taskNumber} ${event.task.title}` : "Доска"}</span>
-                  <small>{timeShort(event.createdAt)}</small>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="tv-panel-card tv-qr-card">
-            <header>
-              <ExternalLink size={18} />
-              <span>Открыть с телефона</span>
-            </header>
-            <div className="tv-qr-body">
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=132x132&data=${encodeURIComponent(boardUrl)}`} alt="QR-код для открытия доски" />
-              <span>Сканируйте QR-код, чтобы открыть рабочую доску.</span>
-            </div>
-          </section>
-        </aside>
       </section>
 
       <footer className="tv-footer">
         <span>Обновлено {timeOnly(lastUpdatedAt)}</span>
-        <span>Экран: {rotationLabel(now)}</span>
-        <a href="/board" title="Вернуться к рабочей доске">
-          Открыть доску
-          <ExternalLink size={16} />
-        </a>
+        <span>{view?.board?.name ?? "Team Kanban Board"}</span>
       </footer>
     </main>
   );
@@ -234,17 +200,6 @@ function WeatherPanel({ weather }: { weather: Weather | null }) {
   );
 }
 
-function KpiCard({ title, value, tone, icon }: { title: string; value: number; tone: string; icon: ReactNode }) {
-  return (
-    <article className={`tv-kpi tv-kpi-${tone}`}>
-      <span>{icon}</span>
-      <div>
-        <strong>{value}</strong>
-        <small>{title}</small>
-      </div>
-    </article>
-  );
-}
 
 function TvTaskCard({ task }: { task: Task }) {
   return (
@@ -266,19 +221,6 @@ function TvTaskCard({ task }: { task: Task }) {
   );
 }
 
-function TvFocusTask({ task }: { task: Task }) {
-  return (
-    <article className="tv-focus-task">
-      <strong>
-        #{task.taskNumber} {task.title}
-      </strong>
-      <span>
-        {task.oilDepot?.name ?? "Без нефтебазы"} · {task.assignee?.name ?? "Не назначен"}
-      </span>
-      <small>{task.deadline ? deadlineLabel(task.deadline) : priorityLabels[task.priority as keyof typeof priorityLabels]}</small>
-    </article>
-  );
-}
 
 function buildSummary(tasks: Task[], view: View) {
   const completedColumnIds = new Set((view?.board?.columns ?? []).filter((column: any) => isCompletedColumn(column.name)).map((column: any) => column.id));
@@ -291,22 +233,10 @@ function buildSummary(tasks: Task[], view: View) {
   };
 }
 
-function buildUrgentTasks(tasks: Task[]) {
-  return [...tasks]
-    .filter((task) => task.priority === "CRITICAL" || isOverdue(task) || isDueSoon(task))
-    .sort((a, b) => urgencyScore(b) - urgencyScore(a))
-    .slice(0, 5);
-}
 
-function urgencyScore(task: Task) {
-  let score = task.priority === "CRITICAL" ? 100 : task.priority === "HIGH" ? 60 : 20;
-  if (isOverdue(task)) score += 80;
-  if (isDueSoon(task)) score += 35;
-  return score;
-}
 
 function isOverdue(task: Task) {
-  return Boolean(task.deadline && new Date(task.deadline).getTime() < Date.now() && !isCompletedColumn(task.column?.name ?? ""));
+  return Boolean(task.deadline && new Date(task.deadline).getTime() < startOfToday().getTime() && !isCompletedColumn(task.column?.name ?? ""));
 }
 
 function isDueSoon(task: Task) {
@@ -331,36 +261,12 @@ function checklistProgress(task: Task) {
   return Math.round((items.filter((item: any) => item.completed).length / items.length) * 100);
 }
 
-function deadlineLabel(value: string) {
-  if (new Date(value).getTime() < Date.now()) return `Просрочено · ${dateShort(value)}`;
-  return `Срок · ${dateShort(value)}`;
-}
 
-function activityLabel(action: string) {
-  const labels: Record<string, string> = {
-    TASK_CREATED: "Создана задача",
-    TITLE_CHANGED: "Изменено название",
-    DESCRIPTION_CHANGED: "Изменено описание",
-    STATUS_CHANGED: "Изменен статус",
-    PRIORITY_CHANGED: "Изменен приоритет",
-    DEADLINE_CHANGED: "Изменен срок",
-    ASSIGNEE_CHANGED: "Изменен исполнитель",
-    COMMENT_ADDED: "Добавлен комментарий",
-    FILE_UPLOADED: "Загружен файл",
-    CHECKLIST_CHANGED: "Изменен чек-лист",
-    TASK_DELETED: "Задача удалена",
-    COLUMN_CHANGED: "Изменена доска",
-  };
-  return labels[action] ?? action;
-}
 
 function timeOnly(value: Date) {
   return new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(value);
 }
 
-function timeShort(value: string) {
-  return new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
-}
 
 function hourOnly(value: string) {
   return new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit" }).format(new Date(value));
@@ -378,12 +284,12 @@ function signed(value: number) {
   return value > 0 ? `+${value}` : String(value);
 }
 
-function rotationLabel(value: Date) {
-  const slot = Math.floor(value.getSeconds() / 20);
-  if (slot === 0) return "общая доска";
-  if (slot === 1) return "фокус дня";
-  return "последние события";
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
 }
+
 
 async function fetchOfficeWeatherDirect() {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
@@ -423,3 +329,4 @@ async function fetchOfficeWeatherDirect() {
         : null,
   };
 }
+

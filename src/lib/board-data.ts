@@ -85,7 +85,7 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
       if (assignee && task.assigneeId !== assignee) return false;
       if (oilDepot && task.oilDepotId !== oilDepot) return false;
       if (tag && !task.tags.some((taskTag) => taskTag.tagId === tag)) return false;
-      if (deadline === "overdue" && (!task.deadline || task.deadline >= new Date())) return false;
+      if (deadline === "overdue" && (!task.deadline || task.deadline >= new Date() || isCompletedColumn(task.column.name))) return false;
       if (deadline === "week") {
         const week = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         if (!task.deadline || task.deadline > week) return false;
