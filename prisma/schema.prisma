@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleName {
+  ADMIN
+  MANAGER
+  EXECUTOR
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ActivityAction {
+  TASK_CREATED
+  TITLE_CHANGED
+  DESCRIPTION_CHANGED
+  STATUS_CHANGED
+  PRIORITY_CHANGED
+  DEADLINE_CHANGED
+  ASSIGNEE_CHANGED
+  COMMENT_ADDED
+  FILE_UPLOADED
+  CHECKLIST_CHANGED
+  TASK_DELETED
+  COLUMN_CHANGED
+}
+
+model Role {
+  id    String   @id @default(cuid())
+  name  RoleName @unique
+  users User[]
+}
+
+model User {
+  id                 String                    @id @default(cuid())
+  name               String
+  email              String                    @unique
+  passwordHash       String
+  emailVerifiedAt    DateTime?
+  roleId             String
+  role               Role                      @relation(fields: [roleId], references: [id])
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  authoredTasks      Task[]                    @relation("TaskAuthor")
+  assignedTasks      Task[]                    @relation("TaskAssignee")
+  comments           Comment[]
+  fileAttachments    FileAttachment[]
+  activityLogs       ActivityLog[]
+  archivedTasks      Task[]                    @relation("TaskArchivedBy")
+  sessions           Session[]
+  emailTokens        EmailVerificationToken[]
+  telegramConnection TelegramConnection?
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  name      String
+  columns   Column[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Column {
+  id        String   @id @default(cuid())
+  name      String
+  position  Int
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([boardId, position])
+}
+
+model Task {
+  id              String           @id @default(cuid())
+  taskNumber      Int              @unique @default(autoincrement())
+  title           String
+  description     String           @default("")
+  deadline        DateTime?
+  priority        Priority         @default(MEDIUM)
+  position        Int              @default(0)
+  columnId        String
+  column          Column           @relation(fields: [columnId], references: [id])
+  oilDepotId      String?
+  oilDepot        OilDepot?        @relation(fields: [oilDepotId], references: [id])
+  authorId        String
+  author          User             @relation("TaskAuthor", fields: [authorId], references: [id])
+  assigneeId      String?
+  assignee        User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  tags            TaskTag[]
+  checklists      Checklist[]
+  comments        Comment[]
+  fileAttachments FileAttachment[]
+  activityLogs    ActivityLog[]
+  archivedAt      DateTime?
+  archivedById    String?
+  archivedBy      User?            @relation("TaskArchivedBy", fields: [archivedById], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model OilDepot {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  tasks     Task[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tag {
+  id    String    @id @default(cuid())
+  name  String    @unique
+  color String
+  tasks TaskTag[]
+}
+
+model TaskTag {
+  taskId String
+  tagId  String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, tagId])
+}
+
+model Checklist {
+  id        String          @id @default(cuid())
+  title     String
+  taskId    String
+  task      Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  items     ChecklistItem[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model ChecklistItem {
+  id          String    @id @default(cuid())
+  text        String
+  completed   Boolean   @default(false)
+  checklistId String
+  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FileAttachment {
+  id         String   @id @default(cuid())
+  fileName   String
+  url        String
+  size       Int
+  mimeType   String
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploaderId String
+  uploader   User     @relation(fields: [uploaderId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String         @id @default(cuid())
+  action    ActivityAction
+  details   Json?
+  taskId    String?
+  task      Task?          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  createdAt DateTime       @default(now())
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model TelegramConnection {
+  id        String   @id @default(cuid())
+  chatId    String
+  enabled   Boolean  @default(true)
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

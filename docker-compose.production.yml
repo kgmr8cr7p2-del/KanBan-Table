@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: team-kanban-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kanban
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: team_kanban
+    volumes:
+      - team-kanban-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kanban -d team_kanban"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  app:
+    build:
+      context: .
+    container_name: team-kanban-app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://kanban:${POSTGRES_PASSWORD}@postgres:5432/team_kanban?schema=public
+      APP_URL: ${APP_URL}
+      SESSION_SECRET: ${SESSION_SECRET}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-Team Kanban Board <noreply@region-free.online>}
+      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS:-}
+      INVITED_EMAILS: ${INVITED_EMAILS:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_DEFAULT_CHAT_ID: ${TELEGRAM_DEFAULT_CHAT_ID:-}
+    volumes:
+      - team-kanban-uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "3000"
+    networks:
+      - default
+      - regionfree-edge
+
+volumes:
+  team-kanban-postgres:
+  team-kanban-uploads:
+
+networks:
+  regionfree-edge:
+    external: true
