@@ -7,8 +7,9 @@ const inter = Inter({ subsets: ["latin", "cyrillic"], display: "swap" });
 const unbounded = Unbounded({ subsets: ["latin", "cyrillic"], display: "swap", variable: "--font-unbounded" });
 
 export const metadata: Metadata = {
-  title: "Такт — рабочая система команды",
-  description: "Задачи, чаты, статусы и отчёты команды в одном рабочем ритме.",
+  title: "Taskora — управление работой команды",
+  description: "Задачи, чаты, статусы и отчёты команды в одном рабочем пространстве.",
+  icons: { icon: "/taskora-icon.png" },
 };
 
 export const viewport: Viewport = {

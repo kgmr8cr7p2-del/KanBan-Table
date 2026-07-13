@@ -15,8 +15,8 @@ async function main() {
 
   const board = await prisma.board.upsert({
     where: { id: "default-board" },
-    update: { name: "Такт" },
-    create: { id: "default-board", name: "Такт" },
+    update: { name: "Taskora" },
+    create: { id: "default-board", name: "Taskora" },
   });
 
   await prisma.oilDepot.upsert({
