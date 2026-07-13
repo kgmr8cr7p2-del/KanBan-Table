@@ -199,7 +199,7 @@
       opacity: 0;
     }
     35% {
-      opacity: .55;
+      opacity: 1;
     }
     100% {
       transform: translateY(240%);
@@ -208,7 +208,7 @@
   }
 
   @keyframes hover-glow-breathe {
-    0%, 100% { opacity: .72; }
+    0%, 100% { opacity: .88; }
     50% { opacity: 1; }
   }
 
@@ -777,14 +777,16 @@
     content: "";
     position: absolute;
     z-index: 4;
-    inset: -1px;
-    border: 1px solid transparent;
+    inset: -2px;
+    border: 2px solid transparent;
     border-radius: inherit;
     background:
-      radial-gradient(circle at var(--button-glow-x) var(--button-glow-y), rgb(255 255 255 / 95%) 0, #38bdf8 18%, transparent 48%) border-box,
-      conic-gradient(from var(--button-glow-angle) at center, transparent 0 32%, #c084fc 43%, #f472b6 50%, #38bdf8 57%, transparent 68%) border-box;
+      radial-gradient(circle at var(--button-glow-x) var(--button-glow-y), #fff 0, #38bdf8 24%, transparent 58%) border-box,
+      conic-gradient(from var(--button-glow-angle) at center, transparent 0 24%, #c084fc 39%, #f472b6 50%, #38bdf8 61%, transparent 76%) border-box;
     opacity: 0;
-    filter: drop-shadow(0 0 7px rgb(56 189 248 / 48%));
+    filter:
+      drop-shadow(0 0 8px rgb(56 189 248 / 82%))
+      drop-shadow(0 0 16px rgb(192 132 252 / 55%));
     pointer-events: none;
     transition: opacity 180ms ease-out;
     -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
@@ -810,7 +812,9 @@
 
   .button:hover:not(:disabled) {
     background: var(--brand-strong);
-    box-shadow: none;
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--brand) 28%, transparent),
+      0 9px 24px color-mix(in srgb, var(--brand) 42%, transparent);
   }
 
   .create-task-button {
@@ -826,10 +830,12 @@
   }
 
   .button.secondary:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--brand) 30%, var(--border));
-    background: color-mix(in srgb, var(--brand) 6%, var(--panel));
+    border-color: color-mix(in srgb, var(--brand) 62%, var(--border));
+    background: color-mix(in srgb, var(--brand) 12%, var(--panel));
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--brand) 20%, transparent),
+      0 8px 20px color-mix(in srgb, var(--brand) 25%, transparent);
     color: var(--brand);
-    box-shadow: none;
   }
 
   .button.danger {
@@ -1449,8 +1455,11 @@
   }
 
   .task-card:hover {
-    border-color: color-mix(in srgb, var(--brand) 32%, var(--border));
-    box-shadow: 0 10px 22px rgb(15 23 42 / 9%);
+    border-color: color-mix(in srgb, var(--brand) 68%, var(--border));
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, var(--brand) 20%, transparent),
+      0 12px 28px rgb(15 23 42 / 15%),
+      0 0 24px color-mix(in srgb, var(--brand) 24%, transparent);
     transform: translateY(-2px);
     filter: none;
   }
@@ -2158,11 +2167,18 @@
     position: absolute;
     inset-block-start: .32rem;
     inset-inline-start: .55rem;
-    inline-size: 2.1rem;
-    block-size: 1.1rem;
+    inline-size: 3.2rem;
+    block-size: 1.35rem;
     border-radius: 999px;
-    background: linear-gradient(180deg, transparent, rgb(255 255 255 / 70%), transparent);
+    background: linear-gradient(
+      180deg,
+      transparent 0,
+      rgb(255 255 255 / 100%) 44%,
+      color-mix(in srgb, var(--brand) 58%, white) 54%,
+      transparent 100%
+    );
     opacity: 0;
+    filter: drop-shadow(0 0 9px color-mix(in srgb, var(--brand) 80%, transparent));
     pointer-events: none;
   }
 

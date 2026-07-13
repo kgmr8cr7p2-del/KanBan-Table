@@ -15,6 +15,7 @@
   background: var(--card-bg, #120f17);
   box-shadow: 0 1px 2px rgb(0 0 0 / 10%), 0 4px 10px rgb(0 0 0 / 10%), 0 12px 28px rgb(0 0 0 / 12%);
   transform: translate3d(0, 0, .01px);
+  transition: border-color .2s ease-out, box-shadow .25s ease-out, transform .18s ease-out;
 }
 
 .border-glow-card::before,
@@ -111,11 +112,19 @@
 }
 
 @keyframes border-glow-hover-breathe {
-  0%, 100% { filter: brightness(1) saturate(1); }
-  50% { filter: brightness(1.12) saturate(1.08); }
+  0%, 100% { filter: brightness(1.18) saturate(1.16); }
+  50% { filter: brightness(1.5) saturate(1.35); }
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .border-glow-card:hover {
+    border-color: var(--glow-color-50);
+    box-shadow:
+      0 0 0 2px var(--glow-color-20),
+      0 14px 34px rgb(0 0 0 / 18%),
+      0 0 32px var(--glow-color-40);
+  }
+
   .border-glow-card:hover > .edge-light {
     animation: border-glow-hover-breathe 1.8s ease-in-out infinite;
   }
