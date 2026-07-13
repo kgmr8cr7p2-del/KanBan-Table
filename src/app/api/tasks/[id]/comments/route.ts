@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: Params) {
     const { id } = await params;
     const access = await canAccessTask(user.id, id);
     if (!access) return fail("Задача не найдена", 404);
-    const task = await prisma.task.findUnique({ where: { id } });
+    const task = await prisma.task.findUnique({ where: { id }, include: { assignees: { select: { userId: true } } } });
     if (!task) return fail("Задача не найдена", 404);
     if (access.column.board.ownerId !== user.id && !canEditTask(user, task)) return fail("Недостаточно прав", 403);
     const input = commentSchema.parse(await request.json());
@@ -24,7 +24,7 @@ export async function POST(request: Request, { params }: Params) {
       data: { text: input.text, taskId: id, authorId: user.id },
       include: {
         author: {
-          select: { id: true, name: true, email: true, jobTitle: true, handle: true, profileStatus: true, avatarUrl: true },
+          select: { id: true, name: true, email: true, jobTitle: true, handle: true, profileStatus: true, currentActivity: true, lastActiveAt: true, avatarUrl: true },
         },
       },
     });
@@ -34,7 +34,7 @@ export async function POST(request: Request, { params }: Params) {
       taskId: id,
       details: { text: input.text.slice(0, 120) },
     });
-    if (!access.column.board.ownerId) await notifyTelegram("comment_added", `${task.title}: ${input.text.slice(0, 180)}`, task.assigneeId ? [task.assigneeId] : []);
+    if (!access.column.board.ownerId) await notifyTelegram("comment_added", `${task.title}: ${input.text.slice(0, 180)}`, task.assignees.map((item) => item.userId));
     return ok({ comment });
   } catch (error) {
     return handleRouteError(error);

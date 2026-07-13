@@ -2,6 +2,8 @@
 
 import { Mail, X } from "lucide-react";
 import { type CSSProperties, type MouseEvent, type PointerEvent, useId, useRef, useState } from "react";
+import { DirectChat } from "@/components/DirectChat";
+import { presenceLabel } from "@/lib/presence";
 import "./ProfileCard.css";
 
 export type ProfileUser = {
@@ -11,6 +13,8 @@ export type ProfileUser = {
   jobTitle?: string | null;
   handle?: string | null;
   profileStatus?: string | null;
+  currentActivity?: string | null;
+  lastActiveAt?: string | Date | null;
   avatarUrl?: string | null;
 };
 
@@ -110,7 +114,7 @@ export default function ProfileCard({
                 <ProfileAvatar name={name} avatarUrl={avatarUrl} size={44} />
                 <div className="pc-user-text">
                   <span className="pc-handle">@{handle || fallbackHandle(name)}</span>
-                  <span className="pc-status"><i aria-hidden="true" />{status || "В сети"}</span>
+                  <span className={`pc-status ${status === "Не в сети" ? "offline" : status === "Отошёл" || status === "Неактивен" ? "away" : "online"}`}><i aria-hidden="true" />{status || "В сети"}</span>
                 </div>
               </div>
               {onContactClick ? <button className="pc-contact-btn" type="button" onClick={onContactClick}><Mail size={14} />{contactText}</button> : null}
@@ -130,10 +134,11 @@ export function ProfileAvatar({ name, avatarUrl, size = 36 }: { name: string; av
   );
 }
 
-export function UserProfileButton({ user, size = 32 }: { user: ProfileUser; size?: number }) {
+export function UserProfileButton({ user, viewerId, size = 32 }: { user: ProfileUser; viewerId?: string; size?: number }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const titleId = useId();
+  const [chatOpen, setChatOpen] = useState(false);
 
   function close() {
     dialogRef.current?.close();
@@ -158,13 +163,17 @@ export function UserProfileButton({ user, size = 32 }: { user: ProfileUser; size
           name={user.name}
           title={user.jobTitle || "Участник команды"}
           handle={user.handle || fallbackHandle(user.name)}
-          status={user.profileStatus || "В сети"}
+          status={presenceLabel(user)}
           avatarUrl={user.avatarUrl}
           showUserInfo
           enableTilt
-          onContactClick={() => { window.location.href = `mailto:${user.email}`; }}
+          onContactClick={viewerId && viewerId !== user.id ? () => {
+            dialogRef.current?.close();
+            setChatOpen(true);
+          } : undefined}
         />
       </dialog>
+      {chatOpen && viewerId ? <DirectChat user={user} viewerId={viewerId} onClose={() => { setChatOpen(false); triggerRef.current?.focus(); }} /> : null}
     </>
   );
 }

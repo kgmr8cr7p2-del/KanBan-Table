@@ -4,6 +4,7 @@ import { AppNav } from "@/components/AppNav";
 import { GoidaReminder } from "@/components/GoidaReminder";
 import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
 import { WeeklyReportReminder } from "@/components/WeeklyReportReminder";
+import { PresenceTracker } from "@/components/PresenceTracker";
 
 export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
   return (
@@ -21,6 +22,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       <TaskSoundNotifier />
       <GoidaReminder />
       <WeeklyReportReminder />
+      <PresenceTracker />
     </div>
   );
 }

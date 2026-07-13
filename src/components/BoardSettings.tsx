@@ -5,8 +5,9 @@ import { type FormEvent, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type ColumnItem = { id: string; name: string; position: number; tasks: unknown[]; _count?: { tasks: number } };
+type BoardOption = { id: string; name: string; ownerId?: string | null };
 
-export function BoardSettings({ columns, canManage, boardId, boardName }: { columns: ColumnItem[]; canManage: boolean; boardId: string; boardName: string }) {
+export function BoardSettings({ columns, canManage, boardId, boardName, boards }: { columns: ColumnItem[]; canManage: boolean; boardId: string; boardName: string; boards: BoardOption[] }) {
   const [items, setItems] = useState(columns);
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -97,18 +98,38 @@ export function BoardSettings({ columns, canManage, boardId, boardName }: { colu
     window.setTimeout(() => setSavedId((current) => (current === id ? null : current)), 1_800);
   }
 
-  if (!canManage) return <div className="empty">Настройки колонок доступны только администратору.</div>;
+  const boardPicker = (
+    <label className="settings-board-picker field">
+      <span>Для какой доски изменить колонки</span>
+      <select className="select" value={boardId} onChange={(event) => window.location.assign(`/settings?board=${encodeURIComponent(event.currentTarget.value)}`)}>
+        {boards.map((board) => <option value={board.id} key={board.id}>{board.name}{board.ownerId ? " · личная" : " · общая"}</option>)}
+      </select>
+    </label>
+  );
+
+  if (!canManage) return (
+    <section className="settings-block settings-manager" aria-labelledby="board-columns-title">
+      <header className="settings-manager-head">
+        <span className="settings-manager-icon"><Columns3 size={20} /></span>
+        <div><h2 id="board-columns-title">Колонки доски</h2><p>Выберите доску, которую хотите настроить.</p></div>
+      </header>
+      {boardPicker}
+      <div className="empty">Для общей доски настройка колонок доступна администратору. Своими личными досками вы можете управлять полностью.</div>
+    </section>
+  );
 
   return (
     <section className="settings-block settings-manager" aria-labelledby="board-columns-title">
       <header className="settings-manager-head">
         <span className="settings-manager-icon"><Columns3 size={20} /></span>
         <div>
-          <h2 id="board-columns-title">Колонки: {boardName}</h2>
-          <p>Настройте этапы работы и порядок слева направо.</p>
+          <h2 id="board-columns-title">Колонки доски</h2>
+          <p>Выберите доску и настройте этапы работы слева направо.</p>
         </div>
         <span className="settings-summary-badge">{items.length} колонок</span>
       </header>
+
+      {boardPicker}
 
       <form className="settings-add-form" onSubmit={add}>
         <label className="field">

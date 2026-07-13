@@ -41,7 +41,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
     () =>
       view?.board?.columns?.map((column: any) => ({
         ...column,
-        tasks: viewMode === "mine" ? column.tasks.filter((task: Task) => task.assigneeId === view.currentUser.id) : column.tasks,
+        tasks: viewMode === "mine" ? column.tasks.filter((task: Task) => taskAssigneeUsers(task).some((user: any) => user.id === view.currentUser.id)) : column.tasks,
       })) ?? [],
     [view, viewMode],
   );
@@ -595,7 +595,7 @@ function TaskTable({ tasks, onOpen, personal }: { tasks: Task[]; onOpen: (task: 
             <strong>#{task.taskNumber} {task.title}</strong>
             <span>{task.column?.name ?? "Без статуса"}</span>
             {!personal ? <span>{task.oilDepot?.name ?? "Без нефтебазы"}</span> : null}
-            {!personal ? <span>{task.assignee?.name ?? "Не назначен"}</span> : null}
+            {!personal ? <span>{taskAssigneeUsers(task).map((user: any) => user.name).join(", ") || "Не назначен"}</span> : null}
             <span className={deadlineTone(task)}>{task.deadline ? deadlineText(task) : "Без срока"}</span>
             <span>{priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
           </button>
@@ -658,7 +658,7 @@ function TaskCard({
       {task.description ? <p className="task-description">{task.description}</p> : null}
       <div className="meta-row">
         <span className={`chip priority-${task.priority}`}>{priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
-        {task.assignee ? <span className="chip">{task.assignee.name}</span> : null}
+        {taskAssigneeUsers(task).map((user: any) => <span className="chip" key={user.id}>{user.name}</span>)}
       </div>
       <div className="meta-row">
         {task.deadline ? (
@@ -902,7 +902,7 @@ function TaskDialog(props: {
             {props.task.comments.map((comment: any) => (
               <div className={`chat-message ${comment.author.id === props.view.currentUser.id ? "own" : ""}`} key={comment.id}>
                 <div className="chat-comment-head">
-                  <UserProfileButton user={comment.author} size={30} />
+                  <UserProfileButton user={comment.author} viewerId={props.view.currentUser.id} size={30} />
                   <div className="chat-meta">
                     <strong>{comment.author.name}</strong>
                     <span>{dateTime(comment.createdAt)}</span>
@@ -1004,7 +1004,7 @@ function CreateTaskDialogV2(props: { view: View; onClose: () => void; onCreate: 
       <header className="task-modal-v2-head">
         <div>
           <h2 id="create-task-title">Новая задача</h2>
-          <div className="modal-badges">
+          <div className="modal-badges compact">
             <span className="modal-badge badge-purple"><span className="status-dot" />{firstColumn?.name ?? "Не выбрана"}</span>
             {!isPersonalBoard ? <span className="modal-badge badge-purple-soft"><Building2 size={15} />Без нефтебазы</span> : null}
           </div>
@@ -1135,18 +1135,7 @@ function CreateTaskDialogV2(props: { view: View; onClose: () => void; onCreate: 
                   ))}
                 </select>
               </label> : null}
-              {!isPersonalBoard ? <label className="field modal-property-field">
-                <span className="property-icon"><UserRound size={19} /></span>
-                <span className="label">Исполнитель</span>
-                <select className="select" name="assigneeId" defaultValue="">
-                  <option value="">Не назначен</option>
-                  {props.view.users.map((user: any) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
-                    </option>
-                  ))}
-                </select>
-              </label> : null}
+              {!isPersonalBoard ? <AssigneePicker users={props.view.users} /> : null}
             </div>
           </aside>
         </div>
@@ -1233,7 +1222,7 @@ function TaskDialogV2(props: {
               props.task.comments.map((comment: any) => (
                 <div className="modal-comment" key={comment.id}>
                   <div className="modal-comment-author">
-                    <UserProfileButton user={comment.author} size={32} />
+                    <UserProfileButton user={comment.author} viewerId={props.view.currentUser.id} size={32} />
                     <span>
                       <strong>{comment.author.name}</strong>
                       <small>{dateTime(comment.createdAt)}</small>
@@ -1364,18 +1353,7 @@ function TaskDialogV2(props: {
               ))}
             </select>
           </label> : null}
-          {!isPersonalBoard ? <label className="field modal-property-field">
-            <span className="property-icon"><UserRound size={19} /></span>
-            <span className="label">Исполнитель</span>
-            <select className="select" form={editFormId} name="assigneeId" defaultValue={props.task.assigneeId ?? ""}>
-              <option value="">Не назначен</option>
-              {props.view.users.map((user: any) => (
-                <option key={user.id} value={user.id}>
-                  {user.name}
-                </option>
-              ))}
-            </select>
-          </label> : null}
+          {!isPersonalBoard ? <AssigneePicker users={props.view.users} defaultIds={taskAssigneeUsers(props.task).map((user: any) => user.id)} formId={editFormId} /> : null}
         </div>
       </aside>
       </div>
@@ -1414,6 +1392,7 @@ function taskPayload(formData: FormData) {
     priority: String(formData.get("priority") ?? "MEDIUM"),
     deadline: String(formData.get("deadline") ?? "") || null,
     assigneeId: String(formData.get("assigneeId") ?? "") || null,
+    assigneeIds: formData.getAll("assigneeIds").map((value) => String(value)).filter(Boolean),
     initialComment: String(formData.get("initialComment") ?? ""),
     initialChecklist: formData
       .getAll("initialChecklist")
@@ -1429,6 +1408,28 @@ function taskPayload(formData: FormData) {
   }
 
   return payload;
+}
+
+function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defaultIds?: string[]; formId?: string }) {
+  return (
+    <fieldset className="field modal-property-field assignee-picker">
+      <legend className="label"><span className="property-icon"><UserRound size={19} /></span>Исполнители</legend>
+      <div className="assignee-picker-list">
+        {users.map((user) => (
+          <label className="assignee-option" key={user.id}>
+            <input type="checkbox" form={formId} name="assigneeIds" value={user.id} defaultChecked={defaultIds.includes(user.id)} />
+            <span>{user.name}</span>
+          </label>
+        ))}
+      </div>
+      <small>Можно выбрать несколько</small>
+    </fieldset>
+  );
+}
+
+function taskAssigneeUsers(task: Task) {
+  if (task.assignees?.length) return task.assignees.map((item: any) => item.user);
+  return task.assignee ? [task.assignee] : [];
 }
 
 function readFiltersFromUrl() {

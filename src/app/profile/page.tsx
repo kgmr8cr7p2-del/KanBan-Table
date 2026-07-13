@@ -20,6 +20,8 @@ export default async function ProfilePage() {
           jobTitle: user.jobTitle,
           handle: user.handle,
           profileStatus: user.profileStatus,
+          currentActivity: user.currentActivity,
+          lastActiveAt: user.lastActiveAt,
           avatarUrl: user.avatarUrl,
         }} />
       </div>

@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Settings2, UserRound } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { BoardSettings } from "@/components/BoardSettings";
 import { GoidaTestButton } from "@/components/GoidaTestButton";
@@ -25,21 +24,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <p>Колонки определяют рабочий процесс, а нефтебазы помогают связывать задачи с объектами.</p>
         </header>
         <div className="settings-managers">
-          <section className="settings-block settings-manager profile-settings-entry">
-            <div className="settings-manager-head">
-              <div className="settings-manager-icon"><UserRound size={20} aria-hidden="true" /></div>
-              <div>
-                <h2>Профиль</h2>
-                <p className="muted">Фото, должность, ник и статус для вашей карточки.</p>
-              </div>
-            </div>
-            <Link className="button secondary" href="/profile">Изменить профиль</Link>
-          </section>
           <PersonalBoardSettings initialBoards={JSON.parse(JSON.stringify((view?.availableBoards ?? []).filter((board: any) => board.ownerId === user.id)))} />
           {selectedBoard ? (
             <BoardSettings
               boardId={selectedBoard.id}
               boardName={selectedBoard.name}
+              boards={JSON.parse(JSON.stringify(view?.availableBoards ?? []))}
               columns={JSON.parse(JSON.stringify(selectedBoard.columns))}
               canManage={selectedBoard.ownerId === user.id || user.role.name === "ADMIN"}
             />

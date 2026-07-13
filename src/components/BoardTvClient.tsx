@@ -250,11 +250,16 @@ function TvTaskCard({ task }: { task: Task }) {
         {task.deadline ? <time>{dateShort(task.deadline)}</time> : null}
       </div>
       <div className="tv-task-bottom">
-        <span>{task.assignee?.name ?? "Не назначен"}</span>
+        <span>{taskAssignees(task).map((user: any) => user.name).join(", ") || "Не назначен"}</span>
         {task.checklists?.length ? <small>{checklistProgress(task)}%</small> : null}
       </div>
     </article>
   );
+}
+
+function taskAssignees(task: Task) {
+  if (task.assignees?.length) return task.assignees.map((item: any) => item.user);
+  return task.assignee ? [task.assignee] : [];
 }
 
 

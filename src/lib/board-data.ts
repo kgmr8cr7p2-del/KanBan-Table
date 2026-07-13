@@ -11,6 +11,8 @@ const profileUserSelect = {
   jobTitle: true,
   handle: true,
   profileStatus: true,
+  currentActivity: true,
+  lastActiveAt: true,
   avatarUrl: true,
 } satisfies Prisma.UserSelect;
 
@@ -19,6 +21,7 @@ export const taskInclude = {
   oilDepot: true,
   author: { select: profileUserSelect },
   assignee: { select: profileUserSelect },
+  assignees: { include: { user: { select: profileUserSelect } }, orderBy: { assignedAt: "asc" as const } },
   tags: { include: { tag: true } },
   checklists: { include: { items: true }, orderBy: { createdAt: "asc" as const } },
   comments: {
@@ -41,6 +44,7 @@ const reportTaskInclude = {
   column: true,
   oilDepot: true,
   assignee: { select: { id: true, name: true, email: true } },
+  assignees: { include: { user: { select: { id: true, name: true, email: true } } } },
 } satisfies Prisma.TaskInclude;
 
 type ReportTask = Prisma.TaskGetPayload<{ include: typeof reportTaskInclude }>;
@@ -111,7 +115,7 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
     tasks: column.tasks.filter((task) => {
       if (status && task.columnId !== status) return false;
       if (priority && task.priority !== priority) return false;
-      if (assignee && task.assigneeId !== assignee) return false;
+      if (assignee && task.assigneeId !== assignee && !task.assignees.some((item) => item.userId === assignee)) return false;
       if (oilDepot && task.oilDepotId !== oilDepot) return false;
       if (tag && !task.tags.some((taskTag) => taskTag.tagId === tag)) return false;
       if (deadline === "overdue" && (!task.deadline || task.deadline >= new Date() || isCompletedColumn(task.column.name) || isReviewColumn(task.column.name))) return false;
@@ -144,6 +148,8 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
       jobTitle: user.jobTitle,
       handle: user.handle,
       profileStatus: user.profileStatus,
+      currentActivity: user.currentActivity,
+      lastActiveAt: user.lastActiveAt,
       avatarUrl: user.avatarUrl,
       role: user.role.name,
       emailVerifiedAt: user.emailVerifiedAt,
@@ -288,7 +294,7 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
       deadline: task.deadline,
       priority: task.priority,
       oilDepot: task.oilDepot?.name ?? "Без нефтебазы",
-      assignee: task.assignee?.name ?? "Не назначен",
+      assignee: taskAssignees(task).map((item) => item.name).join(", ") || "Не назначен",
       overdue: task.deadline! < now && !isReviewColumn(task.column.name),
     }));
 
@@ -302,7 +308,7 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
       status: task.column.name,
       priority: task.priority,
       oilDepot: task.oilDepot?.name ?? "Без нефтебазы",
-      assignee: task.assignee?.name ?? "Не назначен",
+      assignee: taskAssignees(task).map((item) => item.name).join(", ") || "Не назначен",
       updatedAt: task.updatedAt,
     }));
 
@@ -312,17 +318,18 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
   >();
 
   for (const task of tasks) {
-    if (!task.assignee) continue;
-    const member = team.get(task.assignee.id) ?? {
-      ...task.assignee,
-      active: 0,
-      completed: 0,
-      overdue: 0,
-    };
-    if (!isClosed(task)) member.active += 1;
-    if (isClosedInPeriod(task)) member.completed += 1;
-    if (!isClosed(task) && task.deadline && task.deadline < now && !isReviewColumn(task.column.name)) member.overdue += 1;
-    team.set(task.assignee.id, member);
+    for (const assignee of taskAssignees(task)) {
+      const member = team.get(assignee.id) ?? {
+        ...assignee,
+        active: 0,
+        completed: 0,
+        overdue: 0,
+      };
+      if (!isClosed(task)) member.active += 1;
+      if (isClosedInPeriod(task)) member.completed += 1;
+      if (!isClosed(task) && task.deadline && task.deadline < now && !isReviewColumn(task.column.name)) member.overdue += 1;
+      team.set(assignee.id, member);
+    }
   }
 
   return {
@@ -333,7 +340,7 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
       inProgress: inProgress.length,
       overdue: overdue.length,
       dueSoon: dueSoon.length,
-      unassigned: active.filter((task) => !task.assigneeId).length,
+      unassigned: active.filter((task) => taskAssignees(task).length === 0).length,
     },
     progress: {
       percent: progress,
@@ -347,6 +354,11 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
       .sort((a, b) => b.active - a.active || b.completed - a.completed || a.name.localeCompare(b.name, "ru"))
       .slice(0, 6),
   };
+}
+
+function taskAssignees(task: ReportTask) {
+  if (task.assignees.length) return task.assignees.map((item) => item.user);
+  return task.assignee ? [task.assignee] : [];
 }
 
 function normalizeReportMode(value?: string | null) {

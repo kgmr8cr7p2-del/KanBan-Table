@@ -20,6 +20,7 @@ export const taskSchema = z.object({
   priority: z.nativeEnum(Priority),
   deadline: z.string().optional().nullable(),
   assigneeId: z.string().optional().nullable(),
+  assigneeIds: z.array(z.string().min(1)).max(30).optional(),
   initialComment: z.string().max(2000).optional().nullable(),
   initialChecklist: z.array(z.string().max(240)).default([]),
   tags: z.array(z.string().min(1).max(32)).default([]),
@@ -50,7 +51,6 @@ export const profileSchema = z.object({
   name: z.string().min(2).max(80),
   jobTitle: z.string().trim().max(100).default(""),
   handle: z.string().trim().max(40).regex(/^[\p{L}\p{N}._-]*$/u, "Используйте буквы, цифры, точку, дефис или подчёркивание").default(""),
-  profileStatus: z.string().trim().max(60).default("В сети"),
   telegramChatId: z.string().max(80).optional(),
 });
 

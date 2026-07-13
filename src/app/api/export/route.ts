@@ -37,7 +37,7 @@ export async function GET(request: Request) {
         description: task.description,
         status: column.name,
         priority: priorityLabels[task.priority],
-        assignee: task.assignee?.name ?? "",
+        assignee: task.assignees.length ? task.assignees.map((item) => item.user.name).join(", ") : task.assignee?.name ?? "",
         tags: task.tags.map((item) => item.tag.name).join(", "),
         deadline: task.deadline?.toLocaleDateString("ru-RU") ?? "",
         createdAt: task.createdAt.toLocaleString("ru-RU"),

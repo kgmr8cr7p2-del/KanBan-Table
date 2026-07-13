@@ -136,6 +136,8 @@
 .pc-handle { overflow: hidden; font-size: .78rem; font-weight: 780; text-overflow: ellipsis; white-space: nowrap; }
 .pc-status { display: flex; align-items: center; gap: .35rem; color: rgb(226 232 240 / 74%); font-size: .7rem; }
 .pc-status i { inline-size: .42rem; block-size: .42rem; border-radius: 50%; background: #5ee1a0; box-shadow: 0 0 0 3px rgb(94 225 160 / 14%); }
+.pc-status.away i { background: #fbbf24; box-shadow: 0 0 0 3px rgb(251 191 36 / 14%); }
+.pc-status.offline i { background: #94a3b8; box-shadow: 0 0 0 3px rgb(148 163 184 / 14%); }
 
 .pc-contact-btn {
   display: inline-flex;

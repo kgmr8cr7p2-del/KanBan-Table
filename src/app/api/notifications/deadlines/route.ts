@@ -9,17 +9,17 @@ export async function POST() {
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   const soon = await prisma.task.findMany({
-    where: { deadline: { gte: now, lte: tomorrow }, assigneeId: { not: null }, column: { board: { ownerId: null } } },
-    select: { title: true, deadline: true, assigneeId: true },
+    where: { deadline: { gte: now, lte: tomorrow }, assignees: { some: {} }, column: { board: { ownerId: null } } },
+    select: { title: true, deadline: true, assignees: { select: { userId: true } } },
   });
   const overdue = await prisma.task.findMany({
-    where: { deadline: { lt: now }, assigneeId: { not: null }, column: { board: { ownerId: null } } },
-    select: { title: true, deadline: true, assigneeId: true },
+    where: { deadline: { lt: now }, assignees: { some: {} }, column: { board: { ownerId: null } } },
+    select: { title: true, deadline: true, assignees: { select: { userId: true } } },
   });
 
   await Promise.all([
-    ...soon.map((task) => notifyTelegram("deadline_soon", `${task.title}: ${task.deadline?.toLocaleString("ru-RU")}`, task.assigneeId ? [task.assigneeId] : [])),
-    ...overdue.map((task) => notifyTelegram("deadline_overdue", `${task.title}: ${task.deadline?.toLocaleString("ru-RU")}`, task.assigneeId ? [task.assigneeId] : [])),
+    ...soon.map((task) => notifyTelegram("deadline_soon", `${task.title}: ${task.deadline?.toLocaleString("ru-RU")}`, task.assignees.map((item) => item.userId))),
+    ...overdue.map((task) => notifyTelegram("deadline_overdue", `${task.title}: ${task.deadline?.toLocaleString("ru-RU")}`, task.assignees.map((item) => item.userId))),
   ]);
 
   return ok({ soon: soon.length, overdue: overdue.length });

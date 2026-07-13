@@ -51,7 +51,7 @@ export async function POST(request: Request, { params }: Params) {
         details: { deadline: nextDeadline?.toISOString(), reason: "returned_from_review" },
       });
     }
-    if (!isPersonalBoard) await notifyTelegram("status_changed", `${task.title}: ${task.column.name}`, task.assigneeId ? [task.assigneeId] : []);
+    if (!isPersonalBoard) await notifyTelegram("status_changed", `${task.title}: ${task.column.name}`, task.assignees.map((item) => item.userId));
     if (!isPersonalBoard && !isCompletedColumn(existing.column.name) && isCompletedColumn(destinationColumn.name)) {
       triggerTaskCompletionSoundEvent();
     }

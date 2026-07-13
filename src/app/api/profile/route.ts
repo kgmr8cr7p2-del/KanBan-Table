@@ -15,9 +15,8 @@ export async function PATCH(request: Request) {
         name: input.name,
         jobTitle: input.jobTitle,
         handle: input.handle,
-        profileStatus: input.profileStatus,
       },
-      select: { id: true, name: true, email: true, jobTitle: true, handle: true, profileStatus: true, avatarUrl: true },
+      select: { id: true, name: true, email: true, jobTitle: true, handle: true, profileStatus: true, currentActivity: true, lastActiveAt: true, avatarUrl: true },
     });
     await prisma.telegramConnection.upsert({
       where: { userId: user.id },

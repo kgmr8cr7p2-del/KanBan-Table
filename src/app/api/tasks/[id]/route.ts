@@ -24,17 +24,21 @@ export async function PATCH(request: Request, { params }: Params) {
     const isPersonalBoard = access.column.board.ownerId === user.id;
     const existing = await prisma.task.findUnique({
       where: { id },
-      include: { column: { select: { name: true } } },
+      include: { column: { select: { name: true } }, assignees: { select: { userId: true } } },
     });
     if (!existing) return fail("Задача не найдена", 404);
     if (!isPersonalBoard && !canEditTask(user, existing)) return fail("Недостаточно прав", 403);
 
     const input = taskSchema.partial().parse(await request.json());
+    const hasAssigneeUpdate = input.assigneeIds !== undefined || input.assigneeId !== undefined;
+    const assigneeIds = hasAssigneeUpdate
+      ? Array.from(new Set(input.assigneeIds?.length ? input.assigneeIds : input.assigneeId ? [input.assigneeId] : []))
+      : undefined;
     if (input.columnId) {
       const targetColumn = await getAccessibleColumn(user.id, input.columnId);
       if (!targetColumn || targetColumn.boardId !== access.column.boardId) return fail("Нельзя перенести задачу на другую доску", 400);
     }
-    if (isPersonalBoard && input.assigneeId && input.assigneeId !== user.id) return fail("На личной доске задачу можно назначить только себе", 403);
+    if (isPersonalBoard && assigneeIds?.some((userId) => userId !== user.id)) return fail("На личной доске задачу можно назначить только себе", 403);
     const changes: ActivityAction[] = [];
     if (input.title && input.title !== existing.title) changes.push(ActivityAction.TITLE_CHANGED);
     if (input.description !== undefined && input.description !== existing.description) changes.push(ActivityAction.DESCRIPTION_CHANGED);
@@ -42,7 +46,7 @@ export async function PATCH(request: Request, { params }: Params) {
     if (input.deadline !== undefined) changes.push(ActivityAction.DEADLINE_CHANGED);
     if (input.columnId && input.columnId !== existing.columnId) changes.push(ActivityAction.STATUS_CHANGED);
     if (input.oilDepotId !== undefined && (input.oilDepotId || null) !== existing.oilDepotId) changes.push(ActivityAction.DESCRIPTION_CHANGED);
-    if (input.assigneeId !== undefined && input.assigneeId !== existing.assigneeId) changes.push(ActivityAction.ASSIGNEE_CHANGED);
+    if (assigneeIds && !sameIds(assigneeIds, existing.assignees.map((item) => item.userId))) changes.push(ActivityAction.ASSIGNEE_CHANGED);
 
     if (input.tags) await prisma.taskTag.deleteMany({ where: { taskId: id } });
 
@@ -55,7 +59,8 @@ export async function PATCH(request: Request, { params }: Params) {
         deadline: input.deadline === undefined ? undefined : input.deadline ? new Date(input.deadline) : null,
         columnId: input.columnId,
         oilDepotId: input.oilDepotId === undefined ? undefined : input.oilDepotId || null,
-        assigneeId: input.assigneeId === undefined ? undefined : input.assigneeId || null,
+        assigneeId: assigneeIds === undefined ? undefined : assigneeIds[0] || null,
+        assignees: assigneeIds === undefined ? undefined : { deleteMany: {}, create: assigneeIds.map((userId) => ({ userId })) },
         tags: input.tags ? { create: await tagConnects(input.tags) } : undefined,
       },
       include: taskInclude,
@@ -74,13 +79,13 @@ export async function PATCH(request: Request, { params }: Params) {
       ),
     );
     if (!isPersonalBoard && changes.includes(ActivityAction.STATUS_CHANGED)) {
-      await notifyTelegram("status_changed", `${task.title}: ${task.column.name}`, task.assigneeId ? [task.assigneeId] : []);
+      await notifyTelegram("status_changed", `${task.title}: ${task.column.name}`, task.assignees.map((item) => item.userId));
       if (!isCompletedColumn(existing.column.name) && isCompletedColumn(task.column.name)) {
         triggerTaskCompletionSoundEvent();
       }
     }
     if (!isPersonalBoard && changes.includes(ActivityAction.ASSIGNEE_CHANGED)) {
-      await notifyTelegram("assignee_changed", formatAssigneeChangedMessage(task, user), task.assigneeId ? [task.assigneeId] : []);
+      await notifyTelegram("assignee_changed", formatAssigneeChangedMessage(task, user), task.assignees.map((item) => item.userId));
     }
     return ok({ task });
   } catch (error) {
@@ -89,8 +94,16 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 function formatAssigneeChangedMessage(task: TaskWithDetails, user: { name: string; email: string }) {
-  const assignee = task.assignee ? `${task.assignee.name} (${task.assignee.email})` : "не назначен";
+  const assignee = task.assignees.length
+    ? task.assignees.map((item) => `${item.user.name} (${item.user.email})`).join(", ")
+    : "не назначен";
   return [`Задача: ${task.title}`, `Назначили: ${assignee}`, `Изменил: ${user.name} (${user.email})`].join("\n");
+}
+
+function sameIds(left: string[], right: string[]) {
+  const sortedLeft = [...left].sort();
+  const sortedRight = [...right].sort();
+  return sortedLeft.length === sortedRight.length && sortedLeft.every((id, index) => id === sortedRight[index]);
 }
 
 function isCompletedColumn(name: string) {

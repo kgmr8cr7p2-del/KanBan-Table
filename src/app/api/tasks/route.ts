@@ -22,11 +22,12 @@ export async function POST(request: Request) {
   try {
     const user = await requireVerifiedUser();
     const input = taskSchema.parse(await request.json());
+    const assigneeIds = Array.from(new Set(input.assigneeIds?.length ? input.assigneeIds : input.assigneeId ? [input.assigneeId] : []));
     const targetColumn = await getAccessibleColumn(user.id, input.columnId);
     if (!targetColumn) return fail("Колонка не найдена", 404);
     const isPersonalBoard = targetColumn.board.ownerId === user.id;
     if (!isPersonalBoard && !canCreateTask(user)) return fail("Недостаточно прав для создания задачи", 403);
-    if (isPersonalBoard && input.assigneeId && input.assigneeId !== user.id) return fail("На личной доске задачу можно назначить только себе", 403);
+    if (isPersonalBoard && assigneeIds.some((id) => id !== user.id)) return fail("На личной доске задачу можно назначить только себе", 403);
     const maxPosition = await prisma.task.aggregate({
       where: { columnId: input.columnId },
       _max: { position: true },
@@ -41,7 +42,8 @@ export async function POST(request: Request) {
         columnId: input.columnId,
         oilDepotId: input.oilDepotId || null,
         authorId: user.id,
-        assigneeId: input.assigneeId || null,
+        assigneeId: assigneeIds[0] || null,
+        assignees: assigneeIds.length ? { create: assigneeIds.map((userId) => ({ userId })) } : undefined,
         position: (maxPosition._max.position ?? -1) + 1,
         tags: { create: await tagConnects(input.tags) },
       },
@@ -84,7 +86,7 @@ export async function POST(request: Request) {
       await notifyTelegram(
         "task_created",
         formatTaskCreatedMessage(taskWithDetails, user, initialComment),
-        taskWithDetails.assigneeId ? [taskWithDetails.assigneeId] : [],
+        assigneeIds,
       );
       triggerTaskSoundEvent();
     }
