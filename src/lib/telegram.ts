@@ -11,8 +11,8 @@ type TelegramEvent =
 
 const titles: Record<TelegramEvent, string> = {
   task_created: "Новая задача",
-  assignee_changed: "Назначен исполнитель",
-  status_changed: "Статус изменен",
+  assignee_changed: "Исполнители обновлены",
+  status_changed: "Статус задачи изменён",
   comment_added: "Новый комментарий",
   deadline_soon: "Скоро дедлайн",
   deadline_overdue: "Дедлайн просрочен",
@@ -77,7 +77,9 @@ export async function notifyTelegram(event: TelegramEvent, message: string, user
 }
 
 async function sendToChats(token: string, chatIds: string[], text: string, errorLabel: string) {
-  const taskUrl = `${(process.env.APP_URL ?? "https://kanban.region-free.online").replace(/\/$/, "")}/telegram/new-task`;
+  const appBaseUrl = (process.env.APP_URL ?? "https://kanban.region-free.online").replace(/\/$/, "");
+  const taskUrl = `${appBaseUrl}/telegram/new-task`;
+  const boardUrl = `${appBaseUrl}/board`;
   const results = await Promise.all(
     chatIds.map(async (chatId) => {
       try {
@@ -90,7 +92,10 @@ async function sendToChats(token: string, chatIds: string[], text: string, error
             parse_mode: "HTML",
             disable_web_page_preview: true,
             reply_markup: {
-              inline_keyboard: [[{ text: "➕ Создать задачу", url: taskUrl }]],
+              inline_keyboard: [[
+                { text: "📋 Открыть доску", url: boardUrl },
+                { text: "➕ Создать задачу", url: taskUrl },
+              ]],
             },
           }),
         });
@@ -111,16 +116,36 @@ async function sendToChats(token: string, chatIds: string[], text: string, error
 
 function formatTelegramMessage(event: TelegramEvent, message: string) {
   const { taskTitle, body } = extractTaskTitle(message);
+  const details = formatDetailLines(body);
   return [
     `${icons[event]} <b>${escapeHtml(titles[event])}</b>`,
-    "━━━━━━━━━━━━━━",
-    taskTitle ? `<b>Название задачи:</b>\n<u><b>${escapeHtml(taskTitle)}</b></u>` : null,
-    body ? escapeHtml(body) : null,
+    taskTitle ? `\n<b>${escapeHtml(taskTitle)}</b>` : null,
+    details ? `\n${details}` : null,
     "",
-    "<i>Taskora</i>",
+    `🕒 <i>${new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Moscow" }).format(new Date())} · Taskora</i>`,
   ]
     .filter((line) => line !== null)
     .join("\n");
+}
+
+function formatDetailLines(body: string) {
+  return body
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 8)
+    .map((line) => {
+      const separator = line.indexOf(":");
+      if (separator <= 0) return `• ${escapeHtml(shorten(line, 260))}`;
+      const label = line.slice(0, separator).trim();
+      const value = line.slice(separator + 1).trim() || "не указано";
+      return `• <b>${escapeHtml(label)}:</b> ${escapeHtml(shorten(value, label.toLocaleLowerCase("ru-RU").includes("комментар") ? 240 : 180))}`;
+    })
+    .join("\n");
+}
+
+function shorten(value: string, limit: number) {
+  return value.length > limit ? `${value.slice(0, limit - 1)}…` : value;
 }
 
 function extractTaskTitle(message: string) {

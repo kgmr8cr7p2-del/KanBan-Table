@@ -99,10 +99,12 @@ export async function POST(request: Request) {
 function formatTaskCreatedMessage(task: Awaited<ReturnType<typeof prisma.task.findUniqueOrThrow>>, user: { name: string; email: string }, comment?: string) {
   const deadline = task.deadline ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(task.deadline) : "не указан";
   const oilDepotName = (task as any).oilDepot?.name ?? "не указана";
+  const assignees = (task as any).assignees?.map((item: any) => item.user.name).join(", ") || "не назначены";
   return [
     `Задача #${(task as any).taskNumber}`,
-    `Нефтебаза: ${oilDepotName}`,
     `Задача: ${task.title}`,
+    `Нефтебаза: ${oilDepotName}`,
+    `Исполнители: ${assignees}`,
     `Создал: ${user.name} (${user.email})`,
     `Важность: ${priorityLabels[task.priority as keyof typeof priorityLabels]}`,
     `Срок: ${deadline}`,

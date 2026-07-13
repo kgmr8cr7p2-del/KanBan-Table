@@ -1434,7 +1434,7 @@ function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defa
   const labelId = `${pickerId}-label`;
   const [selectedIds, setSelectedIds] = useState(() => [...new Set(defaultIds)]);
   const selectedUsers = users.filter((user) => selectedIds.includes(user.id));
-  const summary = selectedUsers.length ? selectedUsers.map((user) => user.name).join(", ") : "Не выбраны";
+  const summary = selectedUsers.length === 1 ? selectedUsers[0].name : selectedUsers.length ? assigneeCountLabel(selectedUsers.length) : "Не выбраны";
 
   return (
     <div className="field modal-property-field assignee-picker" role="group" aria-labelledby={labelId}>
@@ -1445,9 +1445,20 @@ function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defa
           <span className="assignee-summary-value">{summary}</span>
           <span className="assignee-picker-count" aria-label={`Выбрано: ${selectedIds.length}`}>{selectedIds.length}</span>
         </summary>
+        {selectedUsers.length ? (
+          <div className="assignee-selected-list" aria-label="Выбранные исполнители">
+            {selectedUsers.map((user) => (
+              <span className="assignee-selected-chip" key={user.id}>
+                {user.name}
+                <button type="button" aria-label={`Убрать исполнителя ${user.name}`} onClick={() => setSelectedIds((current) => current.filter((id) => id !== user.id))}><X size={13} aria-hidden="true" /></button>
+              </span>
+            ))}
+          </div>
+        ) : null}
         <div className="assignee-picker-list">
           {users.map((user) => {
             const inputId = `${pickerId}-${user.id}`;
+            const initials = user.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part: string) => part[0]?.toLocaleUpperCase("ru-RU")).join("");
             return (
               <label className="assignee-option" htmlFor={inputId} key={user.id}>
                 <input
@@ -1464,6 +1475,7 @@ function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defa
                       : current.filter((id) => id !== user.id));
                   }}
                 />
+                <span className="assignee-option-avatar" aria-hidden="true">{user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initials || "?"}</span>
                 <span className="assignee-option-copy">
                   <strong>{user.name}</strong>
                   <small>{user.email}</small>
@@ -1476,6 +1488,14 @@ function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defa
       <small>Можно выбрать одного или нескольких исполнителей</small>
     </div>
   );
+}
+
+function assigneeCountLabel(count: number) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${count} исполнитель`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} исполнителя`;
+  return `${count} исполнителей`;
 }
 
 function taskAssigneeUsers(task: Task) {

@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowLeft, CheckCheck, FileText, Paperclip, Send, X } from "lucide-react";
+import { ArrowLeft, CheckCheck, FileText, Image as ImageIcon, Paperclip, Send, X } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ProfileUser } from "@/components/ProfileCard/ProfileCard";
 import { presenceLabel, presenceTone, setPresenceActivity } from "@/lib/presence";
+import { playChatNotification } from "@/lib/chat-notification";
 
 export type ChatMessage = {
   id: string;
@@ -32,8 +33,12 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const [selectedFile, setSelectedFile] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedPreviewUrl, setSelectedPreviewUrl] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const knownMessageIdsRef = useRef(new Set<string>());
+  const messagesLoadedRef = useRef(false);
 
   useEffect(() => {
     setPresenceActivity(`Общается с ${user.name}`);
@@ -48,13 +53,21 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
       if (!active) return;
       if (!response.ok) setError(payload.error || "Не удалось загрузить сообщения");
       else {
-        setMessages(payload.messages ?? []);
+        const nextMessages: ChatMessage[] = payload.messages ?? [];
+        if (messagesLoadedRef.current && nextMessages.some((message) => message.senderId === user.id && !knownMessageIdsRef.current.has(message.id))) {
+          void playChatNotification();
+        }
+        knownMessageIdsRef.current = new Set(nextMessages.map((message) => message.id));
+        messagesLoadedRef.current = true;
+        setMessages(nextMessages);
         onMessagesRead?.();
       }
       setLoading(false);
     }
     setLoading(true);
     setMessages([]);
+    knownMessageIdsRef.current = new Set();
+    messagesLoadedRef.current = false;
     void refresh();
     const timer = window.setInterval(() => void refresh(), 3_000);
     return () => {
@@ -62,6 +75,16 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
       window.clearInterval(timer);
     };
   }, [user.id, onMessagesRead]);
+
+  useEffect(() => {
+    if (!selectedFile || !isPreviewableImageMime(selectedFile.type)) {
+      setSelectedPreviewUrl("");
+      return;
+    }
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setSelectedPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedFile]);
 
   useEffect(() => {
     listRef.current?.lastElementChild?.scrollIntoView({ block: "end" });
@@ -93,7 +116,7 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
     }
     setMessages((current) => [...current, payload.message]);
     form.reset();
-    setSelectedFile("");
+    setSelectedFile(null);
   }
 
   const status = presenceLabel(user);
@@ -115,17 +138,24 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
 
       <div className="direct-chat-messages" ref={listRef} aria-live="polite" aria-busy={loading}>
         {loading ? <p className="direct-chat-empty">Загружаем переписку…</p> : null}
-        {!loading && !messages.length ? <p className="direct-chat-empty">Начните диалог — сообщения видны только вам двоим.</p> : null}
+        {!loading && !messages.length ? <p className="direct-chat-empty">Сообщений пока нет.</p> : null}
         {messages.map((message) => {
           const own = message.senderId === viewerId;
           return (
             <article className={`direct-chat-message ${own ? "own" : ""}`} key={message.id}>
               {message.text ? <p>{message.text}</p> : null}
               {message.fileName ? (
-                <a className="direct-chat-file" href={`/api/message-files/${message.id}`}>
-                  <FileText size={17} />
-                  <span><strong>{message.fileName}</strong><small>{formatFileSize(message.fileSize)}</small></span>
-                </a>
+                isPreviewableImageMime(message.mimeType) ? (
+                  <a className="direct-chat-media" href={`/api/message-files/${message.id}?inline=1`} target="_blank" rel="noreferrer">
+                    <img src={`/api/message-files/${message.id}?inline=1`} alt={message.fileName} loading="lazy" />
+                    <span><ImageIcon size={14} aria-hidden="true" />{message.fileName}</span>
+                  </a>
+                ) : (
+                  <a className="direct-chat-file" href={`/api/message-files/${message.id}`}>
+                    <FileText size={17} aria-hidden="true" />
+                    <span><strong>{message.fileName}</strong><small>{formatFileSize(message.fileSize)}</small></span>
+                  </a>
+                )
               ) : null}
               <footer>
                 <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
@@ -136,16 +166,25 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
         })}
       </div>
 
+      {selectedFile ? (
+        <div className="direct-chat-selected-file">
+          {selectedPreviewUrl ? <img src={selectedPreviewUrl} alt="Предпросмотр выбранного изображения" /> : <FileText size={22} aria-hidden="true" />}
+          <span><strong>{selectedFile.name}</strong><small>{formatFileSize(selectedFile.size)}</small></span>
+          <button className="button icon secondary" type="button" aria-label="Убрать вложение" onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}><X size={16} /></button>
+        </div>
+      ) : null}
+
       <form className="direct-chat-compose" onSubmit={sendMessage}>
-        <label className="button icon secondary direct-chat-attach" title="Прикрепить файл">
-          <Paperclip size={18} />
+        <label className="button secondary direct-chat-attach chat-compose-button" title="Прикрепить файл">
+          <Paperclip size={18} aria-hidden="true" />
+          <span className="direct-chat-action-text">Прикрепить</span>
           <span className="visually-hidden">Прикрепить файл до 15 МБ</span>
-          <input type="file" name="file" onChange={(event) => setSelectedFile(event.currentTarget.files?.[0]?.name ?? "")} />
+          <input ref={fileInputRef} type="file" name="file" onChange={(event) => setSelectedFile(event.currentTarget.files?.[0] ?? null)} />
         </label>
-        <textarea className="textarea" name="text" placeholder="Напишите сообщение…" maxLength={4000} rows={2} />
-        <button className="button icon" disabled={sending} aria-label="Отправить сообщение"><Send size={18} /></button>
+        <textarea className="textarea" name="text" placeholder="Напишите сообщение…" maxLength={4000} rows={1} />
+        <button className="button chat-compose-button" disabled={sending} aria-label="Отправить сообщение"><Send size={18} aria-hidden="true" /><span className="direct-chat-action-text">Отправить</span></button>
       </form>
-      {selectedFile || error ? <p className="direct-chat-notice" role="status">{selectedFile ? `Прикреплён: ${selectedFile}` : error}</p> : null}
+      {error ? <p className="direct-chat-notice is-error" role="alert">{error}</p> : null}
     </section>
   );
 }
@@ -167,4 +206,8 @@ function formatFileSize(size?: number | null) {
   if (!size) return "Файл";
   if (size < 1024 * 1024) return `${Math.ceil(size / 1024)} КБ`;
   return `${(size / 1024 / 1024).toFixed(1)} МБ`;
+}
+
+function isPreviewableImageMime(value?: string | null) {
+  return value === "image/jpeg" || value === "image/png" || value === "image/webp" || value === "image/gif";
 }

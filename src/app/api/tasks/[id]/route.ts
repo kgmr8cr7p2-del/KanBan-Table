@@ -24,7 +24,11 @@ export async function PATCH(request: Request, { params }: Params) {
     const isPersonalBoard = access.column.board.ownerId === user.id;
     const existing = await prisma.task.findUnique({
       where: { id },
-      include: { column: { select: { name: true } }, assignees: { select: { userId: true } } },
+      include: {
+        column: { select: { name: true } },
+        oilDepot: { select: { name: true } },
+        assignees: { include: { user: { select: { name: true } } } },
+      },
     });
     if (!existing) return fail("Задача не найдена", 404);
     if (!isPersonalBoard && !canEditTask(user, existing)) return fail("Недостаточно прав", 403);
@@ -45,7 +49,7 @@ export async function PATCH(request: Request, { params }: Params) {
     if (input.priority && input.priority !== existing.priority) changes.push(ActivityAction.PRIORITY_CHANGED);
     if (input.deadline !== undefined) changes.push(ActivityAction.DEADLINE_CHANGED);
     if (input.columnId && input.columnId !== existing.columnId) changes.push(ActivityAction.STATUS_CHANGED);
-    if (input.oilDepotId !== undefined && (input.oilDepotId || null) !== existing.oilDepotId) changes.push(ActivityAction.DESCRIPTION_CHANGED);
+    const oilDepotChanged = input.oilDepotId !== undefined && (input.oilDepotId || null) !== existing.oilDepotId;
     if (assigneeIds && !sameIds(assigneeIds, existing.assignees.map((item) => item.userId))) changes.push(ActivityAction.ASSIGNEE_CHANGED);
 
     if (input.tags) await prisma.taskTag.deleteMany({ where: { taskId: id } });
@@ -72,14 +76,25 @@ export async function PATCH(request: Request, { params }: Params) {
           action,
           userId: user.id,
           taskId: task.id,
-          details: action === ActivityAction.STATUS_CHANGED
-            ? { title: task.title, column: task.column.name }
-            : { title: task.title },
+          details: changeDetails(action, existing, task),
         }),
       ),
     );
+    if (oilDepotChanged) {
+      await logActivity({
+        action: ActivityAction.DESCRIPTION_CHANGED,
+        userId: user.id,
+        taskId: task.id,
+        details: { field: "oilDepot", oldValue: existing.oilDepot?.name ?? null, newValue: task.oilDepot?.name ?? null },
+      });
+    }
     if (!isPersonalBoard && changes.includes(ActivityAction.STATUS_CHANGED)) {
-      await notifyTelegram("status_changed", `${task.title}: ${task.column.name}`, task.assignees.map((item) => item.userId));
+      await notifyTelegram("status_changed", [
+        `Задача: ${task.title}`,
+        `Было: ${existing.column.name}`,
+        `Стало: ${task.column.name}`,
+        `Изменил: ${user.name}`,
+      ].join("\n"), task.assignees.map((item) => item.userId));
       if (!isCompletedColumn(existing.column.name) && isCompletedColumn(task.column.name)) {
         triggerTaskCompletionSoundEvent();
       }
@@ -93,11 +108,36 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 }
 
+function changeDetails(action: ActivityAction, existing: any, task: TaskWithDetails) {
+  if (action === ActivityAction.TITLE_CHANGED) return { label: "Название", oldValue: existing.title, newValue: task.title };
+  if (action === ActivityAction.DESCRIPTION_CHANGED) return { label: "Описание", oldValue: summarize(existing.description), newValue: summarize(task.description) };
+  if (action === ActivityAction.PRIORITY_CHANGED) return { label: "Приоритет", oldValue: existing.priority, newValue: task.priority };
+  if (action === ActivityAction.DEADLINE_CHANGED) return { label: "Срок", oldValue: existing.deadline?.toISOString() ?? null, newValue: task.deadline?.toISOString() ?? null };
+  if (action === ActivityAction.STATUS_CHANGED) return { previousColumn: existing.column.name, column: task.column.name };
+  if (action === ActivityAction.ASSIGNEE_CHANGED) return {
+    assigneesBefore: existing.assignees.map((item: any) => item.user.name),
+    assigneesAfter: task.assignees.map((item) => item.user.name),
+  };
+  return { title: task.title };
+}
+
+function summarize(value?: string | null) {
+  const normalized = value?.trim() ?? "";
+  return normalized.length > 140 ? `${normalized.slice(0, 137)}…` : normalized;
+}
+
 function formatAssigneeChangedMessage(task: TaskWithDetails, user: { name: string; email: string }) {
   const assignee = task.assignees.length
     ? task.assignees.map((item) => `${item.user.name} (${item.user.email})`).join(", ")
     : "не назначен";
-  return [`Задача: ${task.title}`, `Назначили: ${assignee}`, `Изменил: ${user.name} (${user.email})`].join("\n");
+  return [
+    `Задача #${task.taskNumber}`,
+    `Задача: ${task.title}`,
+    `Исполнители: ${assignee}`,
+    `Статус: ${task.column.name}`,
+    `Срок: ${task.deadline ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(task.deadline) : "не указан"}`,
+    `Изменил: ${user.name} (${user.email})`,
+  ].join("\n");
 }
 
 function sameIds(left: string[], right: string[]) {

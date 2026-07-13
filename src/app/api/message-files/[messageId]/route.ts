@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 type Params = { params: Promise<{ messageId: string }> };
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   try {
     const user = await requireVerifiedUser();
     const { messageId } = await params;
@@ -17,14 +17,19 @@ export async function GET(_: Request, { params }: Params) {
     if (!message?.fileName) return fail("Файл не найден", 404);
     const body = await readFile(path.join(process.cwd(), "uploads", "messages", message.id, "attachment"));
     const safeName = message.fileName.replace(/[\r\n\"]/g, "_");
+    const showInline = new URL(request.url).searchParams.get("inline") === "1" && isPreviewableImageMime(message.mimeType);
     return new Response(new Uint8Array(body), {
       headers: {
         "content-type": message.mimeType || "application/octet-stream",
-        "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(safeName)}`,
+        "content-disposition": `${showInline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(safeName)}`,
         "cache-control": "private, no-store",
       },
     });
   } catch (error) {
     return handleRouteError(error);
   }
+}
+
+function isPreviewableImageMime(value?: string | null) {
+  return value === "image/jpeg" || value === "image/png" || value === "image/webp" || value === "image/gif";
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import { MessageCircle, Paperclip, Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatThread } from "@/components/DirectChat";
 import type { ProfileUser } from "@/components/ProfileCard/ProfileCard";
 import { presenceLabel, presenceTone } from "@/lib/presence";
+import { playChatNotification } from "@/lib/chat-notification";
 
 type Conversation = {
   user: ProfileUser;
@@ -26,13 +27,18 @@ export function ChatHub({ viewerId }: { viewerId: string }) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const previousUnreadRef = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
     const response = await fetch("/api/messages/conversations", { cache: "no-store" });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) setError(payload.error || "Не удалось загрузить чаты");
     else {
-      setConversations(payload.conversations ?? []);
+      const nextConversations: Conversation[] = payload.conversations ?? [];
+      const unreadTotal = Number(payload.unreadTotal ?? nextConversations.reduce((sum, item) => sum + item.unreadCount, 0));
+      if (previousUnreadRef.current !== null && unreadTotal > previousUnreadRef.current) void playChatNotification();
+      previousUnreadRef.current = unreadTotal;
+      setConversations(nextConversations);
       setError("");
     }
     setLoading(false);
@@ -91,8 +97,9 @@ export function ChatHub({ viewerId }: { viewerId: string }) {
                   </span>
                   <span className="chat-directory-copy">
                     <span className="chat-directory-name"><strong>{conversation.user.name}</strong>{conversation.latest ? <time dateTime={conversation.latest.createdAt}>{formatListTime(conversation.latest.createdAt)}</time> : null}</span>
+                    <span className={`chat-directory-status ${presenceTone(conversation.user)}`}><i aria-hidden="true" />{status}</span>
                     <span className="chat-directory-preview">
-                      {conversation.latest?.fileName && !conversation.latest.text ? <><Paperclip size={13} /> {conversation.latest.fileName}</> : conversation.latest?.text || status}
+                      {conversation.latest?.fileName && !conversation.latest.text ? <><Paperclip size={13} /> {conversation.latest.fileName}</> : conversation.latest?.text || "Сообщений пока нет"}
                     </span>
                   </span>
                   {conversation.unreadCount ? <span className="chat-unread-count" aria-label={`Непрочитанных сообщений: ${conversation.unreadCount}`}>{conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}</span> : null}
@@ -117,7 +124,6 @@ export function ChatHub({ viewerId }: { viewerId: string }) {
           <div className="chat-welcome">
             <span><MessageCircle size={28} aria-hidden="true" /></span>
             <h2>Выберите диалог</h2>
-            <p>Найдите коллегу слева — можно писать сообщения и отправлять файлы до 15 МБ.</p>
           </div>
         )}
       </div>

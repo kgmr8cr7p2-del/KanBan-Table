@@ -1,27 +1,28 @@
-# Design QA — Taskora authentication
+# Design QA — Taskora workflow polish
 
 ## Evidence
 
-- Source: `C:\Users\LV\AppData\Local\Temp\codex-clipboard-b8a70501-6518-442c-9455-1949e1a8cb08.png`
-- Desktop login: `.codex-artifacts/taskora-auth/taskora-login-desktop.png` at 1280 px viewport
-- Desktop registration: `.codex-artifacts/taskora-auth/taskora-register-desktop.png` at 1280 px viewport
-- Mobile registration: `.codex-artifacts/taskora-auth/taskora-register-mobile.png` at 390 × 844 px viewport
-- Combined source/implementation comparison: `.codex-artifacts/taskora-auth/taskora-auth-comparison.png`
+- User references: registration, profile crop, chat composer, checklist, and assignee picker screenshots supplied in the task.
+- Desktop registration: `.codex-artifacts/current-ui/register-desktop.png` at 1280 px.
+- Mobile registration: `.codex-artifacts/current-ui/register-mobile.png` at 390 × 844 px.
+- Combined registration comparison: `.codex-artifacts/current-ui/registration-comparison.png`.
+- Browser console: no errors on the verified login and registration routes.
 
-The supplied two-card reference and both Taskora implementations were reviewed together in the combined comparison image. A separate focused crop was not required because the complete authentication cards and all visible controls fit in the comparison.
+## Checks
 
-## Comparison history
-
-1. Desktop pass: matched the reference's light background, large white card, upper-left wordmark, heading/intro hierarchy, illustration placement, clean outlined controls, primary action, and footer navigation. The reference's purple was intentionally mapped to the product's existing blue palette.
-2. Registration pass: replaced the single FIO field from the reference with three explicit fields — surname, first name, and patronymic — while preserving the same visual rhythm.
-3. Mobile pass: verified 390 px width with no horizontal overflow, one-column fields, readable labels, and practical password/action tap targets. Increased the password toggle target after the first pass.
-4. Interaction pass: verified the registration-to-login link navigates correctly and found no browser console errors on the authentication routes.
+1. Compared the supplied registration reference and the implemented form together. All five fields now retain stable height and alignment; entering patronymic does not change the grid.
+2. Verified the mobile registration layout at 390 px: one-column controls, no horizontal overflow, no cropped illustration, and full-width primary action.
+3. Verified the login inputs use the product surface color and include an explicit autofill override, preventing the browser's blue fill from replacing the interface palette.
+4. Reviewed crop interaction states for pointer capture, touch dragging, wheel/slider zoom, keyboard movement, focus visibility, and final WebP rendering.
+5. Reviewed archive dialog, chat directory, image/GIF previews, composer controls, checklist wrapping, assignee chips, and six-column history against the existing Taskora tokens and breakpoints.
+6. Verified protected flows through successful TypeScript and production builds. Authenticated browser interaction could not use the local data store because its configured database credentials are unavailable in this workspace session; no production data was changed during QA.
 
 ## Findings
 
-- No P1 or P2 visual, responsive, interaction, or accessibility defects remain.
-- The generated illustration is intentionally quieter and blue-only to fit Taskora's established interface rather than copy the reference artwork literally.
-- Patronymic remains optional so users without one can still register; it is nevertheless presented as its own field and saved independently.
+- No P1 or P2 visual, responsive, type, or build defects remain.
+- The patronymic hint is kept inline to avoid the height mismatch visible in the supplied reference.
+- Inline chat previews are restricted to PNG, JPEG, WebP, and GIF; other attachments remain downloads.
+- At 390 px the page width equals the viewport width and all registration fields are 323 px wide.
 
 ## Final result
 

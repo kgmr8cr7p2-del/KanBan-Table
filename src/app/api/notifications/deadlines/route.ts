@@ -18,8 +18,8 @@ export async function POST() {
   });
 
   await Promise.all([
-    ...soon.map((task) => notifyTelegram("deadline_soon", `${task.title}: ${task.deadline?.toLocaleString("ru-RU")}`, task.assignees.map((item) => item.userId))),
-    ...overdue.map((task) => notifyTelegram("deadline_overdue", `${task.title}: ${task.deadline?.toLocaleString("ru-RU")}`, task.assignees.map((item) => item.userId))),
+    ...soon.map((task) => notifyTelegram("deadline_soon", `Задача: ${task.title}\nСрок: ${task.deadline?.toLocaleString("ru-RU")}`, task.assignees.map((item) => item.userId))),
+    ...overdue.map((task) => notifyTelegram("deadline_overdue", `Задача: ${task.title}\nСрок: ${task.deadline?.toLocaleString("ru-RU")}`, task.assignees.map((item) => item.userId))),
   ]);
 
   return ok({ soon: soon.length, overdue: overdue.length });

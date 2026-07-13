@@ -461,6 +461,7 @@ export function GlobalHistory({ logs }: { logs: any[] }) {
           <span>Задача</span>
           <span>Нефтебаза</span>
           <span>Пользователь</span>
+          <span>Подробности</span>
         </div>
         {logs?.length ? (
           logs.map((log) => (
@@ -470,6 +471,7 @@ export function GlobalHistory({ logs }: { logs: any[] }) {
               <span className="history-task" data-label="Задача">{historyTaskLabel(log)}</span>
               <span data-label="Нефтебаза">{historyOilDepotLabel(log)}</span>
               <span className="history-meta" data-label="Пользователь">{log.user?.name ?? "Система"}</span>
+              <span className="history-details" data-label="Подробности">{activityDetails(log)}</span>
             </div>
           ))
         ) : (
@@ -515,4 +517,34 @@ function historyTaskLabel(log: any) {
 
 function historyOilDepotLabel(log: any) {
   return log.task?.oilDepot?.name ?? log.details?.oilDepotName ?? "Без нефтебазы";
+}
+
+function activityDetails(log: any) {
+  const details = log.details ?? {};
+  if (details.previousColumn || details.column) return `Статус: ${details.previousColumn ?? "—"} → ${details.column ?? "—"}`;
+  if (details.field === "oilDepot") return `Нефтебаза: ${details.oldValue ?? "без нефтебазы"} → ${details.newValue ?? "без нефтебазы"}`;
+  if (details.oldValue !== undefined || details.newValue !== undefined) return `${details.label ?? "Значение"}: ${displayHistoryValue(details.oldValue)} → ${displayHistoryValue(details.newValue)}`;
+  if (details.assigneesBefore || details.assigneesAfter) return `Исполнители: ${(details.assigneesBefore ?? []).join(", ") || "не назначены"} → ${(details.assigneesAfter ?? []).join(", ") || "не назначены"}`;
+  if (details.action === "created" && details.item) return `Добавлен пункт: «${details.item}»`;
+  if (details.action === "deleted" && details.item) return `Удалён пункт: «${details.item}»`;
+  if (details.item && typeof details.completed === "boolean") return `${details.completed ? "Выполнен" : "Возвращён"} пункт: «${details.item}»`;
+  if (details.fileName) return `Файл: ${details.fileName}${details.size ? ` · ${formatBytes(details.size)}` : ""}`;
+  if (details.text) return `Текст: «${String(details.text).slice(0, 160)}»`;
+  if (details.archived) return "Заявка сохранена в архиве и доступна для просмотра";
+  if (details.deletedPermanently) return "Заявка удалена без возможности восстановления";
+  if (details.deadline) return `Новый срок: ${dateTime(details.deadline)}`;
+  if (details.title && log.action === "CHECKLIST_CHANGED") return `Создан чек-лист «${details.title}»`;
+  return "Без дополнительных значений";
+}
+
+function displayHistoryValue(value: unknown) {
+  if (value === null || value === undefined || value === "") return "не указано";
+  if (Array.isArray(value)) return value.join(", ") || "не указано";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) return dateTime(value);
+  return String(value).slice(0, 180);
+}
+
+function formatBytes(value: number) {
+  if (value < 1024 * 1024) return `${Math.ceil(value / 1024)} КБ`;
+  return `${(value / 1024 / 1024).toFixed(1)} МБ`;
 }

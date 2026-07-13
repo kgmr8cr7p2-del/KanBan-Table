@@ -1,7 +1,7 @@
 "use client";
 
-import { ImagePlus, Save, Trash2 } from "lucide-react";
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
+import { ImagePlus, Move, Save, Trash2, ZoomIn } from "lucide-react";
+import { type ChangeEvent, type FormEvent, type KeyboardEvent, type PointerEvent, type WheelEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProfileCard, { type ProfileUser, ProfileAvatar } from "@/components/ProfileCard/ProfileCard";
 import { presenceLabel } from "@/lib/presence";
@@ -16,6 +16,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
   const router = useRouter();
   const cropCanvasRef = useRef<HTMLCanvasElement>(null);
   const sourceImageRef = useRef<HTMLImageElement | null>(null);
+  const dragRef = useRef<{ pointerId: number; clientX: number; clientY: number; crop: Crop } | null>(null);
   const [draft, setDraft] = useState({
     lastName: user.lastName ?? "",
     firstName: user.firstName || user.name,
@@ -74,6 +75,48 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
     setCrop({ zoom: 1, x: 50, y: 50 });
     setStatus("idle");
     setMessage("");
+  }
+
+  function beginCropDrag(event: PointerEvent<HTMLCanvasElement>) {
+    if (!sourceImageRef.current) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, crop };
+  }
+
+  function moveCrop(event: PointerEvent<HTMLCanvasElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const multiplier = 100 / Math.max(1, Math.min(rect.width, rect.height));
+    setCrop({
+      ...drag.crop,
+      x: clamp(drag.crop.x - (event.clientX - drag.clientX) * multiplier / drag.crop.zoom, 0, 100),
+      y: clamp(drag.crop.y - (event.clientY - drag.clientY) * multiplier / drag.crop.zoom, 0, 100),
+    });
+  }
+
+  function endCropDrag(event: PointerEvent<HTMLCanvasElement>) {
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  }
+
+  function zoomCrop(event: WheelEvent<HTMLCanvasElement>) {
+    event.preventDefault();
+    setCrop((current) => ({ ...current, zoom: clamp(current.zoom - event.deltaY * 0.0025, 1, 3) }));
+  }
+
+  function moveCropWithKeyboard(event: KeyboardEvent<HTMLCanvasElement>) {
+    const step = event.shiftKey ? 5 : 1;
+    const direction = {
+      ArrowLeft: { x: step, y: 0 },
+      ArrowRight: { x: -step, y: 0 },
+      ArrowUp: { x: 0, y: step },
+      ArrowDown: { x: 0, y: -step },
+    }[event.key];
+    if (!direction) return;
+    event.preventDefault();
+    setCrop((current) => ({ ...current, x: clamp(current.x + direction.x, 0, 100), y: clamp(current.y + direction.y, 0, 100) }));
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -162,13 +205,28 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
           <fieldset className="avatar-cropper">
             <legend>Настройте кадр</legend>
             <div className="avatar-cropper-layout">
-              <div className="avatar-crop-canvas-wrap"><canvas ref={cropCanvasRef} width={240} height={240} aria-label="Итоговый вид фотографии" /></div>
+              <div className="avatar-crop-canvas-wrap">
+                <canvas
+                  ref={cropCanvasRef}
+                  width={240}
+                  height={240}
+                  tabIndex={0}
+                  aria-label="Кадр фотографии. Перетаскивайте изображение мышью, колесом меняйте масштаб"
+                  onPointerDown={beginCropDrag}
+                  onPointerMove={moveCrop}
+                  onPointerUp={endCropDrag}
+                  onPointerCancel={endCropDrag}
+                  onWheel={zoomCrop}
+                  onKeyDown={moveCropWithKeyboard}
+                />
+                <span className="avatar-crop-drag-hint"><Move size={15} aria-hidden="true" /> Перетащите фото</span>
+              </div>
               <div className="avatar-crop-controls">
-                <label><span>Масштаб</span><input type="range" min="1" max="3" step="0.05" value={crop.zoom} onChange={(event) => setCrop({ ...crop, zoom: Number(event.currentTarget.value) })} /></label>
+                <label><span><ZoomIn size={14} aria-hidden="true" /> Масштаб</span><input type="range" min="1" max="3" step="0.05" value={crop.zoom} onChange={(event) => setCrop({ ...crop, zoom: Number(event.currentTarget.value) })} /></label>
                 <label><span>По горизонтали</span><input type="range" min="0" max="100" value={crop.x} onChange={(event) => setCrop({ ...crop, x: Number(event.currentTarget.value) })} /></label>
                 <label><span>По вертикали</span><input type="range" min="0" max="100" value={crop.y} onChange={(event) => setCrop({ ...crop, y: Number(event.currentTarget.value) })} /></label>
                 <button className="button secondary" type="button" onClick={() => setCrop({ zoom: 1, x: 50, y: 50 })}>Сбросить кадр</button>
-                <small>Слева показано ровно то, как фото будет обрезано после сохранения.</small>
+                <small>Перетаскивайте фотографию мышью или пальцем. Колесо мыши и ползунок меняют масштаб. Стрелки на клавиатуре двигают фото.</small>
               </div>
             </div>
           </fieldset>
@@ -245,4 +303,8 @@ async function createCroppedAvatar(image: HTMLImageElement, crop: Crop) {
   drawCroppedImage(image, canvas, crop);
   const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Не удалось обработать фото")), "image/webp", 0.9));
   return new File([blob], "avatar.webp", { type: "image/webp" });
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }

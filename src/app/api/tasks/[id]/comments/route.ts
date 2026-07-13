@@ -34,7 +34,11 @@ export async function POST(request: Request, { params }: Params) {
       taskId: id,
       details: { text: input.text.slice(0, 120) },
     });
-    if (!access.column.board.ownerId) await notifyTelegram("comment_added", `${task.title}: ${input.text.slice(0, 180)}`, task.assignees.map((item) => item.userId));
+    if (!access.column.board.ownerId) await notifyTelegram("comment_added", [
+      `Задача: ${task.title}`,
+      `Автор: ${user.name}`,
+      `Комментарий: ${input.text.slice(0, 260)}`,
+    ].join("\n"), task.assignees.map((item) => item.userId));
     return ok({ comment });
   } catch (error) {
     return handleRouteError(error);

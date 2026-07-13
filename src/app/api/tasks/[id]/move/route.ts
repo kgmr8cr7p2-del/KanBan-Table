@@ -41,7 +41,7 @@ export async function POST(request: Request, { params }: Params) {
       action: ActivityAction.STATUS_CHANGED,
       userId: user.id,
       taskId: task.id,
-      details: { column: task.column.name, returnedFromReviewToWork },
+      details: { previousColumn: existing.column.name, column: task.column.name, returnedFromReviewToWork },
     });
     if (returnedFromReviewToWork) {
       await logActivity({
@@ -51,7 +51,13 @@ export async function POST(request: Request, { params }: Params) {
         details: { deadline: nextDeadline?.toISOString(), reason: "returned_from_review" },
       });
     }
-    if (!isPersonalBoard) await notifyTelegram("status_changed", `${task.title}: ${task.column.name}`, task.assignees.map((item) => item.userId));
+    if (!isPersonalBoard) await notifyTelegram("status_changed", [
+      `Задача: ${task.title}`,
+      `Было: ${existing.column.name}`,
+      `Стало: ${task.column.name}`,
+      `Изменил: ${user.name}`,
+      returnedFromReviewToWork && nextDeadline ? `Новый срок: ${new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(nextDeadline)}` : null,
+    ].filter(Boolean).join("\n"), task.assignees.map((item) => item.userId));
     if (!isPersonalBoard && !isCompletedColumn(existing.column.name) && isCompletedColumn(destinationColumn.name)) {
       triggerTaskCompletionSoundEvent();
     }

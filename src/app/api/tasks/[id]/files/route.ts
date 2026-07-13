@@ -45,7 +45,7 @@ export async function POST(request: Request, { params }: Params) {
       action: ActivityAction.FILE_UPLOADED,
       userId: user.id,
       taskId: id,
-      details: { fileName: attachment.fileName },
+      details: { fileName: attachment.fileName, size: attachment.size, mimeType: attachment.mimeType },
     });
     return ok({ attachment });
   } catch (error) {
