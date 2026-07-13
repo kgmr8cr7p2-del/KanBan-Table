@@ -50,7 +50,7 @@ export async function sendTelegramStartMessage(chatId: string) {
   if (!token) return { sent: 0, failed: 0, reason: "token_missing" as const };
 
   const message = [
-    "👋 <b>Team Kanban Board</b>",
+    "👋 <b>Такт</b>",
     "",
     "Создайте новую задачу прямо из Telegram — она сразу появится на доске сайта.",
   ].join("\n");
@@ -117,7 +117,7 @@ function formatTelegramMessage(event: TelegramEvent, message: string) {
     taskTitle ? `<b>Название задачи:</b>\n<u><b>${escapeHtml(taskTitle)}</b></u>` : null,
     body ? escapeHtml(body) : null,
     "",
-    "<i>Team Kanban Board</i>",
+    "<i>Такт</i>",
   ]
     .filter((line) => line !== null)
     .join("\n");

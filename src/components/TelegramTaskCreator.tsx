@@ -84,7 +84,7 @@ export function TelegramTaskCreator({ canCreate, data }: { canCreate: boolean; d
     <section className="telegram-create-card">
       <header className="telegram-create-head">
         <div>
-          <span>Team Kanban Board</span>
+          <span>Такт</span>
           <h1>Новая задача</h1>
           <p>Создаёт: {data.currentUser.name}</p>
         </div>

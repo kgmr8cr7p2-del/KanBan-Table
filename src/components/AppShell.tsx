@@ -14,7 +14,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           <span className="brand-mark">
             <KanbanSquare size={20} />
           </span>
-          <span>Team Kanban Board</span>
+          <span>Такт</span>
         </div>
         <AppNav user={user} />
       </aside>

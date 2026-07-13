@@ -195,7 +195,7 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
 
       <footer className="tv-footer">
         <span>Обновлено {timeOnly(lastUpdatedAt)}</span>
-        <span>{view?.board?.name ?? "Team Kanban Board"}</span>
+        <span>{view?.board?.name ?? "Такт"}</span>
       </footer>
       <TaskSoundNotifier />
       <GoidaReminder />

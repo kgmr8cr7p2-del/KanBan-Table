@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { AlertCircle, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -64,7 +63,7 @@ export function AuthForm({ mode, nextPath }: { mode: "login" | "register"; nextP
         </div>
       ) : null}
       <div className="field auth-field">
-        <label className="label" htmlFor="email">Почта</label>
+        <label className="label" htmlFor="email">Рабочая почта</label>
         <span className="auth-control">
           <Mail size={18} aria-hidden="true" />
           <input id="email" name="email" type="email" inputMode="email" autoComplete="username" enterKeyHint="next" required placeholder="name@company.ru" />
@@ -99,13 +98,9 @@ export function AuthForm({ mode, nextPath }: { mode: "login" | "register"; nextP
       </div>
       {error ? <p className="auth-error" role="alert"><AlertCircle size={17} aria-hidden="true" />{error}</p> : null}
       <button className="button auth-submit" disabled={loading}>
-        <span>{loading ? "Подождите…" : mode === "login" ? "Войти в доску" : "Создать аккаунт"}</span>
+        <span>{loading ? "Подождите…" : mode === "login" ? "Войти" : "Создать аккаунт"}</span>
         {!loading ? <ArrowRight size={18} aria-hidden="true" /> : <span className="auth-spinner" aria-hidden="true" />}
       </button>
-      <p className="auth-switch">
-        {mode === "login" ? "Нет аккаунта? " : "Уже есть аккаунт? "}
-        <Link href={mode === "login" ? "/register" : "/login"}>{mode === "login" ? "Зарегистрироваться" : "Войти"}</Link>
-      </p>
     </form>
   );
 }

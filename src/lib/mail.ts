@@ -20,8 +20,8 @@ export async function sendVerificationEmail(email: string, token: string) {
 
   await transporter.sendMail({
     to: email,
-    from: process.env.SMTP_FROM ?? "Team Kanban Board <noreply@example.com>",
-    subject: "Подтвердите почту в Team Kanban Board",
+    from: process.env.SMTP_FROM ?? "Такт <noreply@example.com>",
+    subject: "Подтвердите почту в системе «Такт»",
     text: `Откройте ссылку для подтверждения почты: ${link}`,
     html: `<p>Откройте ссылку для подтверждения почты:</p><p><a href="${link}">${link}</a></p>`,
   });

@@ -29,7 +29,7 @@ services:
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-Team Kanban Board <noreply@region-free.online>}
+      SMTP_FROM: ${SMTP_FROM:-Такт <noreply@region-free.online>}
       ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS:-}
       INVITED_EMAILS: ${INVITED_EMAILS:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}

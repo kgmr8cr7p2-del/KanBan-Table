@@ -1,63 +1,78 @@
-import { CheckCircle2, KanbanSquare } from "lucide-react";
+import Link from "next/link";
 import { AuthForm } from "@/components/AuthForm";
 
-const benefits = ["Одна доска для всей команды", "Сроки и ответственные всегда видны", "История изменений сохраняется"];
+const rhythmRows = [
+  { time: "09:20", title: "Проверить утренние задачи", meta: "Доска · 4 участника", state: "Готово", done: true },
+  { time: "11:40", title: "Согласовать сроки команды", meta: "В работе · 3 исполнителя", state: "Сейчас", active: true },
+  { time: "14:15", title: "Посмотреть недельный отчёт", meta: "Отчёты · руководитель", state: "Далее" },
+];
 
 export function AuthShell({ mode, nextPath }: { mode: "login" | "register"; nextPath?: string }) {
   const isLogin = mode === "login";
 
   return (
-    <main className="auth-page">
-      <section className="auth-shell" aria-label={isLogin ? "Вход в Team Kanban Board" : "Регистрация в Team Kanban Board"}>
+    <main className={`auth-page auth-page-${mode}`}>
+      <section className="auth-shell" aria-label={isLogin ? "Вход в Такт" : "Регистрация в Такт"}>
         <aside className="auth-story">
           <div className="auth-brand">
-            <span className="auth-brand-mark"><KanbanSquare size={22} aria-hidden="true" /></span>
-            <span>Team Kanban Board</span>
+            <BrandMark />
+            <span className="auth-brand-copy"><strong>Такт</strong><small>рабочая система команды</small></span>
           </div>
 
           <div className="auth-story-copy">
-            <span className="auth-eyebrow">Рабочее пространство команды</span>
-            <h2>От задачи<br />{" "}до результата.</h2>
-            <p>Планируйте работу, распределяйте ответственность и не теряйте важное между сообщениями.</p>
+            <span className="auth-eyebrow">Задачи · люди · результат</span>
+            <h2>Работайте<br />в одном <em>ритме.</em></h2>
+            <p>Вся командная работа в одном месте: от первой задачи и обсуждения до отчёта о результате.</p>
           </div>
 
-          <div className="auth-board-preview" aria-hidden="true">
-            <div className="auth-preview-lane">
-              <span>Новые</span>
-              <i className="auth-preview-card card-short" />
-              <i className="auth-preview-card" />
+          <div className="auth-rhythm" aria-hidden="true">
+            <div className="auth-rhythm-head">
+              <span>Ритм дня</span>
+              <strong><i /> Команда в сети</strong>
             </div>
-            <div className="auth-preview-lane lane-active">
-              <span>В работе</span>
-              <i className="auth-preview-card card-accent" />
-              <i className="auth-preview-card card-short" />
-            </div>
-            <div className="auth-preview-lane">
-              <span>Готово</span>
-              <i className="auth-preview-card card-done" />
+            <div className="auth-rhythm-list">
+              {rhythmRows.map((row) => (
+                <div className={`auth-rhythm-row ${row.active ? "is-active" : ""} ${row.done ? "is-done" : ""}`} key={row.time}>
+                  <time>{row.time}</time>
+                  <span className="auth-rhythm-node" />
+                  <span className="auth-rhythm-task"><strong>{row.title}</strong><small>{row.meta}</small></span>
+                  <span className="auth-rhythm-state">{row.state}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          <ul className="auth-benefits">
-            {benefits.map((benefit) => (
-              <li key={benefit}><CheckCircle2 size={16} aria-hidden="true" />{benefit}</li>
-            ))}
-          </ul>
+          <footer className="auth-story-foot">
+            <span><i /> Система работает</span>
+            <span>Такт · 2026</span>
+          </footer>
         </aside>
 
         <section className={`auth-card ${isLogin ? "auth-card-login" : "auth-card-register"}`}>
-          <div className="auth-mobile-brand" aria-hidden="true">
-            <span className="auth-brand-mark"><KanbanSquare size={19} /></span>
-            <span>Team Kanban Board</span>
+          <div className="auth-mobile-brand">
+            <BrandMark />
+            <span className="auth-brand-copy"><strong>Такт</strong><small>рабочая система команды</small></span>
           </div>
+
+          <nav className="auth-mode-switch" aria-label="Вход или регистрация">
+            <Link href="/login" aria-current={isLogin ? "page" : undefined}>Вход</Link>
+            <Link href="/register" aria-current={!isLogin ? "page" : undefined}>Регистрация</Link>
+          </nav>
+
           <header className="auth-card-head">
-            <span className="auth-kicker">{isLogin ? "Вход в систему" : "Новый аккаунт"}</span>
-            <h1>{isLogin ? "С возвращением" : "Присоединяйтесь к команде"}</h1>
-            <p>{isLogin ? "Введите рабочую почту и пароль, чтобы открыть доску." : "Используйте приглашённую рабочую почту — доступ откроется сразу после регистрации."}</p>
+            <span className="auth-kicker">{isLogin ? "Рабочее пространство" : "Новый участник"}</span>
+            <h1>{isLogin ? "Войдите в свой аккаунт" : "Создайте аккаунт"}</h1>
+            <p>{isLogin ? "Продолжите работу с задачами, сообщениями и отчётами команды." : "Заполните данные и используйте приглашённую рабочую почту для доступа."}</p>
           </header>
+
           <AuthForm mode={mode} nextPath={nextPath} />
+          <p className="auth-security-note"><span aria-hidden="true">↳</span> Доступ к рабочим данным есть только у участников команды.</p>
         </section>
       </section>
     </main>
   );
+}
+
+function BrandMark() {
+  return <span className="auth-brand-mark" aria-hidden="true"><i /><i /><i /><i /></span>;
 }

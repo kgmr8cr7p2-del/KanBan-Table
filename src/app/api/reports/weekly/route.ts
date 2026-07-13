@@ -21,7 +21,7 @@ function formatReport(report: Awaited<ReturnType<typeof getWeeklyReport>>) {
     `💬 Комментарии: <b>${report.totals.commentsAdded}</b>   ·   📎 Файлы: <b>${report.totals.filesUploaded}</b>`,
     `☑️ Чек-листы: <b>${report.totals.checklistChanges}</b>   ·   🔁 Смены статуса: <b>${report.totals.statusChanges}</b>`,
   ];
-  lines.push("", "<i>Team Kanban Board · автоотчёт</i>");
+  lines.push("", "<i>Такт · автоотчёт</i>");
   return lines.join("\n");
 }
 
