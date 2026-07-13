@@ -110,10 +110,22 @@
   border-radius: inherit;
 }
 
+@keyframes border-glow-hover-breathe {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.12) saturate(1.08); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .border-glow-card:hover > .edge-light {
+    animation: border-glow-hover-breathe 1.8s ease-in-out infinite;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .border-glow-card::before,
   .border-glow-card::after,
   .border-glow-card > .edge-light {
+    animation: none;
     transition: none;
   }
 }
