@@ -59,6 +59,8 @@ export default function ProfileCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
   const initials = profileInitials(name);
+  const normalizedNameLength = name.replace(/\s+/g, "").length;
+  const nameSizeClass = normalizedNameLength > 28 ? "is-very-long" : normalizedNameLength > 18 ? "is-long" : "";
 
   function move(event: PointerEvent<HTMLDivElement>) {
     if (!enableTilt || (event.pointerType !== "mouse" && !enableMobileTilt)) return;
@@ -106,7 +108,7 @@ export default function ProfileCard({
             {avatarUrl ? <img className="pc-avatar-image" src={avatarUrl} alt="" /> : <span className="pc-avatar-placeholder">{initials}</span>}
           </div>
           <div className="pc-content">
-            <div className="pc-details">
+            <div className={`pc-details ${nameSizeClass}`}>
               <h3>{name}</h3>
               <p>{title || "Участник команды"}</p>
             </div>

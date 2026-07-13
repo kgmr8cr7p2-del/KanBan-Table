@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, Move, Save, Trash2, ZoomIn } from "lucide-react";
+import { Crop as CropIcon, ImagePlus, Move, RotateCcw, Save, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 import { type ChangeEvent, type FormEvent, type KeyboardEvent, type PointerEvent, type WheelEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProfileCard, { type ProfileUser, ProfileAvatar } from "@/components/ProfileCard/ProfileCard";
@@ -77,6 +77,24 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
     setMessage("");
   }
 
+  async function editCurrentAvatar() {
+    if (!avatarUrl) return;
+    setStatus("saving");
+    setMessage("");
+    try {
+      const response = await fetch(avatarUrl, { cache: "no-store" });
+      if (!response.ok) throw new Error("Не удалось открыть текущее фото.");
+      const blob = await response.blob();
+      const extension = blob.type.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
+      setAvatarFile(new File([blob], `avatar.${extension}`, { type: blob.type || "image/jpeg" }));
+      setCrop({ zoom: 1, x: 50, y: 50 });
+      setStatus("idle");
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Не удалось открыть текущее фото.");
+    }
+  }
+
   function beginCropDrag(event: PointerEvent<HTMLCanvasElement>) {
     if (!sourceImageRef.current) return;
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -104,6 +122,10 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
   function zoomCrop(event: WheelEvent<HTMLCanvasElement>) {
     event.preventDefault();
     setCrop((current) => ({ ...current, zoom: clamp(current.zoom - event.deltaY * 0.0025, 1, 3) }));
+  }
+
+  function adjustCropZoom(delta: number) {
+    setCrop((current) => ({ ...current, zoom: clamp(Number((current.zoom + delta).toFixed(2)), 1, 3) }));
   }
 
   function moveCropWithKeyboard(event: KeyboardEvent<HTMLCanvasElement>) {
@@ -192,6 +214,11 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
                 Выбрать фото
                 <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={chooseAvatar} />
               </label>
+              {avatarUrl && !avatarFile ? (
+                <button className="button secondary" type="button" onClick={editCurrentAvatar} disabled={status === "saving"}>
+                  <CropIcon size={16} aria-hidden="true" /> Настроить кадр
+                </button>
+              ) : null}
               {previewUrl ? (
                 <button className="button secondary" type="button" onClick={removeAvatar} disabled={status === "saving"}>
                   <Trash2 size={16} aria-hidden="true" /> Удалить
@@ -222,11 +249,13 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
                 <span className="avatar-crop-drag-hint"><Move size={15} aria-hidden="true" /> Перетащите фото</span>
               </div>
               <div className="avatar-crop-controls">
-                <label><span><ZoomIn size={14} aria-hidden="true" /> Масштаб</span><input type="range" min="1" max="3" step="0.05" value={crop.zoom} onChange={(event) => setCrop({ ...crop, zoom: Number(event.currentTarget.value) })} /></label>
-                <label><span>По горизонтали</span><input type="range" min="0" max="100" value={crop.x} onChange={(event) => setCrop({ ...crop, x: Number(event.currentTarget.value) })} /></label>
-                <label><span>По вертикали</span><input type="range" min="0" max="100" value={crop.y} onChange={(event) => setCrop({ ...crop, y: Number(event.currentTarget.value) })} /></label>
-                <button className="button secondary" type="button" onClick={() => setCrop({ zoom: 1, x: 50, y: 50 })}>Сбросить кадр</button>
-                <small>Перетаскивайте фотографию мышью или пальцем. Колесо мыши и ползунок меняют масштаб. Стрелки на клавиатуре двигают фото.</small>
+                <p>Двигайте фото мышью или пальцем. Масштаб меняется колесом или кнопками.</p>
+                <div className="avatar-crop-actions" aria-label="Масштаб фотографии">
+                  <button className="button icon secondary" type="button" aria-label="Уменьшить фотографию" onClick={() => adjustCropZoom(-0.15)} disabled={crop.zoom <= 1}><ZoomOut size={17} aria-hidden="true" /></button>
+                  <output aria-live="polite">{Math.round(crop.zoom * 100)}%</output>
+                  <button className="button icon secondary" type="button" aria-label="Увеличить фотографию" onClick={() => adjustCropZoom(0.15)} disabled={crop.zoom >= 3}><ZoomIn size={17} aria-hidden="true" /></button>
+                  <button className="button secondary avatar-crop-reset" type="button" onClick={() => setCrop({ zoom: 1, x: 50, y: 50 })}><RotateCcw size={16} aria-hidden="true" /> Сбросить</button>
+                </div>
               </div>
             </div>
           </fieldset>

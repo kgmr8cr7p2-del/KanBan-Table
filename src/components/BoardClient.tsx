@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Building2, Calendar, CheckSquare, Download, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { Archive, Building2, Calendar, Check, CheckSquare, ChevronDown, Download, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskButton } from "@/components/CreateTaskButton";
@@ -1433,59 +1433,62 @@ function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defa
   const pickerId = useId();
   const labelId = `${pickerId}-label`;
   const [selectedIds, setSelectedIds] = useState(() => [...new Set(defaultIds)]);
+  const [query, setQuery] = useState("");
   const selectedUsers = users.filter((user) => selectedIds.includes(user.id));
-  const summary = selectedUsers.length === 1 ? selectedUsers[0].name : selectedUsers.length ? assigneeCountLabel(selectedUsers.length) : "Не выбраны";
+  const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
+  const visibleUsers = normalizedQuery
+    ? users.filter((user) => `${user.name} ${user.email}`.toLocaleLowerCase("ru-RU").includes(normalizedQuery))
+    : users;
+  const summary = selectedUsers.length
+    ? `${selectedUsers.slice(0, 2).map((user) => user.name).join(", ")}${selectedUsers.length > 2 ? ` +${selectedUsers.length - 2}` : ""}`
+    : "Выбрать исполнителей";
+
+  function toggleAssignee(userId: string) {
+    setSelectedIds((current) => current.includes(userId) ? current.filter((id) => id !== userId) : [...current, userId]);
+  }
 
   return (
     <div className="field modal-property-field assignee-picker" role="group" aria-labelledby={labelId}>
       <span className="property-icon"><UserRound size={19} /></span>
       <span className="label" id={labelId}>Исполнители</span>
+      {selectedIds.map((userId) => <input key={userId} type="hidden" form={formId} name="assigneeIds" value={userId} />)}
       <details className="assignee-select">
         <summary>
           <span className="assignee-summary-value">{summary}</span>
-          <span className="assignee-picker-count" aria-label={`Выбрано: ${selectedIds.length}`}>{selectedIds.length}</span>
+          <span className="assignee-summary-meta">
+            {selectedIds.length ? <span className="assignee-picker-count" aria-label={`Выбрано: ${selectedIds.length}`}>{selectedIds.length}</span> : null}
+            <ChevronDown size={16} aria-hidden="true" />
+          </span>
         </summary>
-        {selectedUsers.length ? (
-          <div className="assignee-selected-list" aria-label="Выбранные исполнители">
-            {selectedUsers.map((user) => (
-              <span className="assignee-selected-chip" key={user.id}>
-                {user.name}
-                <button type="button" aria-label={`Убрать исполнителя ${user.name}`} onClick={() => setSelectedIds((current) => current.filter((id) => id !== user.id))}><X size={13} aria-hidden="true" /></button>
-              </span>
-            ))}
-          </div>
-        ) : null}
-        <div className="assignee-picker-list">
-          {users.map((user) => {
-            const inputId = `${pickerId}-${user.id}`;
+        <div className="assignee-search">
+          <Search size={16} aria-hidden="true" />
+          <input type="search" placeholder="Найти по имени" value={query} onChange={(event) => setQuery(event.currentTarget.value)} />
+          {query ? <button type="button" aria-label="Очистить поиск" onClick={() => setQuery("")}><X size={15} aria-hidden="true" /></button> : null}
+        </div>
+        <div className="assignee-picker-list" role="listbox" aria-multiselectable="true">
+          {visibleUsers.map((user) => {
+            const selected = selectedIds.includes(user.id);
             const initials = user.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part: string) => part[0]?.toLocaleUpperCase("ru-RU")).join("");
             return (
-              <label className="assignee-option" htmlFor={inputId} key={user.id}>
-                <input
-                  id={inputId}
-                  type="checkbox"
-                  form={formId}
-                  name="assigneeIds"
-                  value={user.id}
-                  checked={selectedIds.includes(user.id)}
-                  onChange={(event) => {
-                    const checked = event.currentTarget.checked;
-                    setSelectedIds((current) => checked
-                      ? current.includes(user.id) ? current : [...current, user.id]
-                      : current.filter((id) => id !== user.id));
-                  }}
-                />
+              <button className="assignee-option" type="button" role="option" aria-selected={selected} data-selected={selected || undefined} key={user.id} onClick={() => toggleAssignee(user.id)}>
                 <span className="assignee-option-avatar" aria-hidden="true">{user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initials || "?"}</span>
                 <span className="assignee-option-copy">
                   <strong>{user.name}</strong>
                   <small>{user.email}</small>
                 </span>
-              </label>
+                <span className="assignee-option-check" aria-hidden="true">{selected ? <Check size={15} /> : null}</span>
+              </button>
             );
           })}
+          {!visibleUsers.length ? <p className="assignee-empty">Никого не найдено</p> : null}
         </div>
+        {selectedUsers.length ? (
+          <div className="assignee-picker-footer">
+            <span>{assigneeCountLabel(selectedUsers.length)}</span>
+            <button type="button" onClick={() => setSelectedIds([])}>Очистить</button>
+          </div>
+        ) : null}
       </details>
-      <small>Можно выбрать одного или нескольких исполнителей</small>
     </div>
   );
 }

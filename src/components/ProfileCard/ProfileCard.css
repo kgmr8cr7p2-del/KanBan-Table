@@ -35,6 +35,7 @@
 .pc-card {
   position: relative;
   display: grid;
+  container-type: inline-size;
   inline-size: min(21rem, 78vw);
   aspect-ratio: .718;
   overflow: hidden;
@@ -107,14 +108,18 @@
 
 .pc-details {
   position: absolute;
-  inset: 2rem 1.5rem auto;
+  inset: 1.65rem 1.25rem auto;
+  display: grid;
+  gap: .48rem;
   color: white;
   text-align: center;
   text-shadow: 0 2px 18px rgb(0 0 0 / 45%);
 }
 
-.pc-details h3 { margin: 0; font-size: clamp(1.75rem, 7vw, 2.6rem); line-height: 1; letter-spacing: -.055em; text-wrap: balance; }
-.pc-details p { margin: .55rem 0 0; color: rgb(226 232 240 / 85%); font-size: .86rem; font-weight: 720; }
+.pc-details h3 { margin: 0; overflow-wrap: anywhere; font-size: clamp(1.7rem, 10cqi, 2.35rem); line-height: .98; letter-spacing: -.052em; text-wrap: balance; }
+.pc-details.is-long h3 { font-size: clamp(1.55rem, 8.7cqi, 2.05rem); }
+.pc-details.is-very-long h3 { font-size: clamp(1.4rem, 7.7cqi, 1.85rem); }
+.pc-details p { margin: 0; color: rgb(226 232 240 / 85%); font-size: .82rem; font-weight: 720; line-height: 1.25; text-wrap: balance; }
 
 .pc-user-info {
   position: absolute;
