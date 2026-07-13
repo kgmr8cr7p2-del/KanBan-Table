@@ -22,6 +22,7 @@ const links = [
 export function AppNav({ user }: { user: CurrentUser }) {
   const pathname = usePathname();
   const [unreadChats, setUnreadChats] = useState(0);
+  const [profile, setProfile] = useState({ name: user.name, jobTitle: user.jobTitle, avatarUrl: user.avatarUrl });
   const visibleLinks = user.role.name === "ADMIN" ? [...links, { href: "/admin", label: "Админ", icon: Shield }] : links;
   const desktopLinks = visibleLinks.filter(({ href }) => href !== "/profile");
   const primaryMobileLinks = visibleLinks.filter(({ href }) => ["/board", "/chats", "/reports", "/profile"].includes(href));
@@ -43,6 +44,19 @@ export function AppNav({ user }: { user: CurrentUser }) {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    setProfile({ name: user.name, jobTitle: user.jobTitle, avatarUrl: user.avatarUrl });
+  }, [user.name, user.jobTitle, user.avatarUrl]);
+
+  useEffect(() => {
+    const updateProfile = (event: Event) => {
+      const detail = (event as CustomEvent<Partial<typeof profile>>).detail;
+      if (detail) setProfile((current) => ({ ...current, ...detail }));
+    };
+    window.addEventListener("profileupdated", updateProfile);
+    return () => window.removeEventListener("profileupdated", updateProfile);
+  }, []);
+
   return (
     <>
       <nav className="nav nav-desktop" aria-label="Основная навигация">
@@ -57,10 +71,10 @@ export function AppNav({ user }: { user: CurrentUser }) {
         </div>
         <div className="sidebar-account">
           <Link className="sidebar-profile-link" aria-current={pathname === "/profile" ? "page" : undefined} href="/profile">
-            <ProfileAvatar name={user.name} avatarUrl={user.avatarUrl} size={40} />
+            <ProfileAvatar name={profile.name} avatarUrl={profile.avatarUrl} size={40} />
             <span className="sidebar-profile-copy">
-              <strong>{user.name}</strong>
-              <small>{user.jobTitle || "Изменить профиль"}</small>
+              <strong>{profile.name}</strong>
+              <small>{profile.jobTitle || "Изменить профиль"}</small>
             </span>
           </Link>
           <div className="sidebar-account-actions">

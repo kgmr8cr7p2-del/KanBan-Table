@@ -465,11 +465,11 @@ export function GlobalHistory({ logs }: { logs: any[] }) {
         {logs?.length ? (
           logs.map((log) => (
             <div className="history-row" role="row" key={log.id}>
-              <span className="history-meta">{dateTime(log.createdAt)}</span>
-              <span className="history-action">{activityLabel(log)}</span>
-              <span className="history-task">{historyTaskLabel(log)}</span>
-              <span>{historyOilDepotLabel(log)}</span>
-              <span className="history-meta">{log.user?.name ?? "Система"}</span>
+              <span className="history-meta" data-label="Дата">{dateTime(log.createdAt)}</span>
+              <span className="history-action" data-label="Действие">{activityLabel(log)}</span>
+              <span className="history-task" data-label="Задача">{historyTaskLabel(log)}</span>
+              <span data-label="Нефтебаза">{historyOilDepotLabel(log)}</span>
+              <span className="history-meta" data-label="Пользователь">{log.user?.name ?? "Система"}</span>
             </div>
           ))
         ) : (

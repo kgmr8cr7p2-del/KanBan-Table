@@ -1,9 +1,10 @@
 "use client";
 
-import { Archive, Building2, Calendar, CheckSquare, Columns3, Download, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { Archive, Building2, Calendar, CheckSquare, Download, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { CreateTaskPawButton } from "@/components/CreateTaskPawButton";
+import { CreateTaskButton } from "@/components/CreateTaskButton";
+import { TaskTimeline } from "@/components/TaskTimeline";
 import { UserProfileButton } from "@/components/ProfileCard/ProfileCard";
 import { setPresenceActivity } from "@/lib/presence";
 
@@ -18,7 +19,7 @@ type View = any;
 type Task = any;
 const emptyFilters = { q: "", priority: "", assignee: "", deadline: "", oilDepot: "" };
 type Filters = typeof emptyFilters;
-type ViewMode = "board" | "list" | "mine";
+type ViewMode = "board" | "list" | "timeline" | "mine";
 
 export function BoardClient({ initialView }: { initialView: View }) {
   const [view, setView] = useState(initialView);
@@ -31,7 +32,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [error, setError] = useState("");
   const [focusMode, setFocusMode] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("board");
-  const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [toasts, setToasts] = useState<Array<{ id: string; text: string }>>([]);
   const [confirmation, setConfirmation] = useState<"archive" | "delete" | null>(null);
   const activityFingerprintRef = useRef(initialView?.activityLogs?.[0]?.id ?? "");
@@ -48,11 +49,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
   );
   const visibleTasks = useMemo(() => visibleColumns.flatMap((column: any) => column.tasks), [visibleColumns]);
   const activeTask = selected ? tasks.find((task: Task) => task.id === selected.id) ?? selected : null;
-  const timeline = useMemo(() => buildTimeline(tasks), [tasks]);
 
   useEffect(() => {
     filtersRef.current = filters;
   }, [filters]);
+
+  useEffect(() => {
+    setLastUpdatedAt(new Date());
+  }, []);
 
   useEffect(() => {
     if (createOpen) setPresenceActivity("Создаёт новую задачу");
@@ -394,7 +398,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
         </form>
         <span className="spacer" />
         <span className="sync-pill mobile-optional" title="Доска обновляется автоматически каждые 10 секунд">
-          Обновлено {timeOnly(lastUpdatedAt)}
+          {lastUpdatedAt ? `Обновлено ${timeOnly(lastUpdatedAt)}` : "Обновляется"}
         </span>
         <button className="button secondary compact-button mobile-optional" type="button" onClick={() => void toggleFocusMode()} title="Режим просмотра доски">
           <Expand size={17} />
@@ -408,9 +412,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
           <Download size={17} />
           Excel
         </a>
-        <span className="avatar mobile-optional" title={view.currentUser.email}>
-          {view.currentUser.name.slice(0, 1).toUpperCase()}
-        </span>
       </div>
 
       {focusMode ? (
@@ -439,10 +440,11 @@ export function BoardClient({ initialView }: { initialView: View }) {
           <div className="board-view-tabs board-view-tabs-inline" role="tablist" aria-label="Режим отображения">
             <button className={viewMode === "board" ? "active" : ""} type="button" onClick={() => setViewMode("board")}>Доска</button>
             <button className={viewMode === "list" ? "active" : ""} type="button" onClick={() => setViewMode("list")}>Список</button>
+            <button className={viewMode === "timeline" ? "active" : ""} type="button" onClick={() => setViewMode("timeline")}>Таймлайн</button>
             {!view.board.ownerId ? <button className={viewMode === "mine" ? "active" : ""} type="button" onClick={() => setViewMode("mine")}>Моя работа</button> : null}
           </div>
           {view.permissions.canCreateTask ? (
-            <CreateTaskPawButton onClick={openCreateTask} />
+            <CreateTaskButton onClick={openCreateTask} />
           ) : null}
           {view.permissions.canCreateTask ? (
             <form className="toolbar quick-create" action={createTask}>
@@ -465,7 +467,8 @@ export function BoardClient({ initialView }: { initialView: View }) {
         </div>
         {error ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
         {viewMode === "list" ? <TaskTable tasks={visibleTasks} onOpen={openTask} personal={Boolean(view.board.ownerId)} /> : null}
-        <section className={`board ${viewMode === "list" ? "is-hidden" : ""}`} aria-label="Канбан-доска">
+        {viewMode === "timeline" ? <TaskTimeline tasks={tasks} onOpen={openTask} /> : null}
+        <section className={`board ${viewMode === "list" || viewMode === "timeline" ? "is-hidden" : ""}`} aria-label="Канбан-доска">
           {visibleColumns.map((column: any) => (
             <article
               className={`column ${dropColumn === column.id ? "drop-target" : ""}`}
@@ -507,34 +510,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
               </div>
             </article>
           ))}
-        </section>
-        <section className="timeline-panel" aria-label="Таймлайн задач">
-          <div className="timeline-head">
-            <span className="timeline-icon">
-              <Columns3 size={16} />
-            </span>
-            <div>
-              <h2>Таймлайн задач</h2>
-              <p className="muted">Последние изменения, комментарии и движения по доске</p>
-            </div>
-          </div>
-          <div className="timeline-list">
-            {timeline.length ? (
-              timeline.slice(0, 12).map((item) => (
-                <button className="timeline-item" type="button" key={item.id} onClick={() => openTask(item.task)}>
-                  <span className={`timeline-dot priority-${item.task.priority}`} />
-                  <span>
-                    <strong>{item.title}</strong>
-                    <span className="timeline-meta">
-                      {item.task.title} · {item.actor} · {dateTime(item.createdAt)}
-                    </span>
-                  </span>
-                </button>
-              ))
-            ) : (
-              <p className="muted">Пока нет событий.</p>
-            )}
-          </div>
         </section>
       </div>
 
@@ -613,11 +588,11 @@ function TaskTable({ tasks, onOpen, personal }: { tasks: Task[]; onOpen: (task: 
         tasks.map((task) => (
           <button className="task-table-row" type="button" key={task.id} onClick={() => onOpen(task)}>
             <strong>#{task.taskNumber} {task.title}</strong>
-            <span>{task.column?.name ?? "Без статуса"}</span>
-            {!personal ? <span>{task.oilDepot?.name ?? "Без нефтебазы"}</span> : null}
-            {!personal ? <span>{taskAssigneeUsers(task).map((user: any) => user.name).join(", ") || "Не назначен"}</span> : null}
-            <span className={deadlineTone(task)}>{task.deadline ? deadlineText(task) : "Без срока"}</span>
-            <span>{priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
+            <span data-label="Статус">{task.column?.name ?? "Без статуса"}</span>
+            {!personal ? <span data-label="Нефтебаза">{task.oilDepot?.name ?? "Без нефтебазы"}</span> : null}
+            {!personal ? <span data-label="Исполнители">{taskAssigneeUsers(task).map((user: any) => user.name).join(", ") || "Не назначены"}</span> : null}
+            <span data-label="Срок" className={deadlineTone(task)}>{task.deadline ? deadlineText(task) : "Без срока"}</span>
+            <span data-label="Приоритет">{priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
           </button>
         ))
       ) : (
@@ -1483,8 +1458,9 @@ function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defa
                   value={user.id}
                   checked={selectedIds.includes(user.id)}
                   onChange={(event) => {
-                    setSelectedIds((current) => event.currentTarget.checked
-                      ? [...current, user.id]
+                    const checked = event.currentTarget.checked;
+                    setSelectedIds((current) => checked
+                      ? current.includes(user.id) ? current : [...current, user.id]
                       : current.filter((id) => id !== user.id));
                   }}
                 />
@@ -1581,20 +1557,6 @@ function checklistProgress(task: Task) {
   const total = items.length;
   const completed = items.filter((item: any) => item.completed).length;
   return { total, completed, percent: total ? Math.round((completed / total) * 100) : 0 };
-}
-
-function buildTimeline(tasks: Task[]) {
-  return tasks
-    .flatMap((task: Task) =>
-      task.activityLogs.map((log: any) => ({
-        id: log.id,
-        task,
-        title: activityLabel(log.action),
-        actor: log.user?.name ?? "Система",
-        createdAt: log.createdAt,
-      })),
-    )
-    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 function dateOnly(value: string) {

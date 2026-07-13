@@ -8,6 +8,7 @@ dist
 coverage
 uploads
 .ui-audit
+.codex-artifacts
 *.log
 
 *.tsbuildinfo

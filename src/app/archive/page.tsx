@@ -37,12 +37,12 @@ export default async function ArchivePage() {
             {tasks.length ? (
               tasks.map((task) => (
                 <div className="history-row archive-row" key={task.id}>
-                  <span>#{task.taskNumber}</span>
-                  <span className="history-task">{task.title}</span>
-                  <span>{task.column.name}</span>
-                  <span>{task.oilDepot?.name ?? "Без нефтебазы"}</span>
-                  <span>{task.archivedBy?.name ?? "Система"}</span>
-                  <span className="history-meta">{task.archivedAt ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(task.archivedAt) : ""}</span>
+                  <span data-label="Номер">#{task.taskNumber}</span>
+                  <span className="history-task" data-label="Задача">{task.title}</span>
+                  <span data-label="Статус">{task.column.name}</span>
+                  <span data-label="Нефтебаза">{task.oilDepot?.name ?? "Без нефтебазы"}</span>
+                  <span data-label="Архивировал">{task.archivedBy?.name ?? "Система"}</span>
+                  <span className="history-meta" data-label="Дата">{task.archivedAt ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(task.archivedAt) : ""}</span>
                 </div>
               ))
             ) : (

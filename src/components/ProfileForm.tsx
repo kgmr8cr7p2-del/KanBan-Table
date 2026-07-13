@@ -101,6 +101,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
       setAvatarFile(null);
       setStatus("saved");
       setMessage("Профиль сохранён");
+      window.dispatchEvent(new CustomEvent("profileupdated", { detail: { ...draft, avatarUrl: nextAvatarUrl } }));
       router.refresh();
     } catch (error) {
       setStatus("error");
@@ -126,6 +127,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
     setPreviewUrl("");
     setStatus("saved");
     setMessage("Аватар удалён");
+    window.dispatchEvent(new CustomEvent("profileupdated", { detail: { ...draft, avatarUrl: "" } }));
     router.refresh();
   }
 
