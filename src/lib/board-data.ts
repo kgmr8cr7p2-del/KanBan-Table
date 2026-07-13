@@ -4,15 +4,25 @@ import type { CurrentUser } from "@/lib/auth";
 import { cleanupOldCompletedTasks } from "@/lib/cleanup";
 import { accessibleBoardWhere } from "@/lib/board-access";
 
+const profileUserSelect = {
+  id: true,
+  name: true,
+  email: true,
+  jobTitle: true,
+  handle: true,
+  profileStatus: true,
+  avatarUrl: true,
+} satisfies Prisma.UserSelect;
+
 export const taskInclude = {
   column: true,
   oilDepot: true,
-  author: { select: { id: true, name: true, email: true } },
-  assignee: { select: { id: true, name: true, email: true } },
+  author: { select: profileUserSelect },
+  assignee: { select: profileUserSelect },
   tags: { include: { tag: true } },
   checklists: { include: { items: true }, orderBy: { createdAt: "asc" as const } },
   comments: {
-    include: { author: { select: { id: true, name: true, email: true } } },
+    include: { author: { select: profileUserSelect } },
     orderBy: { createdAt: "asc" as const },
   },
   fileAttachments: {
@@ -131,11 +141,15 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
       id: user.id,
       name: user.name,
       email: user.email,
+      jobTitle: user.jobTitle,
+      handle: user.handle,
+      profileStatus: user.profileStatus,
+      avatarUrl: user.avatarUrl,
       role: user.role.name,
       emailVerifiedAt: user.emailVerifiedAt,
     },
     permissions: {
-      canManageColumns: user.role.name === RoleName.ADMIN,
+      canManageColumns: board.ownerId === user.id || user.role.name === RoleName.ADMIN,
       canCreateTask: Boolean(board.ownerId) || user.role.name === RoleName.ADMIN || user.role.name === RoleName.MANAGER,
       canDeleteTask: Boolean(board.ownerId) || user.role.name === RoleName.ADMIN,
       canAssign: Boolean(board.ownerId) || user.role.name === RoleName.ADMIN || user.role.name === RoleName.MANAGER,

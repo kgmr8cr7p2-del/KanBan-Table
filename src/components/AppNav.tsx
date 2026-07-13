@@ -4,7 +4,9 @@ import Link from "next/link";
 import { Archive, BarChart3, History, LayoutDashboard, Moon, MoreHorizontal, Settings, Shield, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/LogoutButton";
+import { ProfileAvatar } from "@/components/ProfileCard/ProfileCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import type { CurrentUser } from "@/lib/auth";
 
 const links = [
   { href: "/board", label: "Доска", icon: LayoutDashboard },
@@ -15,9 +17,10 @@ const links = [
   { href: "/settings", label: "Настройки", icon: Settings },
 ];
 
-export function AppNav({ isAdmin }: { isAdmin: boolean }) {
+export function AppNav({ user }: { user: CurrentUser }) {
   const pathname = usePathname();
-  const visibleLinks = isAdmin ? [...links, { href: "/admin", label: "Админ", icon: Shield }] : links;
+  const visibleLinks = user.role.name === "ADMIN" ? [...links, { href: "/admin", label: "Админ", icon: Shield }] : links;
+  const desktopLinks = visibleLinks.filter(({ href }) => href !== "/profile");
   const primaryMobileLinks = visibleLinks.filter(({ href }) => ["/board", "/reports", "/history", "/profile"].includes(href));
   const secondaryMobileLinks = visibleLinks.filter(({ href }) => !primaryMobileLinks.some((item) => item.href === href));
   const secondaryActive = secondaryMobileLinks.some(({ href }) => pathname === href);
@@ -25,14 +28,27 @@ export function AppNav({ isAdmin }: { isAdmin: boolean }) {
   return (
     <>
       <nav className="nav nav-desktop" aria-label="Основная навигация">
-        {visibleLinks.map(({ href, label, icon: Icon }) => (
-          <Link aria-current={pathname === href ? "page" : undefined} href={href} key={href}>
-            <Icon size={18} aria-hidden="true" />
-            {label}
+        <div className="nav-links">
+          {desktopLinks.map(({ href, label, icon: Icon }) => (
+            <Link aria-current={pathname === href ? "page" : undefined} href={href} key={href}>
+              <Icon size={18} aria-hidden="true" />
+              {label}
+            </Link>
+          ))}
+        </div>
+        <div className="sidebar-account">
+          <Link className="sidebar-profile-link" aria-current={pathname === "/profile" ? "page" : undefined} href="/profile">
+            <ProfileAvatar name={user.name} avatarUrl={user.avatarUrl} size={40} />
+            <span className="sidebar-profile-copy">
+              <strong>{user.name}</strong>
+              <small>{user.jobTitle || "Изменить профиль"}</small>
+            </span>
           </Link>
-        ))}
-        <ThemeToggle icon={<Moon size={18} aria-hidden="true" />} />
-        <LogoutButton />
+          <div className="sidebar-account-actions">
+            <ThemeToggle icon={<Moon size={18} aria-hidden="true" />} />
+            <LogoutButton />
+          </div>
+        </div>
       </nav>
 
       <nav className="mobile-nav" aria-label="Мобильная навигация">

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Plus, Trash2 } from "lucide-react";
+import { Columns3, LayoutDashboard, Plus, Trash2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
@@ -75,6 +75,9 @@ export function PersonalBoardSettings({ initialBoards }: { initialBoards: Person
               <span>{board._count?.columns ?? 0} колонок · только вы</span>
             </div>
             <a className="button secondary compact-button" href={`/board?board=${board.id}`}>Открыть</a>
+            <a className="button secondary compact-button" href={`/settings?board=${board.id}`} aria-label={`Настроить колонки доски ${board.name}`}>
+              <Columns3 size={16} /> Колонки
+            </a>
             <button className="button icon danger" type="button" onClick={() => setDeleting(board)} aria-label={`Удалить доску ${board.name}`}>
               <Trash2 size={17} />
             </button>

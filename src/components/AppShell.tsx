@@ -15,7 +15,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
           </span>
           <span>Team Kanban Board</span>
         </div>
-        <AppNav isAdmin={user.role.name === "ADMIN"} />
+        <AppNav user={user} />
       </aside>
       <main className="main">{children}</main>
       <TaskSoundNotifier />

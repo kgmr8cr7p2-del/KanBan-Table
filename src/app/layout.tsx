@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { ButtonBorderGlow } from "@/components/ButtonBorderGlow";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], display: "swap" });
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `document.documentElement.dataset.theme=localStorage.getItem("theme")||"light";`,
           }}
         />
+        <ButtonBorderGlow />
         {children}
       </body>
     </html>

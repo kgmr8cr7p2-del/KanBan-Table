@@ -4,6 +4,7 @@ import { Archive, Building2, Calendar, CheckSquare, Columns3, Download, Expand, 
 import { type DragEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskPawButton } from "@/components/CreateTaskPawButton";
+import { UserProfileButton } from "@/components/ProfileCard/ProfileCard";
 
 const priorityLabels = {
   LOW: "Низкий",
@@ -306,14 +307,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
               <input className="input compact-input" name="q" placeholder="Поиск" aria-label="Поиск по задачам" value={filters.q} onChange={(event) => updateFilter("q", event.currentTarget.value)} />
             </span>
           </label>
-          <select className="select compact-select depot-filter" name="oilDepot" aria-label="Фильтр по нефтебазе" value={filters.oilDepot} onChange={(event) => updateFilter("oilDepot", event.currentTarget.value)}>
+          {!view.board.ownerId ? <select className="select compact-select depot-filter" name="oilDepot" aria-label="Фильтр по нефтебазе" value={filters.oilDepot} onChange={(event) => updateFilter("oilDepot", event.currentTarget.value)}>
             <option value="">Нефтебаза</option>
             {view.oilDepots.map((depot: any) => (
               <option key={depot.id} value={depot.id}>
                 {depot.name}
               </option>
             ))}
-          </select>
+          </select> : null}
           <select className="select compact-select" name="priority" aria-label="Фильтр по приоритету" value={filters.priority} onChange={(event) => updateFilter("priority", event.currentTarget.value)}>
             <option value="">Приоритет</option>
             {Object.entries(priorityLabels).map(([value, label]) => (
@@ -322,14 +323,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
               </option>
             ))}
           </select>
-          <select className="select compact-select" name="assignee" aria-label="Фильтр по исполнителю" value={filters.assignee} onChange={(event) => updateFilter("assignee", event.currentTarget.value)}>
+          {!view.board.ownerId ? <select className="select compact-select" name="assignee" aria-label="Фильтр по исполнителю" value={filters.assignee} onChange={(event) => updateFilter("assignee", event.currentTarget.value)}>
             <option value="">Исполнитель</option>
             {view.users.map((user: any) => (
               <option key={user.id} value={user.id}>
                 {user.name}
               </option>
             ))}
-          </select>
+          </select> : null}
           <select className="select compact-select" name="deadline" aria-label="Фильтр по сроку" value={filters.deadline} onChange={(event) => updateFilter("deadline", event.currentTarget.value)}>
             <option value="">Дедлайн</option>
             <option value="week">На этой неделе</option>
@@ -355,14 +356,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
               </option>
             ))}
           </select>
-          <select className="select compact-select" name="assignee" aria-label="Фильтр по исполнителю" defaultValue={filters.assignee}>
+          {!view.board.ownerId ? <select className="select compact-select" name="assignee" aria-label="Фильтр по исполнителю" defaultValue={filters.assignee}>
             <option value="">Исполнитель</option>
             {view.users.map((user: any) => (
               <option key={user.id} value={user.id}>
                 {user.name}
               </option>
             ))}
-          </select>
+          </select> : null}
           <select className="select compact-select" name="deadline" aria-label="Фильтр по дедлайну" defaultValue={filters.deadline}>
             <option value="">Дедлайн</option>
             <option value="week">На этой неделе</option>
@@ -419,7 +420,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
           <div className="board-view-tabs board-view-tabs-inline" role="tablist" aria-label="Режим отображения">
             <button className={viewMode === "board" ? "active" : ""} type="button" onClick={() => setViewMode("board")}>Доска</button>
             <button className={viewMode === "list" ? "active" : ""} type="button" onClick={() => setViewMode("list")}>Список</button>
-            <button className={viewMode === "mine" ? "active" : ""} type="button" onClick={() => setViewMode("mine")}>Моя работа</button>
+            {!view.board.ownerId ? <button className={viewMode === "mine" ? "active" : ""} type="button" onClick={() => setViewMode("mine")}>Моя работа</button> : null}
           </div>
           {view.permissions.canCreateTask ? (
             <CreateTaskPawButton onClick={openCreateTask} />
@@ -444,7 +445,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
           ) : null}
         </div>
         {error ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
-        {viewMode === "list" ? <TaskTable tasks={visibleTasks} onOpen={openTask} /> : null}
+        {viewMode === "list" ? <TaskTable tasks={visibleTasks} onOpen={openTask} personal={Boolean(view.board.ownerId)} /> : null}
         <section className={`board ${viewMode === "list" ? "is-hidden" : ""}`} aria-label="Канбан-доска">
           {visibleColumns.map((column: any) => (
             <article
@@ -577,14 +578,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
   );
 }
 
-function TaskTable({ tasks, onOpen }: { tasks: Task[]; onOpen: (task: Task) => void }) {
+function TaskTable({ tasks, onOpen, personal }: { tasks: Task[]; onOpen: (task: Task) => void; personal: boolean }) {
   return (
-    <section className="task-table-panel" aria-label="Список задач">
+    <section className={`task-table-panel ${personal ? "task-table-personal" : ""}`} aria-label="Список задач">
       <div className="task-table-row task-table-head">
         <span>Задача</span>
         <span>Статус</span>
-        <span>Нефтебаза</span>
-        <span>Исполнитель</span>
+        {!personal ? <span>Нефтебаза</span> : null}
+        {!personal ? <span>Исполнитель</span> : null}
         <span>Срок</span>
         <span>Приоритет</span>
       </div>
@@ -593,8 +594,8 @@ function TaskTable({ tasks, onOpen }: { tasks: Task[]; onOpen: (task: Task) => v
           <button className="task-table-row" type="button" key={task.id} onClick={() => onOpen(task)}>
             <strong>#{task.taskNumber} {task.title}</strong>
             <span>{task.column?.name ?? "Без статуса"}</span>
-            <span>{task.oilDepot?.name ?? "Без нефтебазы"}</span>
-            <span>{task.assignee?.name ?? "Не назначен"}</span>
+            {!personal ? <span>{task.oilDepot?.name ?? "Без нефтебазы"}</span> : null}
+            {!personal ? <span>{task.assignee?.name ?? "Не назначен"}</span> : null}
             <span className={deadlineTone(task)}>{task.deadline ? deadlineText(task) : "Без срока"}</span>
             <span>{priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
           </button>
@@ -694,6 +695,7 @@ function TaskCard({
 }
 
 function CreateTaskDialog(props: { view: View; onClose: () => void; onCreate: (formData: FormData) => void }) {
+  const isPersonalBoard = Boolean(props.view.board.ownerId);
   return (
     <section className="dialog-section create-task-form">
       <div className="toolbar">
@@ -707,7 +709,7 @@ function CreateTaskDialog(props: { view: View; onClose: () => void; onCreate: (f
         </button>
       </div>
       <form className="form task-editor-form" action={props.onCreate}>
-        <label className="field highlighted-field">
+        {isPersonalBoard ? <><input type="hidden" name="oilDepotId" value="" /><input type="hidden" name="assigneeId" value="" /></> : <label className="field highlighted-field">
           <span className="label">Нефтебаза</span>
           <select className="select" name="oilDepotId" defaultValue="">
             <option value="">
@@ -721,7 +723,7 @@ function CreateTaskDialog(props: { view: View; onClose: () => void; onCreate: (f
                 </option>
               ))}
           </select>
-        </label>
+        </label>}
         <label className="field">
           <span className="label">Название</span>
           <input className="input" name="title" placeholder="Что нужно сделать" required autoFocus />
@@ -759,7 +761,7 @@ function CreateTaskDialog(props: { view: View; onClose: () => void; onCreate: (f
             <span className="label">Срок</span>
             <input className="input" type="date" name="deadline" />
           </label>
-          <label className="field">
+          {!isPersonalBoard ? <label className="field">
             <span className="label">Исполнитель</span>
             <select className="select" name="assigneeId" defaultValue="">
               <option value="">Не назначен</option>
@@ -769,7 +771,7 @@ function CreateTaskDialog(props: { view: View; onClose: () => void; onCreate: (f
                 </option>
               ))}
             </select>
-          </label>
+          </label> : null}
         </div>
         <div className="toolbar">
           <button className="button">
@@ -800,6 +802,7 @@ function TaskDialog(props: {
 }) {
   const checklist = props.task.checklists[0];
   const checklistStats = checklistProgress(props.task);
+  const isPersonalBoard = Boolean(props.view.board.ownerId);
 
   return (
     <div className="dialog-grid">
@@ -815,7 +818,7 @@ function TaskDialog(props: {
           </button>
         </div>
         <form className="form task-editor-form" action={props.onSave}>
-          <label className="field highlighted-field">
+          {isPersonalBoard ? <><input type="hidden" name="oilDepotId" value="" /><input type="hidden" name="assigneeId" value="" /></> : <label className="field highlighted-field">
             <span className="label">Нефтебаза</span>
             <select className="select" name="oilDepotId" defaultValue={props.task.oilDepotId ?? ""}>
               <option value="">Без нефтебазы</option>
@@ -826,7 +829,7 @@ function TaskDialog(props: {
                 </option>
               ))}
             </select>
-          </label>
+          </label>}
           <label className="field">
             <span className="label">Название</span>
             <input className="input" name="title" defaultValue={props.task.title} required />
@@ -861,7 +864,7 @@ function TaskDialog(props: {
               <span className="label">Дедлайн</span>
               <input className="input" type="date" name="deadline" defaultValue={props.task.deadline ? String(props.task.deadline).slice(0, 10) : ""} />
             </label>
-            <label className="field">
+            {!isPersonalBoard ? <label className="field">
               <span className="label">Исполнитель</span>
               <select className="select" name="assigneeId" defaultValue={props.task.assigneeId ?? ""}>
                 <option value="">Не назначен</option>
@@ -871,7 +874,7 @@ function TaskDialog(props: {
                   </option>
                 ))}
               </select>
-            </label>
+            </label> : null}
           </div>
           <div className="toolbar">
             <button className="button">
@@ -898,9 +901,12 @@ function TaskDialog(props: {
           <div className="chat-list">
             {props.task.comments.map((comment: any) => (
               <div className={`chat-message ${comment.author.id === props.view.currentUser.id ? "own" : ""}`} key={comment.id}>
-                <div className="chat-meta">
-                  <strong>{comment.author.name}</strong>
-                  <span>{dateTime(comment.createdAt)}</span>
+                <div className="chat-comment-head">
+                  <UserProfileButton user={comment.author} size={30} />
+                  <div className="chat-meta">
+                    <strong>{comment.author.name}</strong>
+                    <span>{dateTime(comment.createdAt)}</span>
+                  </div>
                 </div>
                 <p className="chat-text">{comment.text}</p>
               </div>
@@ -990,6 +996,7 @@ function TaskDialog(props: {
 
 function CreateTaskDialogV2(props: { view: View; onClose: () => void; onCreate: (formData: FormData) => void }) {
   const firstColumn = props.view.board.columns[0];
+  const isPersonalBoard = Boolean(props.view.board.ownerId);
   const [checklistItems, setChecklistItems] = useState([""]);
 
   return (
@@ -999,7 +1006,7 @@ function CreateTaskDialogV2(props: { view: View; onClose: () => void; onCreate: 
           <h2 id="create-task-title">Новая задача</h2>
           <div className="modal-badges">
             <span className="modal-badge badge-purple"><span className="status-dot" />{firstColumn?.name ?? "Не выбрана"}</span>
-            <span className="modal-badge badge-purple-soft"><Building2 size={15} />Без нефтебазы</span>
+            {!isPersonalBoard ? <span className="modal-badge badge-purple-soft"><Building2 size={15} />Без нефтебазы</span> : null}
           </div>
         </div>
         <button className="button icon secondary modal-close" type="button" title="Закрыть" onClick={props.onClose}>
@@ -1008,6 +1015,7 @@ function CreateTaskDialogV2(props: { view: View; onClose: () => void; onCreate: 
       </header>
 
       <form className="task-modal-v2-form" action={props.onCreate}>
+        {isPersonalBoard ? <><input type="hidden" name="oilDepotId" value="" /><input type="hidden" name="assigneeId" value="" /></> : null}
         <div className="task-modal-layout task-create-layout">
           <div className="task-modal-main">
             <section className="modal-field-stack">
@@ -1113,7 +1121,7 @@ function CreateTaskDialogV2(props: { view: View; onClose: () => void; onCreate: 
                 <span className="label">Срок</span>
                 <input className="input" type="date" name="deadline" />
               </label>
-              <label className="field modal-property-field">
+              {!isPersonalBoard ? <label className="field modal-property-field">
                 <span className="property-icon"><Building2 size={19} /></span>
                 <span className="label">Нефтебаза</span>
                 <select className="select" name="oilDepotId" defaultValue="">
@@ -1126,8 +1134,8 @@ function CreateTaskDialogV2(props: { view: View; onClose: () => void; onCreate: 
                     </option>
                   ))}
                 </select>
-              </label>
-              <label className="field modal-property-field">
+              </label> : null}
+              {!isPersonalBoard ? <label className="field modal-property-field">
                 <span className="property-icon"><UserRound size={19} /></span>
                 <span className="label">Исполнитель</span>
                 <select className="select" name="assigneeId" defaultValue="">
@@ -1138,7 +1146,7 @@ function CreateTaskDialogV2(props: { view: View; onClose: () => void; onCreate: 
                     </option>
                   ))}
                 </select>
-              </label>
+              </label> : null}
             </div>
           </aside>
         </div>
@@ -1173,6 +1181,7 @@ function TaskDialogV2(props: {
   const checklist = props.task.checklists[0];
   const checklistStats = checklistProgress(props.task);
   const editFormId = `task-edit-${props.task.id}`;
+  const isPersonalBoard = Boolean(props.view.board.ownerId);
 
   return (
     <section className="task-modal-v2">
@@ -1183,7 +1192,7 @@ function TaskDialogV2(props: {
           </h2>
           <div className="modal-badges">
             <span className="modal-badge badge-purple"><span className="status-dot" />{props.task.column.name}</span>
-            <span className="modal-badge badge-blue"><span className="status-dot" />{props.task.oilDepot?.name ?? "Без нефтебазы"}</span>
+            {!isPersonalBoard ? <span className="modal-badge badge-blue"><span className="status-dot" />{props.task.oilDepot?.name ?? "Без нефтебазы"}</span> : null}
             <span className="modal-badge badge-green"><span className="status-dot" />{priorityLabels[props.task.priority as keyof typeof priorityLabels]} приоритет</span>
           </div>
         </div>
@@ -1193,6 +1202,7 @@ function TaskDialogV2(props: {
       </header>
 
       <form id={editFormId} className="sr-form" action={props.onSave} />
+      {isPersonalBoard ? <><input form={editFormId} type="hidden" name="oilDepotId" value="" /><input form={editFormId} type="hidden" name="assigneeId" value="" /></> : null}
 
       <div className="task-modal-layout task-edit-layout">
         <div className="task-modal-main">
@@ -1222,8 +1232,13 @@ function TaskDialogV2(props: {
             {props.task.comments.length ? (
               props.task.comments.map((comment: any) => (
                 <div className="modal-comment" key={comment.id}>
-                  <strong>{comment.author.name}</strong>
-                  <small>{dateTime(comment.createdAt)}</small>
+                  <div className="modal-comment-author">
+                    <UserProfileButton user={comment.author} size={32} />
+                    <span>
+                      <strong>{comment.author.name}</strong>
+                      <small>{dateTime(comment.createdAt)}</small>
+                    </span>
+                  </div>
                   <p>{comment.text}</p>
                 </div>
               ))
@@ -1336,7 +1351,7 @@ function TaskDialogV2(props: {
             <span className="label">Срок</span>
             <input className="input" form={editFormId} type="date" name="deadline" defaultValue={props.task.deadline ? String(props.task.deadline).slice(0, 10) : ""} />
           </label>
-          <label className="field modal-property-field">
+          {!isPersonalBoard ? <label className="field modal-property-field">
             <span className="property-icon"><Building2 size={19} /></span>
             <span className="label">Нефтебаза</span>
             <select className="select" form={editFormId} name="oilDepotId" defaultValue={props.task.oilDepotId ?? ""}>
@@ -1348,8 +1363,8 @@ function TaskDialogV2(props: {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="field modal-property-field">
+          </label> : null}
+          {!isPersonalBoard ? <label className="field modal-property-field">
             <span className="property-icon"><UserRound size={19} /></span>
             <span className="label">Исполнитель</span>
             <select className="select" form={editFormId} name="assigneeId" defaultValue={props.task.assigneeId ?? ""}>
@@ -1360,7 +1375,7 @@ function TaskDialogV2(props: {
                 </option>
               ))}
             </select>
-          </label>
+          </label> : null}
         </div>
       </aside>
       </div>

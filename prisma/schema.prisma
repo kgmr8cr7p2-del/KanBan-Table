@@ -43,25 +43,29 @@ model Role {
 }
 
 model User {
-  id                 String                    @id @default(cuid())
+  id                 String                   @id @default(cuid())
   name               String
-  email              String                    @unique
+  jobTitle           String                   @default("")
+  handle             String                   @default("")
+  profileStatus      String                   @default("В сети")
+  avatarUrl          String?
+  email              String                   @unique
   passwordHash       String
   emailVerifiedAt    DateTime?
   roleId             String
-  role               Role                      @relation(fields: [roleId], references: [id])
-  createdAt          DateTime                  @default(now())
-  updatedAt          DateTime                  @updatedAt
-  authoredTasks      Task[]                    @relation("TaskAuthor")
-  assignedTasks      Task[]                    @relation("TaskAssignee")
+  role               Role                     @relation(fields: [roleId], references: [id])
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  authoredTasks      Task[]                   @relation("TaskAuthor")
+  assignedTasks      Task[]                   @relation("TaskAssignee")
   comments           Comment[]
   fileAttachments    FileAttachment[]
   activityLogs       ActivityLog[]
-  archivedTasks      Task[]                    @relation("TaskArchivedBy")
+  archivedTasks      Task[]                   @relation("TaskArchivedBy")
   sessions           Session[]
   emailTokens        EmailVerificationToken[]
   telegramConnection TelegramConnection?
-  personalBoards      Board[]                   @relation("PersonalBoardOwner")
+  personalBoards     Board[]                  @relation("PersonalBoardOwner")
 }
 
 model UserInvite {
@@ -236,9 +240,9 @@ model TelegramConnection {
 }
 
 model NotificationDispatch {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  type      String
-  payload   Json?
-  sentAt    DateTime @default(now())
+  id      String   @id @default(cuid())
+  key     String   @unique
+  type    String
+  payload Json?
+  sentAt  DateTime @default(now())
 }

@@ -6,7 +6,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 type ColumnItem = { id: string; name: string; position: number; tasks: unknown[]; _count?: { tasks: number } };
 
-export function BoardSettings({ columns, canManage }: { columns: ColumnItem[]; canManage: boolean }) {
+export function BoardSettings({ columns, canManage, boardId, boardName }: { columns: ColumnItem[]; canManage: boolean; boardId: string; boardName: string }) {
   const [items, setItems] = useState(columns);
   const [error, setError] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export function BoardSettings({ columns, canManage }: { columns: ColumnItem[]; c
       const response = await fetch("/api/columns", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, boardId }),
       });
       const data = await response.json();
       if (!response.ok) return setError(data.error ?? "Не удалось создать колонку");
@@ -71,7 +71,7 @@ export function BoardSettings({ columns, canManage }: { columns: ColumnItem[]; c
     const response = await fetch("/api/columns/reorder", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ orderedIds: nextItems.map((item) => item.id) }),
+      body: JSON.stringify({ boardId, orderedIds: nextItems.map((item) => item.id) }),
     });
     const data = await response.json();
     setPendingId(null);
@@ -104,7 +104,7 @@ export function BoardSettings({ columns, canManage }: { columns: ColumnItem[]; c
       <header className="settings-manager-head">
         <span className="settings-manager-icon"><Columns3 size={20} /></span>
         <div>
-          <h2 id="board-columns-title">Колонки доски</h2>
+          <h2 id="board-columns-title">Колонки: {boardName}</h2>
           <p>Настройте этапы работы и порядок слева направо.</p>
         </div>
         <span className="settings-summary-badge">{items.length} колонок</span>

@@ -1,23 +1,27 @@
 import { AppShell } from "@/components/AppShell";
 import { ProfileForm } from "@/components/ProfileForm";
 import { requireVerifiedUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 export default async function ProfilePage() {
   const user = await requireVerifiedUser();
-  const full = await prisma.user.findUnique({
-    where: { id: user.id },
-    include: { telegramConnection: true },
-  });
 
   return (
     <AppShell user={user}>
-      <div className="content">
-        <section className="panel">
-          <h1>Профиль</h1>
-          <p className="muted">Имя, рабочая почта и ссылка на Telegram-чат для уведомлений.</p>
-          <ProfileForm name={full?.name ?? user.name} email={user.email} />
-        </section>
+      <div className="content profile-page">
+        <header className="profile-page-head">
+          <span className="profile-page-kicker">Личная карточка</span>
+          <h1>Изменить профиль</h1>
+          <p>Заполните карточку, которую коллеги увидят по нажатию на ваш аватар в комментариях.</p>
+        </header>
+        <ProfileForm user={{
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          jobTitle: user.jobTitle,
+          handle: user.handle,
+          profileStatus: user.profileStatus,
+          avatarUrl: user.avatarUrl,
+        }} />
       </div>
     </AppShell>
   );

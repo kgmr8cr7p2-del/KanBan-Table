@@ -22,7 +22,7 @@
 .border-glow-card > .edge-light {
   content: "";
   position: absolute;
-  z-index: -1;
+  z-index: 0;
   inset: 0;
   border-radius: inherit;
   transition: opacity .25s ease-out;
@@ -77,7 +77,7 @@
 }
 
 .border-glow-card > .edge-light {
-  z-index: 2;
+  z-index: 3;
   inset: calc(var(--glow-padding) * -1);
   pointer-events: none;
   mask-image: conic-gradient(from var(--cursor-angle) at center, black 2.5%, transparent 10%, transparent 90%, black 97.5%);
@@ -103,7 +103,7 @@
 
 .border-glow-inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   overflow: auto;

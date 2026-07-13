@@ -22,7 +22,11 @@ export async function POST(request: Request, { params }: Params) {
     const input = commentSchema.parse(await request.json());
     const comment = await prisma.comment.create({
       data: { text: input.text, taskId: id, authorId: user.id },
-      include: { author: { select: { id: true, name: true, email: true } } },
+      include: {
+        author: {
+          select: { id: true, name: true, email: true, jobTitle: true, handle: true, profileStatus: true, avatarUrl: true },
+        },
+      },
     });
     await logActivity({
       action: ActivityAction.COMMENT_ADDED,

@@ -48,6 +48,9 @@ export const checklistItemSchema = z.object({
 
 export const profileSchema = z.object({
   name: z.string().min(2).max(80),
+  jobTitle: z.string().trim().max(100).default(""),
+  handle: z.string().trim().max(40).regex(/^[\p{L}\p{N}._-]*$/u, "Используйте буквы, цифры, точку, дефис или подчёркивание").default(""),
+  profileStatus: z.string().trim().max(60).default("В сети"),
   telegramChatId: z.string().max(80).optional(),
 });
 

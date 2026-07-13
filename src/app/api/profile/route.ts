@@ -9,13 +9,22 @@ export async function PATCH(request: Request) {
   try {
     const user = await requireVerifiedUser();
     const input = profileSchema.parse(await request.json());
-    await prisma.user.update({ where: { id: user.id }, data: { name: input.name } });
+    const profile = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name: input.name,
+        jobTitle: input.jobTitle,
+        handle: input.handle,
+        profileStatus: input.profileStatus,
+      },
+      select: { id: true, name: true, email: true, jobTitle: true, handle: true, profileStatus: true, avatarUrl: true },
+    });
     await prisma.telegramConnection.upsert({
       where: { userId: user.id },
       update: { chatId: DEFAULT_TELEGRAM_CHAT_ID, enabled: true },
       create: { userId: user.id, chatId: DEFAULT_TELEGRAM_CHAT_ID },
     });
-    return ok({ ok: true });
+    return ok({ profile });
   } catch (error) {
     return handleRouteError(error);
   }

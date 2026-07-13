@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AlertCircle, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -8,6 +9,7 @@ export function AuthForm({ mode, nextPath }: { mode: "login" | "register"; nextP
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function submit(formData: FormData) {
     setLoading(true);
@@ -35,26 +37,56 @@ export function AuthForm({ mode, nextPath }: { mode: "login" | "register"; nextP
   }
 
   return (
-    <form className="form" action={submit} aria-busy={loading}>
+    <form className="form auth-form" action={submit} aria-busy={loading}>
       {mode === "register" ? (
-        <label className="field">
-          <span className="label">Имя</span>
-          <input className="input" name="name" autoComplete="name" required />
-        </label>
+        <div className="field auth-field">
+          <label className="label" htmlFor="full-name">Имя</label>
+          <span className="auth-control">
+            <UserRound size={18} aria-hidden="true" />
+            <input id="full-name" name="name" autoComplete="name" enterKeyHint="next" minLength={2} maxLength={80} required placeholder="Как к вам обращаться" />
+          </span>
+        </div>
       ) : null}
-      <label className="field">
-        <span className="label">Почта</span>
-        <input className="input" name="email" type="email" autoComplete="email" required />
-      </label>
-      <label className="field">
-        <span className="label">Пароль</span>
-        <input className="input" name="password" type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} required />
-      </label>
-      {error ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
-      <button className="button" disabled={loading}>
-        {loading ? "Подождите..." : mode === "login" ? "Войти" : "Зарегистрироваться"}
+      <div className="field auth-field">
+        <label className="label" htmlFor="email">Почта</label>
+        <span className="auth-control">
+          <Mail size={18} aria-hidden="true" />
+          <input id="email" name="email" type="email" inputMode="email" autoComplete="username" enterKeyHint="next" required placeholder="name@company.ru" />
+        </span>
+      </div>
+      <div className="field auth-field">
+        <label className="label" htmlFor={mode === "login" ? "current-password" : "new-password"}>Пароль</label>
+        <span className="auth-control auth-password-control">
+          <LockKeyhole size={18} aria-hidden="true" />
+          <input
+            id={mode === "login" ? "current-password" : "new-password"}
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            enterKeyHint="done"
+            minLength={mode === "register" ? 8 : undefined}
+            aria-describedby={mode === "register" ? "password-hint" : undefined}
+            required
+            placeholder={mode === "register" ? "Минимум 8 символов" : "Введите пароль"}
+          />
+          <button
+            className="auth-password-toggle"
+            type="button"
+            aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
+            aria-pressed={showPassword}
+            onClick={() => setShowPassword((current) => !current)}
+          >
+            {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
+          </button>
+        </span>
+        {mode === "register" ? <small className="auth-field-hint" id="password-hint">Используйте не меньше 8 символов.</small> : null}
+      </div>
+      {error ? <p className="auth-error" role="alert"><AlertCircle size={17} aria-hidden="true" />{error}</p> : null}
+      <button className="button auth-submit" disabled={loading}>
+        <span>{loading ? "Подождите…" : mode === "login" ? "Войти в доску" : "Создать аккаунт"}</span>
+        {!loading ? <ArrowRight size={18} aria-hidden="true" /> : <span className="auth-spinner" aria-hidden="true" />}
       </button>
-      <p className="muted">
+      <p className="auth-switch">
         {mode === "login" ? "Нет аккаунта? " : "Уже есть аккаунт? "}
         <Link href={mode === "login" ? "/register" : "/login"}>{mode === "login" ? "Зарегистрироваться" : "Войти"}</Link>
       </p>

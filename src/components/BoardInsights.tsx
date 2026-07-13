@@ -90,6 +90,7 @@ export function ReportsPanel({ reports }: { reports: any }) {
               glowRadius={20}
               glowIntensity={0.72}
               coneSpread={24}
+              animated
               fillOpacity={0.18}
               colors={card.glow.colors}
             >
