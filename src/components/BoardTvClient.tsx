@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { CloudSun, Radio, Wind } from "lucide-react";
+import { CloudSun, Minimize2, Radio, Wind } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
 import { GoidaReminder } from "@/components/GoidaReminder";
@@ -118,6 +118,13 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
     if (direct) setWeather(direct);
   }
 
+  async function exitTvMode() {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => undefined);
+    }
+    window.location.href = "/board";
+  }
+
   async function refreshJoke() {
     try {
       const response = await fetch(`/api/jokes/random?at=${Date.now()}`, { cache: "no-store" });
@@ -135,6 +142,10 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
 
   return (
     <main className="tv-page">
+      <button className="button focus-exit tv-exit" type="button" onClick={() => void exitTvMode()}>
+        <Minimize2 size={17} />
+        Выйти из просмотра
+      </button>
       <header className="tv-hero">
         <section className="tv-title-block">
           <span className={connectionState === "live" ? "tv-live-pill" : "tv-live-pill tv-live-stale"}>

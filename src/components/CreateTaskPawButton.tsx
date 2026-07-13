@@ -1,10 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Plus } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const Lanyard = dynamic(() => import("@/components/Lanyard/Lanyard"), { ssr: false });
 
 export function CreateTaskPawButton({ onClick }: { onClick: () => void }) {
   const zoneRef = useRef<HTMLDivElement>(null);
+  const [showLanyard, setShowLanyard] = useState(false);
 
   useEffect(() => {
     const zone = zoneRef.current;
@@ -13,11 +17,14 @@ export function CreateTaskPawButton({ onClick }: { onClick: () => void }) {
     let animationFrame = 0;
     let pointerX = -10_000;
     let pointerY = -10_000;
+    let lanyardVisible = false;
 
     const stopTracking = () => {
       pointerX = -10_000;
       pointerY = -10_000;
       zone.dataset.tracking = "false";
+      lanyardVisible = false;
+      setShowLanyard(false);
       if (animationFrame) {
         window.cancelAnimationFrame(animationFrame);
         animationFrame = 0;
@@ -42,7 +49,7 @@ export function CreateTaskPawButton({ onClick }: { onClick: () => void }) {
       const horizontalGap = pointerX < rect.left ? rect.left - pointerX : pointerX > rect.right ? pointerX - rect.right : 0;
       const verticalGap = pointerY < rect.top ? rect.top - pointerY : pointerY > rect.bottom ? pointerY - rect.bottom : 0;
       const distanceToButton = Math.hypot(horizontalGap, verticalGap);
-      const isTracking = distanceToButton <= 50;
+      const isTracking = distanceToButton <= (lanyardVisible ? 220 : 50);
       const anchorX = rect.left + rect.width / 2;
       const anchorY = rect.top;
       const deltaX = pointerX - anchorX;
@@ -50,6 +57,10 @@ export function CreateTaskPawButton({ onClick }: { onClick: () => void }) {
 
       zone.dataset.tracking = String(isTracking);
       if (!isTracking) return;
+      if (!lanyardVisible) {
+        lanyardVisible = true;
+        setShowLanyard(true);
+      }
 
       const angle = clamp(deltaX * 0.16, -20, 20);
       const shift = clamp(deltaX * 0.48, -52, 52);
@@ -81,18 +92,11 @@ export function CreateTaskPawButton({ onClick }: { onClick: () => void }) {
 
   return (
     <div className="create-task-paw-zone" data-tracking="false" ref={zoneRef}>
-      <span className="cat-paw" aria-hidden="true">
-        <svg viewBox="0 0 84 152" focusable="false">
-          <rect className="cat-paw-leg" x="24" y="-8" width="36" height="112" rx="18" />
-          <path className="cat-paw-stripe" d="M25 28c9 6 25 6 34 0M24 48c10 7 26 7 36 0" />
-          <ellipse className="cat-paw-foot" cx="42" cy="112" rx="30" ry="27" />
-          <ellipse className="cat-paw-pad" cx="42" cy="117" rx="12" ry="10" />
-          <circle className="cat-paw-pad" cx="21" cy="103" r="6" />
-          <circle className="cat-paw-pad" cx="35" cy="96" r="6" />
-          <circle className="cat-paw-pad" cx="50" cy="96" r="6" />
-          <circle className="cat-paw-pad" cx="64" cy="103" r="6" />
-        </svg>
-      </span>
+      {showLanyard ? (
+        <div className="create-task-lanyard" aria-hidden="true">
+          <Lanyard position={[0, 0, 24]} gravity={[0, -40, 0]} onActivate={onClick} />
+        </div>
+      ) : null}
       <button className="button create-task-button" type="button" onClick={onClick}>
         <Plus size={17} />
         Создать

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d4ed8"/>
+      <stop offset="0.55" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#9333ea"/>
+    </linearGradient>
+    <radialGradient id="light" cx="0.18" cy="0.08" r="0.95">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="900" height="1200" rx="72" fill="url(#bg)"/>
+  <rect width="900" height="1200" rx="72" fill="url(#light)"/>
+  <circle cx="450" cy="315" r="118" fill="#ffffff" fill-opacity="0.16"/>
+  <path d="M450 245v140M380 315h140" fill="none" stroke="#fff" stroke-width="32" stroke-linecap="round"/>
+  <text x="450" y="625" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="86" font-weight="800" text-anchor="middle">СОЗДАТЬ</text>
+  <text x="450" y="725" fill="#fff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="86" font-weight="800" text-anchor="middle">ЗАДАЧУ</text>
+  <text x="450" y="835" fill="#dbeafe" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="34" font-weight="600" text-anchor="middle">TEAM KANBAN BOARD</text>
+  <rect x="120" y="970" width="660" height="3" rx="2" fill="#fff" fill-opacity="0.3"/>
+  <text x="450" y="1045" fill="#fff" fill-opacity="0.78" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="28" font-weight="600" letter-spacing="3" text-anchor="middle">НАЖМИТЕ НА БЕЙДЖ</text>
+</svg>

@@ -13,6 +13,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import type { CSSProperties } from "react";
+import BorderGlow from "@/components/BorderGlow/BorderGlow";
 import { ReportLineChart } from "@/components/ReportLineChart";
 
 export function ReportsPanel({ reports }: { reports: any }) {
@@ -42,6 +43,7 @@ export function ReportsPanel({ reports }: { reports: any }) {
       icon: Layers3,
       tone: "primary",
       metric: "created",
+      glow: { color: "215 100 72", colors: ["#93c5fd", "#c084fc", "#60a5fa"] },
     },
     {
       title: "Закрыто за период",
@@ -50,6 +52,7 @@ export function ReportsPanel({ reports }: { reports: any }) {
       icon: CheckCircle2,
       tone: "green",
       metric: "completed",
+      glow: { color: "150 72 58", colors: ["#86efac", "#34d399", "#67e8f9"] },
     },
     {
       title: "В работе",
@@ -58,6 +61,7 @@ export function ReportsPanel({ reports }: { reports: any }) {
       icon: Clock3,
       tone: "blue",
       metric: "created",
+      glow: { color: "205 100 68", colors: ["#7dd3fc", "#60a5fa", "#818cf8"] },
     },
     {
       title: "Просрочено",
@@ -66,6 +70,7 @@ export function ReportsPanel({ reports }: { reports: any }) {
       icon: AlertTriangle,
       tone: "red",
       metric: "overdue",
+      glow: { color: "348 83 62", colors: ["#fda4af", "#fb7185", "#f0abfc"] },
     },
   ];
 
@@ -75,23 +80,37 @@ export function ReportsPanel({ reports }: { reports: any }) {
         {summaryCards.map((card) => {
           const Icon = card.icon;
           return (
-            <article className={`report-kpi report-kpi-${card.tone}`} key={card.title}>
-              <span className="report-kpi-top">
-                <span className="report-kpi-label">
-                  <Icon size={16} />
-                  {card.title}
+            <BorderGlow
+              className="report-kpi-glow"
+              key={card.title}
+              edgeSensitivity={24}
+              glowColor={card.glow.color}
+              backgroundColor={card.tone === "primary" ? "var(--brand-strong)" : "var(--panel)"}
+              borderRadius={8}
+              glowRadius={20}
+              glowIntensity={0.72}
+              coneSpread={24}
+              fillOpacity={0.18}
+              colors={card.glow.colors}
+            >
+              <article className={`report-kpi report-kpi-${card.tone}`}>
+                <span className="report-kpi-top">
+                  <span className="report-kpi-label">
+                    <Icon size={16} />
+                    {card.title}
+                  </span>
+                  <span className="report-kpi-link" aria-hidden="true">
+                    <ArrowUpRight size={15} />
+                  </span>
                 </span>
-                <span className="report-kpi-link" aria-hidden="true">
-                  <ArrowUpRight size={15} />
-                </span>
-              </span>
-              <strong>{card.value}</strong>
-              <small>
-                <TrendingUp size={13} />
-                {card.note}
-              </small>
-              <MiniSparkline data={chartData} metric={card.metric} />
-            </article>
+                <strong>{card.value}</strong>
+                <small>
+                  <TrendingUp size={13} />
+                  {card.note}
+                </small>
+                <MiniSparkline data={chartData} metric={card.metric} />
+              </article>
+            </BorderGlow>
           );
         })}
       </div>

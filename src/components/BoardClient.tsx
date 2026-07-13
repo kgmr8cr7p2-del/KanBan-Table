@@ -23,6 +23,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [filters, setFilters] = useState<Filters>(readFiltersFromUrl);
   const filtersRef = useRef(filters);
   const [selected, setSelected] = useState<Task | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropColumn, setDropColumn] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -31,8 +32,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
   const [toasts, setToasts] = useState<Array<{ id: string; text: string }>>([]);
   const [confirmation, setConfirmation] = useState<"archive" | "delete" | null>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const createDialogRef = useRef<HTMLDialogElement>(null);
   const activityFingerprintRef = useRef(initialView?.activityLogs?.[0]?.id ?? "");
 
   const tasks = useMemo(() => view?.board?.columns?.flatMap((column: any) => column.tasks) ?? [], [view]);
@@ -52,42 +51,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
     filtersRef.current = filters;
   }, [filters]);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    dialog.setAttribute("closedby", "any");
-    const closeOnBackdrop = (event: MouseEvent) => {
-      if ("closedBy" in HTMLDialogElement.prototype) return;
-      if (event.target !== dialog) return;
-      const rect = dialog.getBoundingClientRect();
-      const inside = rect.top <= event.clientY && event.clientY <= rect.bottom && rect.left <= event.clientX && event.clientX <= rect.right;
-      if (!inside) dialog.close();
-    };
-    dialog.addEventListener("click", closeOnBackdrop);
-    return () => dialog.removeEventListener("click", closeOnBackdrop);
-  }, []);
-
-  useEffect(() => {
-    const dialog = createDialogRef.current;
-    if (!dialog) return;
-    dialog.setAttribute("closedby", "any");
-    const closeOnBackdrop = (event: MouseEvent) => {
-      if ("closedBy" in HTMLDialogElement.prototype) return;
-      if (event.target !== dialog) return;
-      const rect = dialog.getBoundingClientRect();
-      const inside = rect.top <= event.clientY && event.clientY <= rect.bottom && rect.left <= event.clientX && event.clientX <= rect.right;
-      if (!inside) dialog.close();
-    };
-    dialog.addEventListener("click", closeOnBackdrop);
-    return () => dialog.removeEventListener("click", closeOnBackdrop);
-  }, []);
-
   function openTask(task: Task) {
+    setCreateOpen(false);
     setSelected(task);
   }
 
   function openCreateTask() {
-    createDialogRef.current?.showModal();
+    setSelected(null);
+    setCreateOpen(true);
   }
 
   async function refresh(nextFilters = filtersRef.current, options: { syncUrl?: boolean } = {}) {
@@ -118,12 +89,23 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible" && !dialogRef.current?.open && !createDialogRef.current?.open) {
+      if (document.visibilityState === "visible" && !createOpen && !selected) {
         void refresh(filtersRef.current);
       }
     }, 10000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [createOpen, selected]);
+
+  useEffect(() => {
+    if (!createOpen && !selected) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setCreateOpen(false);
+      setSelected(null);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [createOpen, selected]);
 
   useEffect(() => {
     document.documentElement.dataset.boardFocus = focusMode ? "true" : "false";
@@ -181,7 +163,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
       setError(data.error ?? "Не удалось создать задачу");
       return;
     }
-    createDialogRef.current?.close();
+    setCreateOpen(false);
     await refresh();
   }
 
@@ -206,7 +188,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
     if (!activeTask) return;
     const response = await fetch(`/api/tasks/${activeTask.id}/archive`, { method: "POST" });
     if (response.ok) {
-      dialogRef.current?.close();
       setSelected(null);
       await refresh();
     } else {
@@ -219,7 +200,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
     if (!activeTask) return;
     const response = await fetch(`/api/tasks/${activeTask.id}`, { method: "DELETE" });
     if (response.ok) {
-      dialogRef.current?.close();
       setSelected(null);
       await refresh();
     } else {
@@ -520,7 +500,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
       {activeTask ? (
         <aside className="task-drawer-backdrop" aria-label="Панель задачи">
-          <div className="task-drawer" role="dialog" aria-modal="false" aria-labelledby="task-dialog-title">
+          <div className="task-drawer t-panel-slide" data-open="true" role="dialog" aria-modal="false" aria-labelledby="task-dialog-title">
           <TaskDialogV2
             task={activeTask}
             view={view}
@@ -537,9 +517,13 @@ export function BoardClient({ initialView }: { initialView: View }) {
           </div>
         </aside>
       ) : null}
-      <dialog className="task-dialog create-task-dialog" ref={createDialogRef} aria-labelledby="create-task-title">
-        <CreateTaskDialogV2 view={view} onClose={() => createDialogRef.current?.close()} onCreate={createTask} />
-      </dialog>
+      {createOpen ? (
+        <aside className="task-drawer-backdrop" aria-label="Создание задачи">
+          <div className="task-drawer t-panel-slide" data-open="true" role="dialog" aria-modal="false" aria-labelledby="create-task-title">
+            <CreateTaskDialogV2 view={view} onClose={() => setCreateOpen(false)} onCreate={createTask} />
+          </div>
+        </aside>
+      ) : null}
       <ConfirmDialog
         confirmLabel={confirmation === "delete" ? "Удалить навсегда" : "Перенести в архив"}
         description={
