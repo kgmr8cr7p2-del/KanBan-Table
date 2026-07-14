@@ -14,6 +14,28 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const authEmailSchema = z.string().trim().email("Введите корректную почту").transform((value) => value.toLowerCase());
+const authCodeSchema = z.string().trim().regex(/^\d{6}$/, "Введите шестизначный код");
+
+export const verifyEmailCodeSchema = z.object({
+  email: authEmailSchema,
+  code: authCodeSchema,
+});
+
+export const resendVerificationSchema = z.object({
+  email: authEmailSchema,
+});
+
+export const passwordResetRequestSchema = z.object({
+  email: authEmailSchema,
+});
+
+export const passwordResetConfirmSchema = z.object({
+  email: authEmailSchema,
+  code: authCodeSchema,
+  password: z.string().min(8, "Минимум 8 символов"),
+});
+
 const taskDateSchema = (requiredMessage = "Укажите дату") => z.string({ required_error: requiredMessage, invalid_type_error: requiredMessage })
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Укажите дату")
   .refine((value) => {

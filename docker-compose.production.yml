@@ -25,6 +25,8 @@ services:
       DATABASE_URL: postgresql://kanban:${POSTGRES_PASSWORD}@postgres:5432/team_kanban?schema=public
       APP_URL: ${APP_URL}
       SESSION_SECRET: ${SESSION_SECRET}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-Taskora <noreply@region-free.online>}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}

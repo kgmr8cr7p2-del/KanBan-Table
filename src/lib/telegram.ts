@@ -8,7 +8,9 @@ type TelegramEvent =
   | "deadline_soon"
   | "deadline_overdue"
   | "deadline_reminder"
-  | "weekly_report";
+  | "weekly_report"
+  | "account_registered"
+  | "password_reset";
 
 const titles: Record<TelegramEvent, string> = {
   task_created: "Новая задача",
@@ -19,6 +21,8 @@ const titles: Record<TelegramEvent, string> = {
   deadline_overdue: "Дедлайн просрочен",
   deadline_reminder: "Напоминание о задаче",
   weekly_report: "Еженедельный отчёт",
+  account_registered: "Новый пользователь",
+  password_reset: "Пароль восстановлен",
 };
 
 const icons: Record<TelegramEvent, string> = {
@@ -30,7 +34,19 @@ const icons: Record<TelegramEvent, string> = {
   deadline_overdue: "🔴",
   deadline_reminder: "🔔",
   weekly_report: "📊",
+  account_registered: "👋",
+  password_reset: "🔐",
 };
+
+const taskEvents = new Set<TelegramEvent>([
+  "task_created",
+  "assignee_changed",
+  "status_changed",
+  "comment_added",
+  "deadline_soon",
+  "deadline_overdue",
+  "deadline_reminder",
+]);
 
 export async function sendWeeklyReportMessage(message: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -134,7 +150,7 @@ async function sendToChats(token: string, chatIds: string[], text: string, error
 }
 
 function formatTelegramMessage(event: TelegramEvent, message: string) {
-  const { taskTitle, body } = extractTaskTitle(message);
+  const { taskTitle, body } = taskEvents.has(event) ? extractTaskTitle(message) : { taskTitle: "", body: message };
   const details = formatDetailLines(body);
   return [
     `${icons[event]} <b>${escapeHtml(titles[event])}</b>`,

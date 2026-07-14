@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertCircle, ArrowRight, Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -26,7 +27,12 @@ export function AuthForm({ mode, nextPath }: { mode: "login" | "register"; nextP
         return;
       }
       const safeNext = nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/board";
-      router.push(data.verified === false ? "/verify-email" : safeNext);
+      if (data.verified === false) {
+        const email = String(data.email ?? payload.email ?? "");
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      } else {
+        router.push(safeNext);
+      }
       router.refresh();
     } catch {
       setError("Не удалось связаться с сервером. Попробуйте ещё раз.");
@@ -96,6 +102,7 @@ export function AuthForm({ mode, nextPath }: { mode: "login" | "register"; nextP
         </span>
         {mode === "register" ? <small className="auth-field-hint" id="password-hint">Используйте не меньше 8 символов.</small> : null}
       </div>
+      {mode === "login" ? <div className="auth-forgot-link"><Link href="/forgot-password">Забыли пароль?</Link></div> : null}
       {error ? <p className="auth-error" role="alert"><AlertCircle size={17} aria-hidden="true" />{error}</p> : null}
       <button className="button auth-submit" disabled={loading}>
         <span>{loading ? "Подождите…" : mode === "login" ? "Войти" : "Создать аккаунт"}</span>

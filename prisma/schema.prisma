@@ -45,37 +45,38 @@ model Role {
 }
 
 model User {
-  id                 String                   @id @default(cuid())
-  name               String
-  lastName           String                   @default("")
-  firstName          String                   @default("")
-  middleName         String                   @default("")
-  jobTitle           String                   @default("")
-  handle             String                   @default("")
-  profileStatus      String                   @default("В сети")
-  currentActivity    String                   @default("В сети")
-  lastActiveAt       DateTime?
-  avatarUrl          String?
-  email              String                   @unique
-  passwordHash       String
-  emailVerifiedAt    DateTime?
-  roleId             String
-  role               Role                     @relation(fields: [roleId], references: [id])
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
-  authoredTasks      Task[]                   @relation("TaskAuthor")
-  assignedTasks      Task[]                   @relation("TaskAssignee")
-  taskAssignments    TaskAssignment[]
-  sentMessages       DirectMessage[]          @relation("MessageSender")
-  receivedMessages   DirectMessage[]          @relation("MessageRecipient")
-  comments           Comment[]
-  fileAttachments    FileAttachment[]
-  activityLogs       ActivityLog[]
-  archivedTasks      Task[]                   @relation("TaskArchivedBy")
-  sessions           Session[]
-  emailTokens        EmailVerificationToken[]
-  telegramConnection TelegramConnection?
-  personalBoards     Board[]                  @relation("PersonalBoardOwner")
+  id                  String                   @id @default(cuid())
+  name                String
+  lastName            String                   @default("")
+  firstName           String                   @default("")
+  middleName          String                   @default("")
+  jobTitle            String                   @default("")
+  handle              String                   @default("")
+  profileStatus       String                   @default("В сети")
+  currentActivity     String                   @default("В сети")
+  lastActiveAt        DateTime?
+  avatarUrl           String?
+  email               String                   @unique
+  passwordHash        String
+  emailVerifiedAt     DateTime?
+  roleId              String
+  role                Role                     @relation(fields: [roleId], references: [id])
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  authoredTasks       Task[]                   @relation("TaskAuthor")
+  assignedTasks       Task[]                   @relation("TaskAssignee")
+  taskAssignments     TaskAssignment[]
+  sentMessages        DirectMessage[]          @relation("MessageSender")
+  receivedMessages    DirectMessage[]          @relation("MessageRecipient")
+  comments            Comment[]
+  fileAttachments     FileAttachment[]
+  activityLogs        ActivityLog[]
+  archivedTasks       Task[]                   @relation("TaskArchivedBy")
+  sessions            Session[]
+  emailTokens         EmailVerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  telegramConnection  TelegramConnection?
+  personalBoards      Board[]                  @relation("PersonalBoardOwner")
 }
 
 model UserInvite {
@@ -268,7 +269,22 @@ model EmailVerificationToken {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
+  attempts  Int      @default(0)
   createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model TelegramConnection {

@@ -7,13 +7,6 @@ import { hashToken, randomToken } from "@/lib/crypto";
 
 export const SESSION_COOKIE = "tkb_session";
 const SESSION_DAYS = 14;
-const DEFAULT_INVITED_EMAILS = [
-  "les_victor@mail.ru",
-  "nemix.danil@yandex.ru",
-  "mr.nikita.moskalenko@yandex.ru",
-  "ivangluhov83@yandex.ru",
-  "nikita53ne@yandex.ru",
-];
 
 export type CurrentUser = User & { role: { name: RoleName } };
 
@@ -87,21 +80,4 @@ export async function verifyPassword(password: string, passwordHash: string) {
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 12);
-}
-
-export function canRegisterEmail(email: string) {
-  const normalized = email.toLowerCase();
-  const invitedSource = process.env.INVITED_EMAILS?.trim() ? process.env.INVITED_EMAILS : DEFAULT_INVITED_EMAILS.join(",");
-  const invited = invitedSource
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-  const domains = (process.env.ALLOWED_EMAIL_DOMAINS ?? "")
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (invited.length === 0 && domains.length === 0) return true;
-  if (invited.includes(normalized)) return true;
-  return domains.some((domain) => normalized.endsWith(`@${domain}`));
 }
