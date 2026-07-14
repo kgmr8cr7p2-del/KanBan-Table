@@ -6,6 +6,8 @@ export const permissionOptions = [
   { key: "MANAGE_COLUMNS", label: "Колонки доски", description: "Создавать, переименовывать, переставлять и удалять колонки общей доски." },
   { key: "VIEW_REPORTS", label: "Отчёты", description: "Открывать отчёты и выгружать данные." },
   { key: "VIEW_HISTORY", label: "История изменений", description: "Просматривать историю действий по задачам." },
+  { key: "VIEW_FILES", label: "Общие файлы", description: "Открывать защищённое хранилище общих важных файлов." },
+  { key: "MANAGE_FILES", label: "Управление файлами", description: "Загружать и удалять файлы в общем защищённом хранилище." },
   { key: "USE_CHATS", label: "Личные чаты", description: "Переписываться с другими участниками внутри Taskora." },
   { key: "USE_TELEGRAM", label: "Telegram-уведомления", description: "Подключать личный чат с ботом и получать напоминания." },
   { key: "MANAGE_WORKSPACE", label: "Настройки пространства", description: "Управлять нефтебазами и общими настройками рабочего пространства." },

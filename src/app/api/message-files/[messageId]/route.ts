@@ -24,6 +24,7 @@ export async function GET(request: Request, { params }: Params) {
         "content-type": message.mimeType || "application/octet-stream",
         "content-disposition": `${showInline ? "inline" : "attachment"}; filename*=UTF-8''${encodeURIComponent(safeName)}`,
         "cache-control": "private, no-store",
+        "x-content-type-options": "nosniff",
       },
     });
   } catch (error) {

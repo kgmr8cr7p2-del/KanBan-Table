@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { CurrentUser } from "@/lib/auth";
 import { cleanupOldCompletedTasks } from "@/lib/cleanup";
 import { accessibleBoardWhere } from "@/lib/board-access";
-import { canCreateTask, canDeleteTask, canManageColumns } from "@/lib/permissions";
+import { canCreateTask, canDeleteTask, canManageColumns, canViewTaskFiles } from "@/lib/permissions";
 import { hasPermission } from "@/lib/role-permissions";
 
 const profileUserSelect = {
@@ -132,7 +132,10 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
         if (!haystack.includes(query)) return false;
       }
       return true;
-    }),
+    }).map((task) => ({
+      ...task,
+      fileAttachments: board.ownerId === user.id || canViewTaskFiles(user, task) ? task.fileAttachments : [],
+    })),
   }));
 
   return {

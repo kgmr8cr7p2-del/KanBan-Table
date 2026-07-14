@@ -3542,6 +3542,18 @@
     pointer-events: auto;
   }
 
+  .task-drawer-backdrop-fullscreen {
+    inset: 0;
+    inline-size: 100vw;
+    block-size: 100dvh;
+  }
+
+  .task-drawer-fullscreen {
+    inline-size: 100vw;
+    border-inline-start: 0;
+    box-shadow: none;
+  }
+
   .task-timeline {
     min-inline-size: 0;
     margin-block-start: .85rem;
@@ -3770,6 +3782,23 @@
 
   .task-drawer .task-modal-layout {
     grid-template-columns: 1fr;
+  }
+
+  .task-drawer-fullscreen .task-modal-v2 {
+    min-block-size: 100dvh;
+    max-block-size: 100dvh;
+  }
+
+  .task-drawer-fullscreen .task-modal-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
+    gap: 1.25rem;
+  }
+
+  .task-drawer-fullscreen .task-modal-v2-head,
+  .task-drawer-fullscreen .task-modal-layout,
+  .task-drawer-fullscreen .task-modal-v2-actions {
+    margin-inline: auto;
+    inline-size: min(100%, 1440px);
   }
 
   .task-drawer .task-modal-v2-head,
@@ -4003,6 +4032,25 @@
     border: 0;
     background: transparent;
     color: var(--muted);
+  }
+
+  .task-modal-head-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: .35rem;
+  }
+
+  .modal-expand {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+  }
+
+  .modal-expand:hover,
+  .modal-close:hover {
+    background: var(--panel-2);
+    color: var(--text);
   }
 
   .task-modal-v2-form,
@@ -4495,6 +4543,191 @@
     min-block-size: 3.6rem;
     border-radius: 8px;
     font-size: 1rem;
+  }
+
+  .important-files-page {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .files-head,
+  .files-preview-head,
+  .files-search {
+    display: flex;
+    min-inline-size: 0;
+    align-items: center;
+    gap: .75rem;
+  }
+
+  .files-head {
+    justify-content: space-between;
+  }
+
+  .files-head h1 {
+    font-size: clamp(1.65rem, 2.4vw, 2.3rem);
+  }
+
+  .files-search {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .files-upload-panel {
+    display: grid;
+    grid-template-columns: minmax(12rem, 1fr) minmax(10rem, .65fr) minmax(14rem, 1.2fr) minmax(14rem, 1fr) auto;
+    align-items: end;
+    gap: .75rem;
+    padding: .9rem;
+  }
+
+  .files-workspace {
+    display: grid;
+    grid-template-columns: minmax(18rem, .38fr) minmax(0, 1fr);
+    gap: 1rem;
+    min-block-size: min(68dvh, 48rem);
+  }
+
+  .files-list-panel,
+  .files-preview-panel {
+    min-block-size: 0;
+    overflow: auto;
+    padding: .85rem;
+  }
+
+  .files-list-panel {
+    display: grid;
+    align-content: start;
+    gap: .45rem;
+  }
+
+  .important-file-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: .65rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text);
+    padding: .65rem;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .important-file-row:hover,
+  .important-file-row.is-active {
+    border-color: var(--border);
+    background: var(--panel-2);
+  }
+
+  .important-file-icon {
+    display: grid;
+    inline-size: 2.25rem;
+    block-size: 2.25rem;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--panel);
+    color: var(--brand);
+  }
+
+  .important-file-copy {
+    display: grid;
+    min-inline-size: 0;
+    gap: .12rem;
+  }
+
+  .important-file-copy strong,
+  .important-file-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .important-file-copy small {
+    color: var(--muted);
+    font-size: .78rem;
+  }
+
+  .files-preview-panel {
+    display: grid;
+    align-content: start;
+    gap: .85rem;
+  }
+
+  .files-preview-head {
+    flex-wrap: wrap;
+    border-block-end: 1px solid var(--border);
+    padding-block-end: .8rem;
+  }
+
+  .files-preview-head h2 {
+    font-size: 1.25rem;
+  }
+
+  .files-description,
+  .files-preview-empty {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel-2);
+    padding: .85rem;
+  }
+
+  .files-code-preview,
+  .files-sheet-preview {
+    display: grid;
+    gap: .6rem;
+    min-inline-size: 0;
+  }
+
+  .files-code-meta {
+    justify-self: start;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--panel-2);
+    color: var(--muted);
+    padding: .2rem .55rem;
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .files-code-preview pre {
+    max-block-size: 56dvh;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--panel-2) 75%, #111827 4%);
+    color: var(--text);
+    padding: 1rem;
+    font: .86rem/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .files-sheet-scroll {
+    max-block-size: 56dvh;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .files-sheet-scroll table {
+    inline-size: max-content;
+    min-inline-size: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+    font-size: .82rem;
+  }
+
+  .files-sheet-scroll td {
+    min-inline-size: 7rem;
+    max-inline-size: 18rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    padding: .42rem .55rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .sr-form {
@@ -6656,6 +6889,11 @@
       grid-template-columns: 1fr;
     }
 
+    .files-upload-panel,
+    .files-workspace {
+      grid-template-columns: 1fr;
+    }
+
     .report-kpi-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -6772,6 +7010,16 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .files-head,
+    .files-search {
+      display: grid;
+      justify-content: stretch;
+    }
+
+    .files-search > * {
+      inline-size: 100%;
+    }
+
     .report-donut-wrap {
       grid-template-columns: 1fr;
     }
@@ -6786,6 +7034,10 @@
     .task-modal-layout,
     .task-modal-v2-actions {
       padding-inline: 1rem;
+    }
+
+    .task-drawer-fullscreen .task-modal-layout {
+      grid-template-columns: 1fr;
     }
 
     .property-grid .field {

@@ -16,7 +16,7 @@ async function main() {
       create: {
         name: "Менеджер",
         systemKey: "MANAGER",
-        permissions: [PermissionKey.VIEW_BOARD, PermissionKey.CREATE_TASKS, PermissionKey.EDIT_ALL_TASKS, PermissionKey.VIEW_REPORTS, PermissionKey.VIEW_HISTORY, PermissionKey.USE_CHATS, PermissionKey.USE_TELEGRAM],
+        permissions: [PermissionKey.VIEW_BOARD, PermissionKey.CREATE_TASKS, PermissionKey.EDIT_ALL_TASKS, PermissionKey.VIEW_REPORTS, PermissionKey.VIEW_HISTORY, PermissionKey.VIEW_FILES, PermissionKey.MANAGE_FILES, PermissionKey.USE_CHATS, PermissionKey.USE_TELEGRAM],
       },
     }),
     prisma.role.upsert({
@@ -25,7 +25,7 @@ async function main() {
       create: {
         name: "Исполнитель",
         systemKey: "EXECUTOR",
-        permissions: [PermissionKey.VIEW_BOARD, PermissionKey.VIEW_REPORTS, PermissionKey.VIEW_HISTORY, PermissionKey.USE_CHATS, PermissionKey.USE_TELEGRAM],
+        permissions: [PermissionKey.VIEW_BOARD, PermissionKey.VIEW_REPORTS, PermissionKey.VIEW_HISTORY, PermissionKey.VIEW_FILES, PermissionKey.USE_CHATS, PermissionKey.USE_TELEGRAM],
       },
     }),
   ]);

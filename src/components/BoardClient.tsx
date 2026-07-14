@@ -34,6 +34,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [filters, setFilters] = useState<Filters>(readFiltersFromUrl);
   const filtersRef = useRef(filters);
   const [selected, setSelected] = useState<Task | null>(null);
+  const [taskFullscreen, setTaskFullscreen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropColumn, setDropColumn] = useState<string | null>(null);
@@ -80,13 +81,21 @@ export function BoardClient({ initialView }: { initialView: View }) {
   function openTask(task: Task) {
     setError("");
     setCreateOpen(false);
+    setTaskFullscreen(false);
     setSelected(task);
   }
 
   function openCreateTask() {
     setError("");
     setSelected(null);
+    setTaskFullscreen(false);
     setCreateOpen(true);
+  }
+
+  function closeTask() {
+    setError("");
+    setTaskFullscreen(false);
+    setSelected(null);
   }
 
   async function refresh(nextFilters = filtersRef.current, options: { syncUrl?: boolean; boardId?: string } = {}) {
@@ -111,6 +120,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   function switchBoard(boardId: string) {
     setSelected(null);
+    setTaskFullscreen(false);
     setCreateOpen(false);
     setError("");
     void refresh(filtersRef.current, { boardId, syncUrl: true });
@@ -139,6 +149,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
       if (event.key !== "Escape") return;
       setError("");
       setCreateOpen(false);
+      setTaskFullscreen(false);
       setSelected(null);
     };
     document.addEventListener("keydown", closeOnEscape);
@@ -227,6 +238,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
     const response = await fetch(`/api/tasks/${activeTask.id}/archive`, { method: "POST" });
     if (response.ok) {
       setSelected(null);
+      setTaskFullscreen(false);
       await refresh();
     } else {
       const data = await response.json().catch(() => ({}));
@@ -239,6 +251,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
     const response = await fetch(`/api/tasks/${activeTask.id}`, { method: "DELETE" });
     if (response.ok) {
       setSelected(null);
+      setTaskFullscreen(false);
       await refresh();
     } else {
       const data = await response.json().catch(() => ({}));
@@ -552,13 +565,15 @@ export function BoardClient({ initialView }: { initialView: View }) {
       </div>
 
       {activeTask ? (
-        <aside className="task-drawer-backdrop" aria-label="Панель задачи">
-          <div className="task-drawer t-panel-slide" data-open="true" role="dialog" aria-modal="false" aria-labelledby="task-dialog-title">
+        <aside className={`task-drawer-backdrop ${taskFullscreen ? "task-drawer-backdrop-fullscreen" : ""}`} aria-label="Панель задачи">
+          <div className={`task-drawer t-panel-slide ${taskFullscreen ? "task-drawer-fullscreen" : ""}`} data-open="true" role="dialog" aria-modal={taskFullscreen} aria-labelledby="task-dialog-title">
           <TaskDialogV2
             task={activeTask}
             view={view}
             canDelete={view.permissions.canDeleteTask}
-            onClose={() => { setError(""); setSelected(null); }}
+            fullscreen={taskFullscreen}
+            onToggleFullscreen={() => setTaskFullscreen((current) => !current)}
+            onClose={closeTask}
             onSave={saveTask}
             onArchive={() => setConfirmation("archive")}
             onDelete={() => setConfirmation("delete")}
@@ -1226,6 +1241,8 @@ function TaskDialogV2(props: {
   task: Task;
   view: View;
   canDelete: boolean;
+  fullscreen: boolean;
+  onToggleFullscreen: () => void;
   onClose: () => void;
   onSave: (formData: FormData) => void;
   onArchive: () => void;
@@ -1255,9 +1272,21 @@ function TaskDialogV2(props: {
             <span className="modal-badge badge-green"><span className="status-dot" />{priorityLabels[props.task.priority as keyof typeof priorityLabels]} приоритет</span>
           </div>
         </div>
-        <button className="button icon secondary modal-close" type="button" title="Закрыть" onClick={props.onClose}>
-          <X size={18} />
-        </button>
+        <div className="task-modal-head-actions">
+          <button
+            className="button icon secondary modal-expand"
+            type="button"
+            title={props.fullscreen ? "Вернуть панель справа" : "Открыть на весь экран"}
+            aria-label={props.fullscreen ? "Вернуть панель задачи справа" : "Открыть задачу на весь экран"}
+            aria-pressed={props.fullscreen}
+            onClick={props.onToggleFullscreen}
+          >
+            {props.fullscreen ? <Minimize2 size={18} /> : <Expand size={18} />}
+          </button>
+          <button className="button icon secondary modal-close" type="button" title="Закрыть" onClick={props.onClose}>
+            <X size={18} />
+          </button>
+        </div>
       </header>
 
       <form id={editFormId} className="sr-form" action={props.onSave} />

@@ -91,7 +91,7 @@ async function dispatchReminder(task: {
 }
 
 async function authorizeRequest(request: Request) {
-  const expected = process.env.SESSION_SECRET ?? "";
+  const expected = process.env.NOTIFICATION_CRON_SECRET ?? "";
   const received = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
   if (expected && received && secureEqual(expected, received)) return;
   await requireVerifiedUser();

@@ -15,6 +15,8 @@ enum PermissionKey {
   MANAGE_COLUMNS
   VIEW_REPORTS
   VIEW_HISTORY
+  VIEW_FILES
+  MANAGE_FILES
   USE_CHATS
   USE_TELEGRAM
   MANAGE_WORKSPACE
@@ -81,6 +83,7 @@ model User {
   receivedMessages    DirectMessage[]          @relation("MessageRecipient")
   comments            Comment[]
   fileAttachments     FileAttachment[]
+  importantFiles      ImportantFile[]
   activityLogs        ActivityLog[]
   archivedTasks       Task[]                   @relation("TaskArchivedBy")
   sessions            Session[]
@@ -262,6 +265,24 @@ model FileAttachment {
   uploaderId String
   uploader   User     @relation(fields: [uploaderId], references: [id])
   createdAt  DateTime @default(now())
+}
+
+model ImportantFile {
+  id             String   @id @default(cuid())
+  title          String
+  description    String   @default("")
+  category       String   @default("")
+  originalName   String
+  storedFileName String
+  size           Int
+  mimeType       String
+  uploadedById   String
+  uploadedBy     User     @relation(fields: [uploadedById], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([category])
+  @@index([createdAt])
 }
 
 model ActivityLog {

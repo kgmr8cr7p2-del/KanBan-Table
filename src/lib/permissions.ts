@@ -15,11 +15,17 @@ export function canCreateTask(user: CurrentUser) {
 }
 
 type TaskWithAssignees = Pick<Task, "assigneeId"> & { assignees?: Array<{ userId: string }> };
+type TaskWithFileAccess = TaskWithAssignees & Pick<Task, "authorId">;
 
 export function canEditTask(user: CurrentUser, task?: TaskWithAssignees | null) {
   if (!hasPermission(user, PermissionKey.VIEW_BOARD)) return false;
   if (hasPermission(user, PermissionKey.EDIT_ALL_TASKS)) return true;
   return Boolean(task && (task.assigneeId === user.id || task.assignees?.some((assignment) => assignment.userId === user.id)));
+}
+
+export function canViewTaskFiles(user: CurrentUser, task?: TaskWithFileAccess | null) {
+  if (!task) return false;
+  return task.authorId === user.id || canEditTask(user, task);
 }
 
 export function canDeleteTask(user: CurrentUser) {

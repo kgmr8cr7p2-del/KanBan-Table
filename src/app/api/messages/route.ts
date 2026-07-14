@@ -4,6 +4,7 @@ import { PermissionKey } from "@prisma/client";
 import { requirePermission } from "@/lib/auth";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { validateTaskAttachment } from "@/lib/file-security";
 
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const messageSelect = {
@@ -58,7 +59,10 @@ export async function POST(request: Request) {
     if (!targetId || targetId === user.id) return fail("Собеседник не выбран", 422);
     if (!text && !file) return fail("Напишите сообщение или прикрепите файл", 422);
     if (text.length > 4000) return fail("Сообщение не должно превышать 4000 символов", 422);
-    if (file && file.size > MAX_FILE_BYTES) return fail("Файл не должен превышать 15 МБ", 422);
+    if (file) {
+      const validationError = validateTaskAttachment(file, MAX_FILE_BYTES);
+      if (validationError) return fail(validationError, 422);
+    }
     const target = await prisma.user.findFirst({ where: { id: targetId, approvedAt: { not: null } }, select: { id: true } });
     if (!target) return fail("Пользователь не найден", 404);
 

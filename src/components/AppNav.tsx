@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Archive, BarChart3, History, LayoutDashboard, MessageCircle, Moon, MoreHorizontal, ScrollText, Settings, Shield, UserRound } from "lucide-react";
+import { Archive, BarChart3, Files, History, LayoutDashboard, MessageCircle, Moon, MoreHorizontal, ScrollText, Settings, Shield, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -12,6 +12,7 @@ import type { CurrentUser } from "@/lib/auth";
 const links = [
   { href: "/board", label: "Доска", icon: LayoutDashboard, permission: "VIEW_BOARD" },
   { href: "/chats", label: "Чаты", icon: MessageCircle, permission: "USE_CHATS" },
+  { href: "/files", label: "Файлы", icon: Files, permission: "VIEW_FILES" },
   { href: "/reports", label: "Отчёты", icon: BarChart3, permission: "VIEW_REPORTS" },
   { href: "/history", label: "История", icon: History, permission: "VIEW_HISTORY" },
   { href: "/changelog", label: "Что нового", icon: ScrollText },
@@ -35,7 +36,7 @@ export function AppNav({ user }: { user: CurrentUser }) {
       : permittedLinks
     : accountLinks;
   const desktopLinks = visibleLinks.filter(({ href }) => href !== "/profile");
-  const primaryMobileLinks = visibleLinks.filter(({ href }) => ["/board", "/chats", "/reports", "/profile"].includes(href));
+  const primaryMobileLinks = visibleLinks.filter(({ href }) => ["/board", "/files", "/chats", "/profile"].includes(href));
   const secondaryMobileLinks = visibleLinks.filter(({ href }) => !primaryMobileLinks.some((item) => item.href === href));
   const secondaryActive = secondaryMobileLinks.some(({ href }) => pathname === href);
 

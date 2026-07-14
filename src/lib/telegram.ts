@@ -45,6 +45,11 @@ const taskEvents = new Set<TelegramEvent>([
   "task_created", "assignee_changed", "status_changed", "comment_added",
   "deadline_soon", "deadline_overdue", "deadline_reminder",
 ]);
+const sensitiveEvents = new Set<TelegramEvent>([
+  ...taskEvents,
+  "account_registered",
+  "password_reset",
+]);
 
 const telegramEnabledUser = {
   approvedAt: { not: null },
@@ -136,6 +141,15 @@ async function sendToChats(token: string, chatIds: string[], text: string, error
 }
 
 function formatTelegramMessage(event: TelegramEvent, message: string) {
+  if (sensitiveEvents.has(event) && !telegramDetailsEnabled()) {
+    return [
+      `${icons[event]} <b>${escapeHtml(titles[event])}</b>`,
+      "",
+      "Детали скрыты политикой безопасности. Откройте Taskora, чтобы посмотреть событие.",
+      "",
+      `🕒 <i>${new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Moscow" }).format(new Date())} · Taskora</i>`,
+    ].join("\n");
+  }
   const { taskTitle, body } = taskEvents.has(event) ? extractTaskTitle(message) : { taskTitle: "", body: message };
   const details = formatDetailLines(body);
   return [
@@ -183,4 +197,8 @@ function extractTaskTitle(message: string) {
 
 function escapeHtml(value: string) {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+function telegramDetailsEnabled() {
+  return process.env.TELEGRAM_INCLUDE_SENSITIVE_DETAILS === "true";
 }

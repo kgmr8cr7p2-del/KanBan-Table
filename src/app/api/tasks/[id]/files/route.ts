@@ -7,6 +7,7 @@ import { canEditTask } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { canAccessTask } from "@/lib/board-access";
+import { sanitizeUploadFileName, validateTaskAttachment } from "@/lib/file-security";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -23,8 +24,10 @@ export async function POST(request: Request, { params }: Params) {
     const formData = await request.formData();
     const file = formData.get("file");
     if (!(file instanceof File)) return fail("Файл не передан", 422);
+    const validationError = validateTaskAttachment(file);
+    if (validationError) return fail(validationError, 422);
     const bytes = Buffer.from(await file.arrayBuffer());
-    const safeName = file.name.replace(/[^\p{L}\p{N}._-]+/gu, "_");
+    const safeName = sanitizeUploadFileName(file.name);
     const folder = path.join(process.cwd(), "uploads", id);
     await mkdir(folder, { recursive: true });
     const fileName = `${Date.now()}-${safeName}`;

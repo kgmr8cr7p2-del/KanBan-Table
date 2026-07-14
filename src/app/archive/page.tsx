@@ -3,6 +3,7 @@ import { PermissionKey } from "@prisma/client";
 import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { accessibleBoardWhere } from "@/lib/board-access";
+import { canViewTaskFiles } from "@/lib/permissions";
 import { ArchiveBrowser } from "@/components/ArchiveBrowser";
 
 export default async function ArchivePage() {
@@ -23,6 +24,10 @@ export default async function ArchivePage() {
     orderBy: { archivedAt: "desc" },
     take: 300,
   });
+  const visibleTasks = tasks.map((task) => ({
+    ...task,
+    fileAttachments: task.column.boardId && canViewTaskFiles(user, task) ? task.fileAttachments : [],
+  }));
 
   return (
     <AppShell user={user}>
@@ -31,7 +36,7 @@ export default async function ArchivePage() {
           <h1>Архив задач</h1>
           <p className="muted">Задачи не удаляются из базы, а сохраняются здесь после архивирования.</p>
         </section>
-        <ArchiveBrowser tasks={JSON.parse(JSON.stringify(tasks))} />
+        <ArchiveBrowser tasks={JSON.parse(JSON.stringify(visibleTasks))} />
       </div>
     </AppShell>
   );
