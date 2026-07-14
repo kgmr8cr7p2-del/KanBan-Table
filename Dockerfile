@@ -8,10 +8,13 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci \
+  && npm cache clean --force
 
 COPY . .
-RUN npx prisma generate && npm run build
+RUN npx prisma generate \
+  && npm run build \
+  && rm -rf .next/cache /root/.npm
 
 ENV NODE_ENV=production
 EXPOSE 3000

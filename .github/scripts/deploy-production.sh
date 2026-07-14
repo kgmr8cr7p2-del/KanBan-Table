@@ -18,6 +18,15 @@ compose() {
   docker compose --env-file .env.production -f "${COMPOSE_FILE}" "$@"
 }
 
+cleanup_deploy_storage() {
+  # BuildKit cache can grow indefinitely across releases and eventually make
+  # image export fail. This only removes cache and images not used by running
+  # containers; named volumes and the live application image are preserved.
+  docker builder prune --all --force >/dev/null || true
+  docker image prune --force >/dev/null || true
+  find "${BACKUP_DIR}" -maxdepth 1 -type f -name 'pre-github-*.tgz' -mtime +14 -delete
+}
+
 ensure_telegram_webhook_secret() {
   if grep -Eq '^TELEGRAM_WEBHOOK_SECRET=.+$' .env.production; then
     return
@@ -61,6 +70,7 @@ on_exit() {
 trap on_exit EXIT
 
 mkdir -p "${BACKUP_DIR}" "${RELEASE_ROOT}"
+cleanup_deploy_storage
 rm -rf "${RELEASE_DIR}"
 mkdir -p "${RELEASE_DIR}"
 tar -xzf "${ARCHIVE_PATH}" -C "${RELEASE_DIR}"
