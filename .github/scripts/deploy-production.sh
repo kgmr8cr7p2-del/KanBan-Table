@@ -41,6 +41,64 @@ ensure_telegram_webhook_secret() {
   fi
 }
 
+ensure_notification_cron_secret() {
+  if grep -Eq '^NOTIFICATION_CRON_SECRET=.+$' .env.production; then
+    return
+  fi
+
+  local cron_secret
+  cron_secret="$(openssl rand -hex 32)"
+  if grep -q '^NOTIFICATION_CRON_SECRET=' .env.production; then
+    sed -i "s/^NOTIFICATION_CRON_SECRET=.*/NOTIFICATION_CRON_SECRET=${cron_secret}/" .env.production
+  else
+    printf '\nNOTIFICATION_CRON_SECRET=%s\n' "${cron_secret}" >> .env.production
+  fi
+}
+
+has_failed_important_files_migration() {
+  compose exec -T app node <<'NODE'
+const { PrismaClient } = require("@prisma/client");
+
+const prisma = new PrismaClient();
+const migrationName = "20260714220000_important_files";
+
+(async () => {
+  const table = await prisma.$queryRawUnsafe("SELECT to_regclass('public._prisma_migrations') AS table_name");
+  if (!table[0]?.table_name) {
+    await prisma.$disconnect();
+    process.exit(1);
+  }
+
+  const rows = await prisma.$queryRawUnsafe(
+    'SELECT "finished_at", "rolled_back_at", "applied_steps_count", "logs" FROM "_prisma_migrations" WHERE "migration_name" = $1 ORDER BY "started_at" DESC LIMIT 1',
+    migrationName,
+  );
+  await prisma.$disconnect();
+
+  const row = rows[0];
+  const failedBeforeAnyStep =
+    row &&
+    row.finished_at === null &&
+    row.rolled_back_at === null &&
+    Number(row.applied_steps_count) === 0 &&
+    typeof row.logs === "string" &&
+    row.logs.includes("syntax error at or near") &&
+    row.logs.includes("ALTER");
+
+  process.exit(failedBeforeAnyStep ? 0 : 1);
+})().catch(async () => {
+  await prisma.$disconnect().catch(() => undefined);
+  process.exit(1);
+});
+NODE
+}
+
+recover_important_files_migration() {
+  if has_failed_important_files_migration; then
+    compose exec -T app npx prisma migrate resolve --rolled-back 20260714220000_important_files
+  fi
+}
+
 restore_previous_release() {
   if [[ "${SOURCE_SWITCHED}" -eq 1 && -f "${BACKUP_PATH}" ]]; then
     find "${APP_DIR}" -mindepth 1 -maxdepth 1 \
@@ -98,7 +156,9 @@ SOURCE_SWITCHED=1
 docker tag "${CANDIDATE_IMAGE}" "${LIVE_IMAGE}"
 cd "${APP_DIR}"
 ensure_telegram_webhook_secret
+ensure_notification_cron_secret
 compose up -d --no-deps --no-build --force-recreate app scheduler
+recover_important_files_migration
 compose exec -T app npx prisma migrate deploy
 
 healthy=0
