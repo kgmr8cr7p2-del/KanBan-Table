@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { AUTH_CODE_MAX_ATTEMPTS, authCodeMatches } from "@/lib/auth-code";
 import { createSession } from "@/lib/auth";
 import { fail, handleRouteError, ok } from "@/lib/http";
-import { notifyTelegram } from "@/lib/telegram";
+import { notifySharedTelegram } from "@/lib/telegram";
 import { verifyEmailCodeSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       prisma.userInvite.updateMany({ where: { email: user.email }, data: { acceptedAt: new Date() } }),
     ]);
     await createSession(user.id);
-    await notifyTelegram("account_registered", `Пользователь: ${user.name}\nПочта: ${user.email}`);
+    await notifySharedTelegram("account_registered", `Пользователь: ${user.name}\nПочта: ${user.email}`);
     return ok({ ok: true, verified: true, approved: Boolean(verifiedUser.approvedAt) });
   } catch (error) {
     return handleRouteError(error);

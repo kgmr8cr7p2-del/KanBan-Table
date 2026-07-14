@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { taskInclude } from "@/lib/board-data";
 import { canCreateTask } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
-import { notifyTelegram } from "@/lib/telegram";
+import { notifySharedTelegram } from "@/lib/telegram";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { taskSchema } from "@/lib/validators";
 import { tagConnects } from "@/lib/tags";
@@ -102,10 +102,9 @@ export async function POST(request: Request) {
       details: { title: task.title },
     });
     if (!isPersonalBoard && input.priority !== "PLANNED") {
-      await notifyTelegram(
+      await notifySharedTelegram(
         "task_created",
         formatTaskCreatedMessage(taskWithDetails, user, initialComment),
-        assigneeIds,
       );
       triggerTaskSoundEvent();
     }

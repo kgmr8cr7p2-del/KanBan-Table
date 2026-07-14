@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { taskInclude, type TaskWithDetails } from "@/lib/board-data";
 import { canDeleteTask, canEditTask } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
-import { notifyTelegram } from "@/lib/telegram";
+import { notifySharedTelegram } from "@/lib/telegram";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { taskSchema } from "@/lib/validators";
 import { tagConnects } from "@/lib/tags";
@@ -114,18 +114,18 @@ export async function PATCH(request: Request, { params }: Params) {
       });
     }
     if (!isPersonalBoard && task.priority !== "PLANNED" && changes.includes(ActivityAction.STATUS_CHANGED)) {
-      await notifyTelegram("status_changed", [
+      await notifySharedTelegram("status_changed", [
         `Задача: ${task.title}`,
         `Было: ${existing.column.name}`,
         `Стало: ${task.column.name}`,
         `Изменил: ${user.name}`,
-      ].join("\n"), task.assignees.map((item) => item.userId));
+      ].join("\n"));
       if (!isCompletedColumn(existing.column.name) && isCompletedColumn(task.column.name)) {
         triggerTaskCompletionSoundEvent();
       }
     }
     if (!isPersonalBoard && task.priority !== "PLANNED" && changes.includes(ActivityAction.ASSIGNEE_CHANGED)) {
-      await notifyTelegram("assignee_changed", formatAssigneeChangedMessage(task, user), task.assignees.map((item) => item.userId));
+      await notifySharedTelegram("assignee_changed", formatAssigneeChangedMessage(task, user));
     }
     return ok({ task });
   } catch (error) {

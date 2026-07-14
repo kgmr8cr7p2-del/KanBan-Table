@@ -3,7 +3,7 @@ import { requireVerifiedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canEditTask } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
-import { notifyTelegram } from "@/lib/telegram";
+import { notifySharedTelegram } from "@/lib/telegram";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { commentSchema } from "@/lib/validators";
 import { canAccessTask } from "@/lib/board-access";
@@ -34,11 +34,11 @@ export async function POST(request: Request, { params }: Params) {
       taskId: id,
       details: { text: input.text.slice(0, 120) },
     });
-    if (!access.column.board.ownerId && task.priority !== "PLANNED") await notifyTelegram("comment_added", [
+    if (!access.column.board.ownerId && task.priority !== "PLANNED") await notifySharedTelegram("comment_added", [
       `Задача: ${task.title}`,
       `Автор: ${user.name}`,
       `Комментарий: ${input.text.slice(0, 260)}`,
-    ].join("\n"), task.assignees.map((item) => item.userId));
+    ].join("\n"));
     return ok({ comment });
   } catch (error) {
     return handleRouteError(error);

@@ -38,6 +38,13 @@ await callTelegram("setMyCommands", {
   commands: [{ command: "start", description: "Подключить уведомления" }],
 });
 await callTelegram("setChatMenuButton", { menu_button: { type: "default" } });
+await callTelegram("setMyName", { name: "Taskora · Личные напоминания" });
+await callTelegram("setMyDescription", {
+  description: "Личные напоминания только о задачах с ваших личных досок Taskora.",
+});
+await callTelegram("setMyShortDescription", {
+  short_description: "Напоминания с личных досок Taskora",
+});
 
 console.log(`Telegram webhook configured: ${webhookUrl}`);
 

@@ -30,17 +30,16 @@ export async function telegramBotLink() {
 
 async function resolveBotUsername() {
   const configured = (process.env.TELEGRAM_BOT_USERNAME ?? "").trim().replace(/^@/, "");
-  if (configured) return configured;
   if (cachedBotUsername) return cachedBotUsername;
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) return "";
+  if (!token) return configured;
 
   try {
     const response = await fetch(`https://api.telegram.org/bot${token}/getMe`, { next: { revalidate: 3600 } });
     const payload = await response.json() as { ok?: boolean; result?: { username?: string } };
-    cachedBotUsername = payload.ok ? payload.result?.username ?? "" : "";
+    cachedBotUsername = payload.ok ? payload.result?.username ?? configured : configured;
   } catch {
-    cachedBotUsername = "";
+    cachedBotUsername = configured;
   }
   return cachedBotUsername;
 }

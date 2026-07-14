@@ -3,7 +3,7 @@ import { AUTH_CODE_MAX_ATTEMPTS, authCodeMatches } from "@/lib/auth-code";
 import { hashPassword } from "@/lib/auth";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { sendPasswordChangedEmail } from "@/lib/mail";
-import { notifyTelegram } from "@/lib/telegram";
+import { notifySharedTelegram } from "@/lib/telegram";
 import { passwordResetConfirmSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
     await Promise.all([
       sendPasswordChangedEmail(user.email).catch((error) => console.error("Password changed email failed", error)),
-      notifyTelegram("password_reset", `Пользователь: ${user.name}\nПочта: ${user.email}`, [user.id]),
+      notifySharedTelegram("password_reset", `Пользователь: ${user.name}\nПочта: ${user.email}`),
     ]);
     return ok({ ok: true });
   } catch (error) {

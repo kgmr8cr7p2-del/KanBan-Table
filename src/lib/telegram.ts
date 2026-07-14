@@ -58,15 +58,10 @@ const telegramEnabledUser = {
 
 export async function sendWeeklyReportMessage(message: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_DEFAULT_CHAT_ID;
   if (!token) return { sent: 0, failed: 0, reason: "token_missing" as const };
-  const connections = await prisma.telegramConnection.findMany({
-    where: { enabled: true, user: telegramEnabledUser },
-  });
-  const chatIds = new Set([
-    ...connections.map((connection) => connection.chatId),
-    ...(process.env.TELEGRAM_DEFAULT_CHAT_ID ? [process.env.TELEGRAM_DEFAULT_CHAT_ID] : []),
-  ]);
-  return sendToChats(token, [...chatIds], message, "Telegram weekly report failed");
+  if (!chatId) return { sent: 0, failed: 0, reason: "channel_missing" as const };
+  return sendToChats(token, [chatId], message, "Telegram weekly report failed");
 }
 
 export async function sendTelegramStartMessage(chatId: string, state: TelegramStartState = "instructions") {
@@ -100,19 +95,11 @@ export async function sendPersonalTaskReminder(userId: string, message: string) 
   return sendToChats(token, [connection.chatId], formatTelegramMessage("deadline_reminder", message), "Telegram personal reminder failed");
 }
 
-export async function notifyTelegram(event: TelegramEvent, message: string, userIds: string[] = []) {
+export async function notifySharedTelegram(event: TelegramEvent, message: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) return;
-  const connections = userIds.length
-    ? await prisma.telegramConnection.findMany({
-        where: { enabled: true, userId: { in: userIds }, user: telegramEnabledUser },
-      })
-    : [];
-  const chatIds = new Set([
-    ...connections.map((connection) => connection.chatId),
-    ...(process.env.TELEGRAM_DEFAULT_CHAT_ID ? [process.env.TELEGRAM_DEFAULT_CHAT_ID] : []),
-  ]);
-  await sendToChats(token, [...chatIds], formatTelegramMessage(event, message), "Telegram notification failed");
+  const chatId = process.env.TELEGRAM_DEFAULT_CHAT_ID;
+  if (!token || !chatId) return;
+  await sendToChats(token, [chatId], formatTelegramMessage(event, message), "Telegram shared notification failed");
 }
 
 async function sendToChats(token: string, chatIds: string[], text: string, errorLabel: string, includeBoardButton = true) {

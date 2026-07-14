@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { taskInclude } from "@/lib/board-data";
 import { canEditTask } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
-import { notifyTelegram } from "@/lib/telegram";
+import { notifySharedTelegram } from "@/lib/telegram";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { triggerTaskCompletionSoundEvent } from "@/lib/task-sound-event";
 import { canAccessTask, getAccessibleColumn } from "@/lib/board-access";
@@ -51,13 +51,13 @@ export async function POST(request: Request, { params }: Params) {
         details: { deadline: nextDeadline?.toISOString(), reason: "returned_from_review" },
       });
     }
-    if (!isPersonalBoard && task.priority !== "PLANNED") await notifyTelegram("status_changed", [
+    if (!isPersonalBoard && task.priority !== "PLANNED") await notifySharedTelegram("status_changed", [
       `Задача: ${task.title}`,
       `Было: ${existing.column.name}`,
       `Стало: ${task.column.name}`,
       `Изменил: ${user.name}`,
       returnedFromReviewToWork && nextDeadline ? `Новый срок: ${new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(nextDeadline)}` : null,
-    ].filter(Boolean).join("\n"), task.assignees.map((item) => item.userId));
+    ].filter(Boolean).join("\n"));
     if (!isPersonalBoard && task.priority !== "PLANNED" && !isCompletedColumn(existing.column.name) && isCompletedColumn(destinationColumn.name)) {
       triggerTaskCompletionSoundEvent();
     }
