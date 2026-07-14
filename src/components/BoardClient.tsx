@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Building2, Calendar, Check, CheckSquare, ChevronDown, Download, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Download, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskButton } from "@/components/CreateTaskButton";
@@ -666,6 +666,12 @@ function TaskCard({
             {deadlineState}
           </span>
         ) : null}
+        {task.reminderDaysBefore != null ? (
+          <span className="chip reminder-chip" title={`Telegram-напоминание: ${reminderLabel(task.reminderDaysBefore)}`}>
+            <Bell size={13} />
+            {reminderLabel(task.reminderDaysBefore)}
+          </span>
+        ) : null}
         {task.comments.length ? (
           <span className="chip">
             <MessageSquare size={13} />
@@ -1146,6 +1152,7 @@ function CreateTaskDialogV2(props: { view: View; error?: string; onClose: () => 
                 <span className="label">Дедлайн</span>
                 <input className="input" type="date" name="deadline" required />
               </label>
+              <ReminderFields personal={isPersonalBoard} />
               {!isPersonalBoard ? <label className="field modal-property-field">
                 <span className="property-icon"><Building2 size={19} /></span>
                 <span className="label">Нефтебаза</span>
@@ -1384,6 +1391,7 @@ function TaskDialogV2(props: {
             <span className="label">Дедлайн</span>
             <input className="input" form={editFormId} type="date" name="deadline" required defaultValue={props.task.deadline ? String(props.task.deadline).slice(0, 10) : ""} />
           </label>
+          <ReminderFields personal={isPersonalBoard} formId={editFormId} defaultDays={props.task.reminderDaysBefore} />
           {!isPersonalBoard ? <label className="field modal-property-field">
             <span className="property-icon"><Building2 size={19} /></span>
             <span className="label">Нефтебаза</span>
@@ -1437,6 +1445,9 @@ function taskPayload(formData: FormData) {
     priority: String(formData.get("priority") ?? "MEDIUM"),
     startDate: String(formData.get("startDate") ?? "") || null,
     deadline: String(formData.get("deadline") ?? "") || null,
+    reminderDaysBefore: formData.get("reminderEnabled") === "on"
+      ? Number(formData.get("reminderDaysBefore") ?? 1)
+      : null,
     assigneeId: String(formData.get("assigneeId") ?? "") || null,
     assigneeIds: formData.getAll("assigneeIds").map((value) => String(value)).filter(Boolean),
     initialComment: String(formData.get("initialComment") ?? ""),
@@ -1454,6 +1465,46 @@ function taskPayload(formData: FormData) {
   }
 
   return payload;
+}
+
+function ReminderFields({ personal, formId, defaultDays }: { personal: boolean; formId?: string; defaultDays?: number | null }) {
+  const fieldId = useId();
+  const [enabled, setEnabled] = useState(defaultDays != null);
+
+  return (
+    <div className="field modal-property-field reminder-property">
+      <span className="property-icon"><Bell size={19} /></span>
+      <span className="label">Напоминание</span>
+      <label className="reminder-toggle" htmlFor={`${fieldId}-enabled`}>
+        <input
+          id={`${fieldId}-enabled`}
+          form={formId}
+          type="checkbox"
+          name="reminderEnabled"
+          checked={enabled}
+          onChange={(event) => setEnabled(event.currentTarget.checked)}
+        />
+        <span>{personal ? "Напомнить мне в Telegram" : "Напомнить в общем канале"}</span>
+      </label>
+      {personal ? (
+        <label className="reminder-offset" htmlFor={`${fieldId}-days`}>
+          <span>Когда напомнить</span>
+          <select id={`${fieldId}-days`} className="select" form={formId} name="reminderDaysBefore" defaultValue={String(defaultDays ?? 1)} disabled={!enabled}>
+            <option value="0">В день дедлайна</option>
+            <option value="1">За 1 день</option>
+            <option value="2">За 2 дня</option>
+            <option value="3">За 3 дня</option>
+            <option value="7">За неделю</option>
+          </select>
+        </label>
+      ) : (
+        <>
+          <input form={formId} type="hidden" name="reminderDaysBefore" value="1" />
+          <small className="modal-property-help reminder-help">За 1 день до дедлайна, в 09:00</small>
+        </>
+      )}
+    </div>
+  );
 }
 
 function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defaultIds?: string[]; formId?: string }) {
@@ -1594,6 +1645,13 @@ function deadlineText(task: Task) {
   if (isDueToday(task)) return "Сегодня";
   if (isDueSoon(task)) return `Скоро · ${dateOnly(task.deadline)}`;
   return dateOnly(task.deadline);
+}
+
+function reminderLabel(days: number) {
+  if (days === 0) return "В день срока";
+  if (days === 1) return "За 1 день";
+  if (days >= 5) return `За ${days} дней`;
+  return `За ${days} дня`;
 }
 
 function startOfToday() {

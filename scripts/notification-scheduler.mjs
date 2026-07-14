@@ -4,6 +4,7 @@ const intervalMs = 30_000;
 let completedDateKey = "";
 
 async function tick() {
+  await sendDeadlineReminders();
   const now = moscowParts(new Date());
   const dayOfWeek = new Date(Date.UTC(now.year, now.month - 1, now.day)).getUTCDay();
   const currentMinutes = now.hour * 60 + now.minute;
@@ -22,6 +23,22 @@ async function tick() {
     console.log(`[weekly-report] ${result.sent ? "sent" : result.duplicate ? "already sent" : "skipped"}`);
   } catch (error) {
     console.error("[weekly-report] scheduler request failed", error);
+  }
+}
+
+async function sendDeadlineReminders() {
+  try {
+    const response = await fetch(`${baseUrl}/api/notifications/deadlines`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${secret}` },
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    if (result.sent || result.failed) {
+      console.log(`[task-reminders] sent=${result.sent || 0} failed=${result.failed || 0} duplicate=${result.duplicate || 0}`);
+    }
+  } catch (error) {
+    console.error("[task-reminders] scheduler request failed", error);
   }
 }
 
@@ -46,6 +63,6 @@ function moscowParts(date) {
   };
 }
 
-console.log("[weekly-report] scheduler started (Friday 16:40 Europe/Moscow)");
+console.log("[notifications] scheduler started (task reminders every 30s; weekly report Friday 16:40 Europe/Moscow)");
 await tick();
 setInterval(() => void tick(), intervalMs);

@@ -7,6 +7,7 @@ type TelegramEvent =
   | "comment_added"
   | "deadline_soon"
   | "deadline_overdue"
+  | "deadline_reminder"
   | "weekly_report";
 
 const titles: Record<TelegramEvent, string> = {
@@ -16,6 +17,7 @@ const titles: Record<TelegramEvent, string> = {
   comment_added: "Новый комментарий",
   deadline_soon: "Скоро дедлайн",
   deadline_overdue: "Дедлайн просрочен",
+  deadline_reminder: "Напоминание о задаче",
   weekly_report: "Еженедельный отчёт",
 };
 
@@ -26,6 +28,7 @@ const icons: Record<TelegramEvent, string> = {
   comment_added: "💬",
   deadline_soon: "⏳",
   deadline_overdue: "🔴",
+  deadline_reminder: "🔔",
   weekly_report: "📊",
 };
 
@@ -45,17 +48,33 @@ export async function sendWeeklyReportMessage(message: string) {
   return sendToChats(token, [...chatIds], message, "Telegram weekly report failed");
 }
 
-export async function sendTelegramStartMessage(chatId: string) {
+export async function sendTelegramStartMessage(chatId: string, connected = false) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) return { sent: 0, failed: 0, reason: "token_missing" as const };
 
   const message = [
     "👋 <b>Taskora</b>",
     "",
-    "Создайте новую задачу прямо из Telegram — она сразу появится на доске сайта.",
+    connected ? "Личный чат подключён. Сюда будут приходить напоминания с ваших личных досок." : "Создайте новую задачу прямо из Telegram — она сразу появится на доске сайта.",
   ].join("\n");
 
   return sendToChats(token, [chatId], message, "Telegram /start response failed");
+}
+
+export async function sendSharedTaskReminder(message: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_DEFAULT_CHAT_ID;
+  if (!token) return { sent: 0, failed: 0, reason: "token_missing" as const };
+  if (!chatId) return { sent: 0, failed: 0, reason: "channel_missing" as const };
+  return sendToChats(token, [chatId], formatTelegramMessage("deadline_reminder", message), "Telegram shared reminder failed");
+}
+
+export async function sendPersonalTaskReminder(userId: string, message: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return { sent: 0, failed: 0, reason: "token_missing" as const };
+  const connection = await prisma.telegramConnection.findUnique({ where: { userId } });
+  if (!connection?.enabled) return { sent: 0, failed: 0, reason: "chat_missing" as const };
+  return sendToChats(token, [connection.chatId], formatTelegramMessage("deadline_reminder", message), "Telegram personal reminder failed");
 }
 
 export async function notifyTelegram(event: TelegramEvent, message: string, userIds: string[] = []) {

@@ -37,6 +37,11 @@ export async function POST(request: Request) {
     const startDate = input.startDate ? parseTaskDate(input.startDate) : createdAt;
     const deadline = parseTaskDate(input.deadline);
     if (dateKey(deadline) < dateKey(startDate)) return fail("Дедлайн не может быть раньше даты начала задачи.", 422);
+    const reminderDaysBefore = input.reminderDaysBefore == null
+      ? null
+      : isPersonalBoard
+        ? input.reminderDaysBefore
+        : 1;
     const maxPosition = await prisma.task.aggregate({
       where: { columnId: input.columnId },
       _max: { position: true },
@@ -50,6 +55,7 @@ export async function POST(request: Request) {
         priority: input.priority,
         startDate,
         deadline,
+        reminderDaysBefore,
         createdAt,
         columnId: input.columnId,
         oilDepotId: input.oilDepotId || null,

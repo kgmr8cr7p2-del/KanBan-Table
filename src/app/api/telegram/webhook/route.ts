@@ -1,14 +1,16 @@
 import { timingSafeEqual } from "node:crypto";
+import { prisma } from "@/lib/prisma";
 import { sendTelegramStartMessage } from "@/lib/telegram";
+import { verifyTelegramStartToken } from "@/lib/telegram-link";
 
 type TelegramUpdate = {
   message?: {
-    chat?: { id?: number | string };
+    chat?: { id?: number | string; type?: string };
     text?: string;
   };
 };
 
-const startCommand = /^\/start(?:@[a-z0-9_]+)?(?:\s|$)/i;
+const startCommand = /^\/start(?:@[a-z0-9_]+)?(?:\s+(\S+))?$/i;
 
 export async function POST(request: Request) {
   if (!hasValidSecret(request)) {
@@ -24,12 +26,29 @@ export async function POST(request: Request) {
 
   const text = update.message?.text?.trim() ?? "";
   const chatId = update.message?.chat?.id;
-  if (chatId === undefined || !startCommand.test(text)) {
+  const command = text.match(startCommand);
+  if (chatId === undefined || !command) {
     return Response.json({ ok: true, handled: false });
   }
 
-  const delivery = await sendTelegramStartMessage(String(chatId));
-  return Response.json({ ok: true, handled: true, delivered: delivery.sent > 0 });
+  const linkedUserId = command[1] && update.message?.chat?.type === "private"
+    ? verifyTelegramStartToken(command[1])
+    : null;
+  let connected = false;
+  if (linkedUserId) {
+    const user = await prisma.user.findUnique({ where: { id: linkedUserId }, select: { id: true } });
+    if (user) {
+      await prisma.telegramConnection.upsert({
+        where: { userId: user.id },
+        update: { chatId: String(chatId), enabled: true },
+        create: { userId: user.id, chatId: String(chatId), enabled: true },
+      });
+      connected = true;
+    }
+  }
+
+  const delivery = await sendTelegramStartMessage(String(chatId), connected);
+  return Response.json({ ok: true, handled: true, linked: connected, delivered: delivery.sent > 0 });
 }
 
 function hasValidSecret(request: Request) {

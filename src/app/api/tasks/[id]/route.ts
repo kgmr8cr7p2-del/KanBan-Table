@@ -57,6 +57,13 @@ export async function PATCH(request: Request, { params }: Params) {
     const nextDeadline = input.deadline === undefined ? existing.deadline : parseTaskDate(input.deadline);
     if (!nextDeadline) return fail("Укажите дедлайн задачи.", 422);
     if (dateKey(nextDeadline) < dateKey(nextStartDate)) return fail("Дедлайн не может быть раньше даты начала задачи.", 422);
+    const reminderDaysBefore = input.reminderDaysBefore === undefined
+      ? undefined
+      : input.reminderDaysBefore == null
+        ? null
+        : isPersonalBoard
+          ? input.reminderDaysBefore
+          : 1;
     const changes: ActivityAction[] = [];
     if (input.title && input.title !== existing.title) changes.push(ActivityAction.TITLE_CHANGED);
     if (input.description !== undefined && input.description !== existing.description) changes.push(ActivityAction.DESCRIPTION_CHANGED);
@@ -78,6 +85,7 @@ export async function PATCH(request: Request, { params }: Params) {
         priority: input.priority,
         startDate: input.startDate === undefined ? undefined : nextStartDate,
         deadline: input.deadline === undefined ? undefined : nextDeadline,
+        reminderDaysBefore,
         columnId: input.columnId,
         oilDepotId: input.oilDepotId === undefined ? undefined : input.oilDepotId || null,
         assigneeId: assigneeIds === undefined ? undefined : assigneeIds[0] || null,

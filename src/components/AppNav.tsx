@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Archive, BarChart3, History, LayoutDashboard, MessageCircle, Moon, MoreHorizontal, Settings, Shield, UserRound } from "lucide-react";
+import { Archive, BarChart3, History, LayoutDashboard, MessageCircle, Moon, MoreHorizontal, ScrollText, Settings, Shield, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -14,6 +14,7 @@ const links = [
   { href: "/chats", label: "Чаты", icon: MessageCircle },
   { href: "/reports", label: "Отчеты", icon: BarChart3 },
   { href: "/history", label: "История", icon: History },
+  { href: "/changelog", label: "Что нового", icon: ScrollText },
   { href: "/archive", label: "Архив", icon: Archive },
   { href: "/profile", label: "Профиль", icon: UserRound },
   { href: "/settings", label: "Настройки", icon: Settings },

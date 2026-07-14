@@ -4241,6 +4241,44 @@
     line-height: 1.35;
   }
 
+  .reminder-toggle {
+    grid-column: 3;
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    min-block-size: 3rem;
+    color: var(--text);
+    font-size: .8rem;
+    font-weight: 750;
+    cursor: pointer;
+  }
+
+  .reminder-chip {
+    color: var(--brand);
+    background: color-mix(in srgb, var(--brand) 8%, var(--panel));
+  }
+
+  .reminder-toggle input {
+    inline-size: 1.05rem;
+    block-size: 1.05rem;
+    accent-color: var(--brand);
+  }
+
+  .reminder-offset {
+    grid-column: 3;
+    display: grid;
+    gap: .35rem;
+  }
+
+  .reminder-offset > span {
+    color: var(--muted);
+    font-size: .7rem;
+  }
+
+  .reminder-help {
+    margin-block-start: -.45rem;
+  }
+
   .task-modal-v2-actions {
     position: sticky;
     inset-block-end: 0;
@@ -5137,6 +5175,151 @@
     display: grid;
     align-content: center;
     gap: .8rem;
+  }
+
+  .changelog-page {
+    display: grid;
+    gap: 1.4rem;
+    max-inline-size: 68rem;
+    margin-inline: auto;
+  }
+
+  .changelog-head {
+    display: grid;
+    gap: .45rem;
+    border-block-end: 1px solid var(--border);
+    padding-block-end: 1.15rem;
+  }
+
+  .changelog-head h1 {
+    font-size: clamp(1.65rem, 3vw, 2.45rem);
+    line-height: 1.1;
+  }
+
+  .changelog-head > p {
+    max-inline-size: 48rem;
+    color: var(--muted);
+  }
+
+  .changelog-list {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .changelog-release {
+    display: grid;
+    gap: .75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    padding: 1.15rem 1.25rem;
+  }
+
+  .changelog-release > header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .65rem;
+  }
+
+  .changelog-release time,
+  .changelog-release > header > span {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    color: var(--muted);
+    font-size: .74rem;
+    font-weight: 750;
+  }
+
+  .changelog-release > header > span {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--brand) 11%, var(--panel));
+    color: var(--brand);
+    padding: .3rem .55rem;
+  }
+
+  .changelog-release h2 {
+    font-size: 1.12rem;
+  }
+
+  .changelog-release ul {
+    display: grid;
+    gap: .55rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .changelog-release ul li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: .55rem;
+    align-items: start;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  .changelog-release ul svg {
+    margin-block-start: .18rem;
+    color: var(--success);
+  }
+
+  .telegram-settings-panel {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1rem;
+    border-color: color-mix(in srgb, #2aabee 30%, var(--border));
+    background: color-mix(in srgb, #2aabee 5%, var(--panel));
+  }
+
+  .telegram-settings-panel h2 {
+    margin-block-end: .2rem;
+    font-size: 1rem;
+  }
+
+  .telegram-settings-icon {
+    display: grid;
+    inline-size: 2.8rem;
+    block-size: 2.8rem;
+    place-items: center;
+    border-radius: 12px;
+    background: #2aabee;
+    color: #fff;
+  }
+
+  .telegram-connection-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-block-start: .55rem;
+    color: var(--muted);
+    font-size: .72rem;
+    font-weight: 750;
+  }
+
+  .telegram-connection-status::before {
+    content: "";
+    inline-size: .5rem;
+    block-size: .5rem;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+
+  .telegram-connection-status.is-connected {
+    color: var(--success);
+  }
+
+  .telegram-connection-status.is-connected::before {
+    background: var(--success);
+  }
+
+  .telegram-settings-unavailable {
+    max-inline-size: 16rem;
+    font-size: .72rem;
   }
 
   .avatar-crop-controls p {
@@ -6273,6 +6456,11 @@
 
     .modal-property-help { grid-column: 1; }
 
+    .reminder-toggle,
+    .reminder-offset {
+      grid-column: 1;
+    }
+
     .property-icon {
       display: none;
     }
@@ -6288,6 +6476,15 @@
 
     .goida-test-panel {
       grid-template-columns: 1fr;
+    }
+
+    .telegram-settings-panel {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .telegram-settings-panel > .button,
+    .telegram-settings-unavailable {
+      grid-column: 1 / -1;
     }
 
     .settings-manager-head {

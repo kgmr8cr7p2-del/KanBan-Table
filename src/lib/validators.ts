@@ -29,6 +29,7 @@ export const taskSchema = z.object({
   priority: z.nativeEnum(Priority),
   startDate: taskDateSchema().optional().nullable(),
   deadline: taskDateSchema("Укажите дедлайн задачи"),
+  reminderDaysBefore: z.number().int().min(0).max(30).optional().nullable(),
   assigneeId: z.string().optional().nullable(),
   assigneeIds: z.array(z.string().min(1)).max(30).optional(),
   initialComment: z.string().max(2000).optional().nullable(),

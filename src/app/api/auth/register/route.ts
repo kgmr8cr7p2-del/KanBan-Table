@@ -5,8 +5,6 @@ import { fail, handleRouteError, ok } from "@/lib/http";
 import { registerSchema } from "@/lib/validators";
 import { formatUserName } from "@/lib/user-name";
 
-const DEFAULT_TELEGRAM_CHAT_ID = "-5575713442";
-
 export async function POST(request: Request) {
   try {
     const input = registerSchema.parse(await request.json());
@@ -34,9 +32,6 @@ export async function POST(request: Request) {
         passwordHash: await hashPassword(input.password),
         roleId: role.id,
         emailVerifiedAt: new Date(),
-        telegramConnection: {
-          create: { chatId: DEFAULT_TELEGRAM_CHAT_ID },
-        },
       },
     });
 
