@@ -55,48 +55,8 @@ ensure_notification_cron_secret() {
   fi
 }
 
-has_failed_important_files_migration() {
-  compose exec -T app node <<'NODE'
-const { PrismaClient } = require("@prisma/client");
-
-const prisma = new PrismaClient();
-const migrationName = "20260714220000_important_files";
-
-(async () => {
-  const table = await prisma.$queryRawUnsafe("SELECT to_regclass('public._prisma_migrations') AS table_name");
-  if (!table[0]?.table_name) {
-    await prisma.$disconnect();
-    process.exit(1);
-  }
-
-  const rows = await prisma.$queryRawUnsafe(
-    'SELECT "finished_at", "rolled_back_at", "applied_steps_count", "logs" FROM "_prisma_migrations" WHERE "migration_name" = $1 ORDER BY "started_at" DESC LIMIT 1',
-    migrationName,
-  );
-  await prisma.$disconnect();
-
-  const row = rows[0];
-  const failedBeforeAnyStep =
-    row &&
-    row.finished_at === null &&
-    row.rolled_back_at === null &&
-    Number(row.applied_steps_count) === 0 &&
-    typeof row.logs === "string" &&
-    row.logs.includes("syntax error at or near") &&
-    row.logs.includes("ALTER");
-
-  process.exit(failedBeforeAnyStep ? 0 : 1);
-})().catch(async () => {
-  await prisma.$disconnect().catch(() => undefined);
-  process.exit(1);
-});
-NODE
-}
-
 recover_important_files_migration() {
-  if has_failed_important_files_migration; then
-    compose exec -T app npx prisma migrate resolve --rolled-back 20260714220000_important_files
-  fi
+  compose exec -T app npx prisma migrate resolve --rolled-back 20260714220000_important_files || true
 }
 
 restore_previous_release() {
