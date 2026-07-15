@@ -16,10 +16,9 @@ export async function PATCH(_: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(request: Request, { params }: Params) {
+export async function DELETE(_: Request, { params }: Params) {
   try {
     const user = await requireVerifiedUser();
-    if (!hasTrustedOrigin(request)) return fail("Недопустимый источник запроса", 403);
     const { id } = await params;
     const result = await prisma.notification.deleteMany({ where: { id, userId: user.id } });
     if (!result.count) return fail("Уведомление не найдено", 404);
@@ -27,9 +26,4 @@ export async function DELETE(request: Request, { params }: Params) {
   } catch (error) {
     return handleRouteError(error);
   }
-}
-
-function hasTrustedOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  return origin === new URL(request.url).origin;
 }

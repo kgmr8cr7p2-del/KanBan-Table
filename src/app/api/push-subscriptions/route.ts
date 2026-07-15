@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { requireVerifiedUser } from "@/lib/auth";
-import { fail, handleRouteError, ok } from "@/lib/http";
+import { handleRouteError, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { getWebPushPublicKey } from "@/lib/web-push";
 
@@ -25,7 +25,6 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await requireVerifiedUser();
-    if (!hasTrustedOrigin(request)) return fail("Недопустимый источник запроса", 403);
     const subscription = subscriptionSchema.parse(await request.json());
     await prisma.pushSubscription.upsert({
       where: { endpoint: subscription.endpoint },
@@ -50,7 +49,6 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const user = await requireVerifiedUser();
-    if (!hasTrustedOrigin(request)) return fail("Недопустимый источник запроса", 403);
     const body = await request.json().catch(() => ({}));
     const endpoint = typeof body?.endpoint === "string" ? body.endpoint : "";
     if (endpoint) {
@@ -60,9 +58,4 @@ export async function DELETE(request: Request) {
   } catch (error) {
     return handleRouteError(error);
   }
-}
-
-function hasTrustedOrigin(request: Request) {
-  const origin = request.headers.get("origin");
-  return origin === new URL(request.url).origin;
 }
