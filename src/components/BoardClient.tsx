@@ -571,6 +571,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
         <aside className={`task-drawer-backdrop ${taskFullscreen ? "task-drawer-backdrop-fullscreen" : ""}`} aria-label="Панель задачи">
           <div className={`task-drawer t-panel-slide ${taskFullscreen ? "task-drawer-fullscreen" : ""}`} data-open="true" role="dialog" aria-modal={taskFullscreen} aria-labelledby="task-dialog-title">
           <TaskDialogV2
+            key={activeTask.id}
             task={activeTask}
             view={view}
             canDelete={view.permissions.canDeleteTask}
