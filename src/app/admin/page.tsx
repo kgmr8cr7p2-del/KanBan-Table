@@ -11,7 +11,7 @@ export default async function AdminPage() {
   const [users, invites, roles] = await Promise.all([
     prisma.user.findMany({ include: { role: true }, orderBy: { createdAt: "desc" } }),
     prisma.userInvite.findMany({ where: { acceptedAt: null }, include: { role: true }, orderBy: { createdAt: "desc" } }),
-    prisma.role.findMany({ orderBy: [{ systemKey: "asc" }, { name: "asc" }] }),
+    prisma.role.findMany({ include: { _count: { select: { users: true, userInvites: true } } }, orderBy: [{ systemKey: "asc" }, { name: "asc" }] }),
   ]);
   const normalizedRoles = roles.map((role) => role.systemKey === "ADMIN" ? { ...role, permissions: allPermissions } : role);
 

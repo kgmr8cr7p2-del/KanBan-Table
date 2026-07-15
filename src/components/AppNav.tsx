@@ -105,7 +105,9 @@ export function AppNav({ user }: { user: CurrentUser }) {
             {secondaryMobileLinks.map(({ href, label, icon: Icon }) => (
               <Link aria-current={pathname === href ? "page" : undefined} href={href} key={href}><Icon size={19} aria-hidden="true" />{label}</Link>
             ))}
-            {canUseChats ? <NotificationCenter /> : null}<ThemeToggle icon={<Moon size={19} aria-hidden="true" />} /><LogoutButton />
+            <div className="mobile-nav-menu-actions">
+              {canUseChats ? <NotificationCenter /> : null}<ThemeToggle icon={<Moon size={19} aria-hidden="true" />} /><LogoutButton />
+            </div>
           </div>
         </details>
       </nav>

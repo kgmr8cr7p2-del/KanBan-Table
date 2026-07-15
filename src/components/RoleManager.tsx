@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { permissionOptions, type PermissionValue } from "@/lib/role-permission-options";
 
-type RoleItem = { id: string; name: string; systemKey: string | null; permissions: PermissionValue[] };
+type RoleItem = { id: string; name: string; systemKey: string | null; permissions: PermissionValue[]; _count?: { users: number; userInvites: number } };
 
 const permissionGroups: Array<{ key: string; label: string; keys: PermissionValue[] }> = [
   { key: "work", label: "Рабочее пространство", keys: ["VIEW_BOARD", "CREATE_TASKS", "EDIT_ALL_TASKS", "DELETE_TASKS", "MANAGE_COLUMNS"] },
@@ -90,8 +90,21 @@ export function RoleManager({ initialRoles }: { initialRoles: RoleItem[] }) {
 
   async function deleteRole() {
     if (!selected || selected.systemKey || !window.confirm(`Удалить роль «${selected.name}»?`)) return;
+    const assignedCount = (selected._count?.users ?? 0) + (selected._count?.userInvites ?? 0);
+    const replacement = roles.find((role) => role.id !== selected.id && role.systemKey === "MANAGER")
+      ?? roles.find((role) => role.id !== selected.id && role.systemKey === "EXECUTOR")
+      ?? roles.find((role) => role.id !== selected.id);
+    if (assignedCount && !replacement) {
+      setMessageKind("error");
+      setMessage("Нельзя удалить роль: сначала создайте роль для переназначения пользователей.");
+      return;
+    }
     setSaving(true);
-    const response = await fetch(`/api/admin/roles/${selected.id}`, { method: "DELETE" });
+    const response = await fetch(`/api/admin/roles/${selected.id}`, {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ replacementRoleId: assignedCount ? replacement?.id : undefined }),
+    });
     const data = await response.json().catch(() => ({}));
     setSaving(false);
     if (!response.ok) {
@@ -146,7 +159,8 @@ export function RoleManager({ initialRoles }: { initialRoles: RoleItem[] }) {
               <button className="button" type="button" onClick={() => void saveRole()} disabled={saving}><Save size={16} />{saving ? "Сохраняем" : "Сохранить"}</button>
             </div>
           </header>
-          <label className="field role-name-field"><span className="label">Название роли</span><input className="input" value={selected.name} minLength={2} maxLength={60} disabled={Boolean(selected.systemKey)} onChange={(event) => updateSelected({ name: event.currentTarget.value })} /></label>
+          <label className="field role-name-field"><span className="label">Название роли</span><input className="input" value={selected.name} minLength={2} maxLength={60} disabled={selected.systemKey === "ADMIN"} onChange={(event) => updateSelected({ name: event.currentTarget.value })} /></label>
+          {!selected.systemKey && ((selected._count?.users ?? 0) + (selected._count?.userInvites ?? 0) > 0) ? <p className="role-danger-note">При удалении назначенные пользователи и приглашения будут переназначены на роль «Менеджер» или «Исполнитель».</p> : null}
           <div className="permission-groups">
             {permissionGroups.map((group) => <section className="permission-group" key={group.key}>
               <header><div><h4>{group.label}</h4><p>{group.keys.length} разрешения</p></div></header>

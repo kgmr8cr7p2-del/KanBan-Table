@@ -45,15 +45,27 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_: Request, { params }: Params) {
+export async function DELETE(request: Request, { params }: Params) {
   try {
     await requirePermission(PermissionKey.MANAGE_USERS);
     const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const replacementRoleId = typeof body?.replacementRoleId === "string" ? body.replacementRoleId : "";
     const role = await prisma.role.findUnique({ where: { id }, include: { _count: { select: { users: true, userInvites: true } } } });
     if (!role) return fail("Роль не найдена", 404);
     if (role.systemKey) return fail("Встроенную роль нельзя удалить", 422);
-    if (role._count.users || role._count.userInvites) return fail("Сначала назначьте пользователям и приглашениям другую роль", 422);
-    await prisma.role.delete({ where: { id } });
+    if (role._count.users || role._count.userInvites) {
+      if (!replacementRoleId || replacementRoleId === id) return fail("Выберите роль для переназначения пользователей перед удалением", 422);
+      const replacementRole = await prisma.role.findUnique({ where: { id: replacementRoleId } });
+      if (!replacementRole) return fail("Роль для переназначения не найдена", 404);
+      await prisma.$transaction([
+        prisma.user.updateMany({ where: { roleId: id }, data: { roleId: replacementRoleId } }),
+        prisma.userInvite.updateMany({ where: { roleId: id }, data: { roleId: replacementRoleId } }),
+        prisma.role.delete({ where: { id } }),
+      ]);
+    } else {
+      await prisma.role.delete({ where: { id } });
+    }
     return ok({ ok: true });
   } catch (error) {
     return handleRouteError(error);

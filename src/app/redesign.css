@@ -126,6 +126,49 @@ body {
 .notification-sound-settings, .notification-open-link { border-color: var(--border); }
 .notification-item:hover, .notification-item.is-unread { background: color-mix(in oklch, var(--brand) 8%, var(--panel)); }
 
+/* Keep account tools in one predictable row instead of an orphaned third item. */
+.sidebar-account-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
+.sidebar-account-actions > *, .sidebar-account-actions .notification-center { min-inline-size: 0; }
+.sidebar-account-actions button { min-inline-size: 0; padding-inline: .35rem; }
+.mobile-nav-menu-actions { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; }
+.mobile-nav-menu-actions > *, .mobile-nav-menu-actions .notification-center { min-inline-size: 0; }
+.mobile-nav-menu-actions button { inline-size: 100%; justify-content: center; padding-inline: .45rem; }
+
+/* The board is easier to scan when identity, views, and actions have a fixed rhythm. */
+.board-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "identity views create"
+    "planned quick sort";
+  align-items: center;
+  gap: .7rem;
+  margin-block-end: 1rem;
+}
+.board-copy { grid-area: identity; }
+.board-head > .spacer { display: none; }
+.board-view-tabs-inline { grid-area: views; justify-self: start; }
+.board-planned-toggle { grid-area: planned; }
+.board-quick-filters { grid-area: quick; min-inline-size: 0; }
+.board-sort-control { grid-area: sort; }
+.board-head > .create-task-button { grid-area: create; justify-self: end; }
+.board-head > .quick-create { grid-column: 1 / -1; }
+.role-danger-note { margin: -.25rem 0 0; color: var(--muted); font-size: .76rem; }
+
+@media (max-width: 900px) {
+  .board-head {
+    grid-template-columns: 1fr;
+    grid-template-areas: "identity" "views" "planned" "quick" "sort" "create";
+    align-items: stretch;
+  }
+  .board-view-tabs-inline, .board-quick-filters { inline-size: 100%; justify-self: stretch; }
+  .board-view-tabs-inline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .board-quick-filters { justify-content: stretch; }
+  .board-quick-filters .button { flex: 1 1 10rem; justify-content: center; }
+  .board-sort-control, .board-sort-control .compact-select, .board-head > .create-task-button { inline-size: 100%; justify-self: stretch; max-inline-size: none; }
+  .sidebar-account-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 @media (max-width: 900px) {
   .role-manager-head, .role-manager-layout { grid-template-columns: 1fr; }
   .role-directory { border-right: 0; border-bottom: 1px solid var(--border); padding: 0 0 1rem; }
