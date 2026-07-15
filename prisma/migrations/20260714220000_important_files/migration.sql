@@ -22,16 +22,3 @@ CREATE INDEX "ImportantFile_createdAt_idx" ON "ImportantFile"("createdAt");
 
 ALTER TABLE "ImportantFile" ADD CONSTRAINT "ImportantFile_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
-UPDATE "Role"
-SET "permissions" = ARRAY(
-  SELECT DISTINCT permission
-  FROM unnest("permissions" || ARRAY['VIEW_FILES', 'MANAGE_FILES']::"PermissionKey"[]) AS permission
-)
-WHERE "systemKey" IN ('ADMIN', 'MANAGER');
-
-UPDATE "Role"
-SET "permissions" = ARRAY(
-  SELECT DISTINCT permission
-  FROM unnest("permissions" || ARRAY['VIEW_FILES']::"PermissionKey"[]) AS permission
-)
-WHERE "systemKey" = 'EXECUTOR';
