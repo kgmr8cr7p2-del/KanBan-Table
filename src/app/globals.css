@@ -6374,7 +6374,7 @@
   .tv-page {
     min-block-size: 100dvh;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
     gap: .72rem;
     overflow: hidden;
     background: linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
@@ -6393,6 +6393,7 @@
   .tv-clock-card,
   .tv-weather-card,
   .tv-joke-card,
+  .tv-news-strip,
   .tv-kpi,
   .tv-column,
   .tv-panel-card {
@@ -6519,6 +6520,92 @@
     -webkit-line-clamp: 4;
     line-clamp: 4;
     animation: soft-enter 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  }
+
+  .tv-news-strip {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    min-inline-size: 0;
+    gap: .85rem;
+    min-block-size: 3.65rem;
+    padding: .55rem .75rem;
+  }
+
+  .tv-news-source {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+  }
+
+  .tv-news-source > span {
+    display: grid;
+    inline-size: 2.15rem;
+    block-size: 2.15rem;
+    place-items: center;
+    border-radius: 7px;
+    background: #e8f0ff;
+    color: #1d4ed8;
+  }
+
+  .tv-news-source div {
+    display: grid;
+    gap: .05rem;
+  }
+
+  .tv-news-source strong {
+    color: #101828;
+    font-size: .78rem;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  .tv-news-source small {
+    color: #667085;
+    font-size: .7rem;
+    white-space: nowrap;
+  }
+
+  .tv-news-title {
+    display: -webkit-box;
+    min-inline-size: 0;
+    overflow: hidden;
+    color: #101828;
+    font-size: 1.02rem;
+    font-weight: 850;
+    line-height: 1.25;
+    text-wrap: pretty;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .tv-news-title:hover,
+  .tv-news-title:focus-visible {
+    color: #1d4ed8;
+    text-decoration: underline;
+    text-underline-offset: .18em;
+  }
+
+  .tv-news-placeholder {
+    color: #667085;
+  }
+
+  .tv-news-refresh {
+    justify-self: end;
+    border-radius: 999px;
+    background: #eef4ff;
+    color: #1d4ed8;
+    padding: .28rem .55rem;
+    font-size: .72rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .tv-news-strip.is-stale .tv-news-refresh {
+    background: #fff2e5;
+    color: #b54708;
   }
 
   .tv-compact-stats {

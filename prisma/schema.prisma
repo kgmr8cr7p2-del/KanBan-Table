@@ -377,3 +377,15 @@ model PushSubscription {
 
   @@index([userId])
 }
+
+model TvNewsItem {
+  id            String   @id @default(cuid())
+  sourceId      String   @unique
+  title         String
+  sourceUrl     String
+  shownAt       DateTime @default(now())
+  lastCheckedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([shownAt])
+}

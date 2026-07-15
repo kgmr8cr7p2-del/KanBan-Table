@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { CloudSun, Minimize2, Radio, Wind } from "lucide-react";
+import { CloudSun, Minimize2, Newspaper, Radio, Wind } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
 import { GoidaReminder } from "@/components/GoidaReminder";
@@ -61,11 +61,22 @@ type TvJoke = {
   updatedAt: string;
 };
 
-export function BoardTvClient({ initialView }: { initialView: View }) {
+type TvNews = {
+  id: string;
+  title: string;
+  sourceUrl: string;
+  shownAt: string;
+  nextRefreshAt: string;
+  stale: boolean;
+};
+
+export function BoardTvClient({ initialView, initialNews = null }: { initialView: View; initialNews?: TvNews | null }) {
   const [view, setView] = useState(initialView);
   const [weather, setWeather] = useState<Weather | null>(null);
   const [now, setNow] = useState(new Date());
   const [joke, setJoke] = useState<TvJoke>({ text: officeJokes[0], sourceUrl: null, updatedAt: "fallback" });
+  const [news, setNews] = useState<TvNews | null>(initialNews);
+  const [newsUnavailable, setNewsUnavailable] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
   const [connectionState, setConnectionState] = useState<"live" | "stale">("live");
 
@@ -86,6 +97,12 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
   useEffect(() => {
     void refreshWeather();
     const timer = window.setInterval(() => void refreshWeather(), 10 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    void refreshNews();
+    const timer = window.setInterval(() => void refreshNews(), 60 * 1000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -117,6 +134,19 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
 
     const direct = await fetchOfficeWeatherDirect().catch(() => data);
     if (direct) setWeather(direct);
+  }
+
+  async function refreshNews() {
+    try {
+      const response = await fetch(`/api/tv-news?at=${Date.now()}`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok || !data.title) throw new Error(data.error ?? "News refresh failed");
+      setNews(data);
+      setNewsUnavailable(false);
+    } catch {
+      setNewsUnavailable(true);
+      setNews((current) => current ? { ...current, stale: true, nextRefreshAt: new Date(Date.now() + 5 * 60 * 1000).toISOString() } : current);
+    }
   }
 
   async function exitTvMode() {
@@ -173,6 +203,19 @@ export function BoardTvClient({ initialView }: { initialView: View }) {
           <strong key={joke.updatedAt}>{joke.text}</strong>
         </section>
       </header>
+
+      <section className={`tv-news-strip${news?.stale ? " is-stale" : ""}`} aria-label="Главная новость Дзена" aria-live="polite">
+        <div className="tv-news-source">
+          <span aria-hidden="true"><Newspaper size={18} /></span>
+          <div><strong>Главное</strong><small>Дзен Новости</small></div>
+        </div>
+        {news ? (
+          <a className="tv-news-title" href={news.sourceUrl} target="_blank" rel="noreferrer" key={news.id}>{news.title}</a>
+        ) : (
+          <span className="tv-news-title tv-news-placeholder">{newsUnavailable ? "Новости временно недоступны" : "Загружаем главную новость"}</span>
+        )}
+        <span className="tv-news-refresh">{news ? nextNewsRefreshLabel(news.nextRefreshAt, now, news.stale) : "Обновление каждые 15 минут"}</span>
+      </section>
 
       <section className="tv-layout">
         <section className="tv-board" aria-label="Канбан-доска для телевизора">
@@ -325,6 +368,12 @@ function dateLong(value: Date) {
 
 function dateShort(value: string) {
   return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit" }).format(new Date(value));
+}
+
+function nextNewsRefreshLabel(nextRefreshAt: string, now: Date, stale: boolean) {
+  const remainingMs = Math.max(0, new Date(nextRefreshAt).getTime() - now.getTime());
+  const minutes = Math.max(1, Math.ceil(remainingMs / 60_000));
+  return stale ? `Ожидаем новую · проверка через ${minutes} мин` : `Следующая через ${minutes} мин`;
 }
 
 function signed(value: number) {
