@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Unbounded } from "next/font/google";
 import { ButtonBorderGlow } from "@/components/ButtonBorderGlow";
 import "./globals.css";
+import "./redesign.css";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"], display: "swap" });
 const unbounded = Unbounded({ subsets: ["latin", "cyrillic"], display: "swap", variable: "--font-unbounded" });
