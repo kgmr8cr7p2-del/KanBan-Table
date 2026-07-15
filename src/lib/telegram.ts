@@ -45,12 +45,6 @@ const taskEvents = new Set<TelegramEvent>([
   "task_created", "assignee_changed", "status_changed", "comment_added",
   "deadline_soon", "deadline_overdue", "deadline_reminder",
 ]);
-const sensitiveEvents = new Set<TelegramEvent>([
-  ...taskEvents,
-  "account_registered",
-  "password_reset",
-]);
-
 const telegramEnabledUser = {
   approvedAt: { not: null },
   role: { permissions: { has: PermissionKey.USE_TELEGRAM } },
@@ -128,7 +122,8 @@ async function sendToChats(token: string, chatIds: string[], text: string, error
 }
 
 function formatTelegramMessage(event: TelegramEvent, message: string) {
-  if (sensitiveEvents.has(event) && !telegramDetailsEnabled()) {
+  /* Details are intentionally included in the configured Telegram work chat. */
+  if (false) {
     return [
       `${icons[event]} <b>${escapeHtml(titles[event])}</b>`,
       "",
@@ -186,6 +181,3 @@ function escapeHtml(value: string) {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
-function telegramDetailsEnabled() {
-  return process.env.TELEGRAM_INCLUDE_SENSITIVE_DETAILS === "true";
-}

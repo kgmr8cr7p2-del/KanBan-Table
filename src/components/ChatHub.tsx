@@ -1,11 +1,10 @@
 "use client";
 
 import { MessageCircle, Paperclip, Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChatThread } from "@/components/DirectChat";
 import type { ProfileUser } from "@/components/ProfileCard/ProfileCard";
 import { presenceLabel, presenceTone } from "@/lib/presence";
-import { playChatNotification } from "@/lib/chat-notification";
 
 type Conversation = {
   user: ProfileUser;
@@ -27,7 +26,6 @@ export function ChatHub({ viewerId }: { viewerId: string }) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const previousUnreadRef = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
     const response = await fetch("/api/messages/conversations", { cache: "no-store" });
@@ -35,9 +33,6 @@ export function ChatHub({ viewerId }: { viewerId: string }) {
     if (!response.ok) setError(payload.error || "Не удалось загрузить чаты");
     else {
       const nextConversations: Conversation[] = payload.conversations ?? [];
-      const unreadTotal = Number(payload.unreadTotal ?? nextConversations.reduce((sum, item) => sum + item.unreadCount, 0));
-      if (previousUnreadRef.current !== null && unreadTotal > previousUnreadRef.current) void playChatNotification();
-      previousUnreadRef.current = unreadTotal;
       setConversations(nextConversations);
       setError("");
     }

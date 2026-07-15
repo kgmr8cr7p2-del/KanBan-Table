@@ -1,13 +1,36 @@
 let audioContext: AudioContext | null = null;
+const SOUND_KEY = "taskora-notification-sound";
+const VOLUME_KEY = "taskora-notification-volume";
 
-export async function playChatNotification() {
+export function isNotificationSoundEnabled() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(SOUND_KEY) !== "off" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+export function getNotificationSoundVolume() {
+  if (typeof window === "undefined") return 0.06;
+  const value = Number(window.localStorage.getItem(VOLUME_KEY));
+  return Number.isFinite(value) && value >= 0 && value <= 1 ? value : 0.06;
+}
+
+export function setNotificationSoundPreferences(enabled: boolean, volume: number) {
   if (typeof window === "undefined") return;
+  window.localStorage.setItem(SOUND_KEY, enabled ? "on" : "off");
+  window.localStorage.setItem(VOLUME_KEY, String(Math.min(1, Math.max(0, volume))));
+}
+
+export async function playChatNotification(kind: "chat" | "mention" = "chat") {
+  if (typeof window === "undefined") return;
+  if (!isNotificationSoundEnabled()) return;
   try {
     audioContext ??= new AudioContext();
     if (audioContext.state === "suspended") await audioContext.resume();
     const start = audioContext.currentTime;
-    playTone(audioContext, 660, start, 0.08, 0.055);
-    playTone(audioContext, 880, start + 0.1, 0.1, 0.045);
+    const volume = getNotificationSoundVolume();
+    const first = kind === "mention" ? 880 : 660;
+    const second = kind === "mention" ? 1046 : 880;
+    playTone(audioContext, first, start, 0.08, volume);
+    playTone(audioContext, second, start + 0.1, 0.1, volume * 0.8);
   } catch {
     // Browsers may block audio until the user has interacted with the page.
   }

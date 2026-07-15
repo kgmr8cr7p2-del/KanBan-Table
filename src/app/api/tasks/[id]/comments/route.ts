@@ -7,6 +7,8 @@ import { notifySharedTelegram } from "@/lib/telegram";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { commentSchema } from "@/lib/validators";
 import { canAccessTask } from "@/lib/board-access";
+import { createNotifications } from "@/lib/notifications";
+import { resolveMentionedUserIds, truncateNotificationText } from "@/lib/mentions";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -34,6 +36,16 @@ export async function POST(request: Request, { params }: Params) {
       taskId: id,
       details: { text: input.text.slice(0, 120) },
     });
+    const mentionedUserIds = await resolveMentionedUserIds(input.text, user.id);
+    if (mentionedUserIds.length) {
+      await createNotifications(mentionedUserIds.map((userId) => ({
+        userId,
+        type: "MENTION" as const,
+        title: "Вас упомянули в комментарии",
+        body: `${user.name} упомянул вас в задаче «${task.title}»: ${truncateNotificationText(input.text)}`,
+        href: `/board?task=${encodeURIComponent(id)}`,
+      }))).catch(() => undefined);
+    }
     if (!access.column.board.ownerId && task.priority !== "PLANNED") await notifySharedTelegram("comment_added", [
       `Задача: ${task.title}`,
       `Автор: ${user.name}`,

@@ -117,13 +117,19 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
     tasks: column.tasks.filter((task) => {
       if (status && task.columnId !== status) return false;
       if (priority && task.priority !== priority) return false;
-      if (assignee && task.assigneeId !== assignee && !task.assignees.some((item) => item.userId === assignee)) return false;
+      if (assignee === "unassigned" && (task.assigneeId || task.assignees.length)) return false;
+      if (assignee && assignee !== "unassigned" && task.assigneeId !== assignee && !task.assignees.some((item) => item.userId === assignee)) return false;
       if (oilDepot && task.oilDepotId !== oilDepot) return false;
       if (tag && !task.tags.some((taskTag) => taskTag.tagId === tag)) return false;
       if (deadline === "overdue" && (!task.deadline || task.deadline >= new Date() || isCompletedColumn(task.column.name) || isReviewColumn(task.column.name))) return false;
       if (deadline === "week") {
-        const week = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        if (!task.deadline || task.deadline > week) return false;
+        const start = new Date();
+        const day = start.getDay() || 7;
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() - day + 1);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 7);
+        if (!task.deadline || task.deadline < start || task.deadline >= end) return false;
       }
       if (query) {
         const haystack = `${task.taskNumber} ${task.title} ${task.description} ${task.oilDepot?.name ?? ""} ${task.tags

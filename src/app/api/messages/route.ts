@@ -5,6 +5,8 @@ import { requirePermission } from "@/lib/auth";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { validateTaskAttachment } from "@/lib/file-security";
+import { createNotification } from "@/lib/notifications";
+import { truncateNotificationText } from "@/lib/mentions";
 
 const MAX_FILE_BYTES = 15 * 1024 * 1024;
 const messageSelect = {
@@ -88,6 +90,13 @@ export async function POST(request: Request) {
         throw error;
       }
     }
+    await createNotification({
+      userId: targetId,
+      type: "CHAT_MESSAGE",
+      title: "Новое сообщение",
+      body: `${user.name}: ${truncateNotificationText(text || file?.name || "Вложение")}`,
+      href: "/chats",
+    }).catch(() => undefined);
     return ok({ message });
   } catch (error) {
     return handleRouteError(error);

@@ -481,6 +481,15 @@ export function BoardClient({ initialView }: { initialView: View }) {
             <Flag size={16} aria-hidden="true" />
             {filters.withoutPlanned === "1" ? "Показать плановые" : "Без плановых работ"}
           </button>
+          <div className="board-quick-filters" role="group" aria-label="Быстрые фильтры">
+            <button className={`button secondary compact-button ${filters.assignee === view.currentUser.id && filters.deadline === "overdue" ? "is-active" : ""}`} type="button" aria-pressed={filters.assignee === view.currentUser.id && filters.deadline === "overdue"} onClick={() => {
+              const active = filters.assignee === view.currentUser.id && filters.deadline === "overdue";
+              const next = active ? { ...filters, assignee: "", deadline: "" } : { ...filters, assignee: view.currentUser.id, deadline: "overdue" };
+              filtersRef.current = next; setFilters(next); void refresh(next, { syncUrl: true });
+            }}>Мои просроченные</button>
+            <button className={`button secondary compact-button ${filters.deadline === "week" ? "is-active" : ""}`} type="button" aria-pressed={filters.deadline === "week"} onClick={() => updateFilter("deadline", filters.deadline === "week" ? "" : "week")}>На этой неделе</button>
+            <button className={`button secondary compact-button ${filters.assignee === "unassigned" ? "is-active" : ""}`} type="button" aria-pressed={filters.assignee === "unassigned"} onClick={() => updateFilter("assignee", filters.assignee === "unassigned" ? "" : "unassigned")}>Без исполнителя</button>
+          </div>
           <label className="board-sort-control">
             <span className="visually-hidden">Сортировка задач</span>
             <select
@@ -1327,7 +1336,7 @@ function TaskDialogV2(props: {
                       <small>{dateTime(comment.createdAt)}</small>
                     </span>
                   </div>
-                  <p>{comment.text}</p>
+                  <p>{renderMentionText(comment.text)}</p>
                 </div>
               ))
             ) : (
@@ -1335,7 +1344,7 @@ function TaskDialogV2(props: {
             )}
           </div>
           <form className="modal-inline-form modal-comment-form" action={props.onAddComment}>
-            <textarea className="textarea modal-comment-input" name="text" placeholder="Напишите комментарий..." required />
+            <MentionTextarea users={props.view.users} />
             <button className="button modal-comment-send" title="Отправить комментарий">
               <Send size={16} />
               Отправить
@@ -1646,6 +1655,27 @@ function assigneeCountLabel(count: number) {
 function taskAssigneeUsers(task: Task) {
   if (task.assignees?.length) return task.assignees.map((item: any) => item.user);
   return task.assignee ? [task.assignee] : [];
+}
+
+function renderMentionText(text: string) {
+  return text.split(/(@[\p{L}\p{N}._-]{2,40})/gu).map((part, index) => part.startsWith("@") ? <strong className="comment-mention" key={`${part}-${index}`}>{part}</strong> : part);
+}
+
+function MentionTextarea({ users }: { users: any[] }) {
+  const [value, setValue] = useState("");
+  const match = value.match(/(?:^|\s)@([^\s@]{1,40})$/u);
+  const query = match?.[1]?.toLocaleLowerCase("ru-RU") ?? "";
+  const suggestions = query ? users.filter((user) => `${user.name} ${user.handle ?? ""}`.toLocaleLowerCase("ru-RU").includes(query)).slice(0, 5) : [];
+  function choose(user: any) {
+    const token = user.handle?.trim() || user.name.split(/\s+/)[0];
+    setValue((current) => current.replace(/@[^\s@]{1,40}$/u, `@${token} `));
+  }
+  return <div className="mention-input-wrap">
+    <textarea className="textarea modal-comment-input" name="text" value={value} onChange={(event) => setValue(event.currentTarget.value)} placeholder="Напишите комментарий… Используйте @имя" required />
+    {suggestions.length ? <div className="mention-suggestions" role="listbox" aria-label="Пользователи для упоминания">
+      {suggestions.map((user) => <button type="button" role="option" key={user.id} onClick={() => choose(user)}>{user.name}{user.handle ? ` · @${user.handle}` : ""}</button>)}
+    </div> : null}
+  </div>;
 }
 
 const priorityOrder: Record<string, number> = {
