@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { PermissionKey } from "@prisma/client";
 import { hashToken } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
+import { hasPermission } from "@/lib/role-permissions";
 
 const CODE_TTL_MINUTES = 15;
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -35,7 +36,7 @@ export async function consumeTelegramConnectCode(value: string) {
     record.expiresAt <= new Date()
     || !user.emailVerifiedAt
     || !user.approvedAt
-    || !user.role.permissions.includes(PermissionKey.USE_TELEGRAM)
+    || !hasPermission(user, PermissionKey.USE_TELEGRAM)
   ) return null;
 
   return user;

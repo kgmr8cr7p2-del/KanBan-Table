@@ -7,11 +7,13 @@ import { prisma } from "@/lib/prisma";
 
 export default async function AdminPage() {
   const user = await requirePermission(PermissionKey.MANAGE_USERS);
+  const allPermissions = Object.values(PermissionKey);
   const [users, invites, roles] = await Promise.all([
     prisma.user.findMany({ include: { role: true }, orderBy: { createdAt: "desc" } }),
     prisma.userInvite.findMany({ where: { acceptedAt: null }, include: { role: true }, orderBy: { createdAt: "desc" } }),
     prisma.role.findMany({ orderBy: [{ systemKey: "asc" }, { name: "asc" }] }),
   ]);
+  const normalizedRoles = roles.map((role) => role.systemKey === "ADMIN" ? { ...role, permissions: allPermissions } : role);
 
   return (
     <AppShell user={user}>
@@ -19,9 +21,9 @@ export default async function AdminPage() {
         <section className="panel">
           <h1>Админ-панель</h1>
           <p className="muted">Добавьте email и роль. Пользователь сам зарегистрируется по этой почте, а имя укажет при регистрации.</p>
-          <AdminUsers currentUserId={user.id} invites={JSON.parse(JSON.stringify(invites))} users={JSON.parse(JSON.stringify(users))} roles={JSON.parse(JSON.stringify(roles))} />
+          <AdminUsers currentUserId={user.id} invites={JSON.parse(JSON.stringify(invites))} users={JSON.parse(JSON.stringify(users))} roles={JSON.parse(JSON.stringify(normalizedRoles))} />
         </section>
-        <RoleManager initialRoles={JSON.parse(JSON.stringify(roles))} />
+        <RoleManager initialRoles={JSON.parse(JSON.stringify(normalizedRoles))} />
       </div>
     </AppShell>
   );

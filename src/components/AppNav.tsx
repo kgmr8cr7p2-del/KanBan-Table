@@ -25,7 +25,7 @@ const links = [
 export function AppNav({ user }: { user: CurrentUser }) {
   const pathname = usePathname();
   const hasAccess = Boolean(user.approvedAt);
-  const hasPermission = (permission: string) => user.role.permissions.some((item) => item === permission);
+  const hasPermission = (permission: string) => user.role.systemKey === "ADMIN" || user.role.permissions.some((item) => item === permission);
   const canUseChats = hasPermission("USE_CHATS");
   const [unreadChats, setUnreadChats] = useState(0);
   const [profile, setProfile] = useState({ name: user.name, jobTitle: user.jobTitle, avatarUrl: user.avatarUrl });
