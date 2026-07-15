@@ -6567,41 +6567,17 @@
   }
 
   .tv-news-title {
-    display: block;
+    display: -webkit-box;
     min-inline-size: 0;
     overflow: hidden;
     color: #101828;
     font-size: 1.02rem;
     font-weight: 850;
     line-height: 1.25;
-  }
-
-  .tv-news-marquee {
-    white-space: nowrap;
-  }
-
-  .tv-news-track {
-    display: flex;
-    inline-size: max-content;
-    min-inline-size: 200%;
-    animation: tv-news-ticker 28s linear infinite;
-  }
-
-  .tv-news-track > span {
-    flex: 0 0 auto;
-    min-inline-size: 50%;
-  }
-
-  .tv-news-track > span::after {
-    content: "•";
-    display: inline-block;
-    margin-inline: 2.5rem;
-    color: #98a2b3;
-  }
-
-  .tv-news-marquee:hover .tv-news-track,
-  .tv-news-marquee:focus-visible .tv-news-track {
-    animation-play-state: paused;
+    text-wrap: pretty;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .tv-news-title:hover,
@@ -6630,15 +6606,6 @@
   .tv-news-strip.is-stale .tv-news-refresh {
     background: #fff2e5;
     color: #b54708;
-  }
-
-  @keyframes tv-news-ticker {
-    to { transform: translate3d(-50%, 0, 0); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .tv-news-track { animation: none; }
-    .tv-news-track > span:nth-child(2) { display: none; }
   }
 
   .tv-compact-stats {

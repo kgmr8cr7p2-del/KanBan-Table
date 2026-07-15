@@ -210,12 +210,7 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
           <div><strong>Главное</strong><small>Дзен Новости</small></div>
         </div>
         {news ? (
-          <a className="tv-news-title tv-news-marquee" href={news.sourceUrl} target="_blank" rel="noreferrer" aria-label={news.title}>
-            <span className="tv-news-track" key={news.id}>
-              <span>{news.title}</span>
-              <span aria-hidden="true">{news.title}</span>
-            </span>
-          </a>
+          <a className="tv-news-title" href={news.sourceUrl} target="_blank" rel="noreferrer" key={news.id}>{news.title}</a>
         ) : (
           <span className="tv-news-title tv-news-placeholder">{newsUnavailable ? "Новости временно недоступны" : "Загружаем главную новость"}</span>
         )}
