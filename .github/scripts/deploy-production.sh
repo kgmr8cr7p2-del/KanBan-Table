@@ -15,7 +15,10 @@ SOURCE_SWITCHED=0
 DEPLOY_FINISHED=0
 
 compose() {
-  docker compose --env-file .env.production -f "${COMPOSE_FILE}" "$@"
+  # The deploy script itself is streamed to `bash -s` over stdin. Commands
+  # spawned by Compose must not inherit that stream, otherwise `compose exec`
+  # consumes the remainder of this script and the deployment exits early.
+  docker compose --env-file .env.production -f "${COMPOSE_FILE}" "$@" </dev/null
 }
 
 cleanup_deploy_storage() {
