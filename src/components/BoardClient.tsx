@@ -1,11 +1,12 @@
 "use client";
 
-import { Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Download, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskButton } from "@/components/CreateTaskButton";
 import { TaskTimeline } from "@/components/TaskTimeline";
 import { UserProfileButton } from "@/components/ProfileCard/ProfileCard";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { setPresenceActivity } from "@/lib/presence";
 
 const priorityLabels = {
@@ -428,17 +429,12 @@ export function BoardClient({ initialView }: { initialView: View }) {
         <span className="sync-pill mobile-optional" title="Доска обновляется автоматически каждые 10 секунд">
           {lastUpdatedAt ? `Обновлено ${timeOnly(lastUpdatedAt)}` : "Обновляется"}
         </span>
-        <button className="button secondary compact-button mobile-optional" type="button" onClick={() => void toggleFocusMode()} title="Режим просмотра доски">
-          <Expand size={17} />
-          Доска
-        </button>
+        <div className="board-notification-control">
+          <NotificationCenter />
+        </div>
         <a className="button secondary compact-button mobile-optional" href="/board/tv" title="TV-режим для офисного экрана">
           <Monitor size={17} />
           TV
-        </a>
-        <a className="button secondary board-export mobile-optional" href={`/api/export?${new URLSearchParams([...Object.entries(filters).filter(([, value]) => value), ["board", view.board.id]]).toString()}`}>
-          <Download size={17} />
-          Excel
         </a>
       </div>
 

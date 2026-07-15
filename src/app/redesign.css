@@ -43,15 +43,17 @@
 body {
   font-family: var(--font-ui);
   background: var(--bg);
+  overflow-x: clip;
 }
 
-.app { gap: 1.25rem; padding: 1.25rem; }
-.sidebar { border: 1px solid color-mix(in oklch, var(--border) 82%, transparent); border-radius: 22px; background: color-mix(in oklch, var(--panel) 90%, transparent); box-shadow: var(--shadow); padding: 1rem; }
+.app { gap: 1.25rem; padding: 1.25rem; min-inline-size: 0; }
+.main { min-inline-size: 0; }
+.sidebar { min-inline-size: 0; border: 1px solid color-mix(in oklch, var(--border) 82%, transparent); border-radius: 22px; background: color-mix(in oklch, var(--panel) 90%, transparent); box-shadow: var(--shadow); padding: 1rem; overflow-x: clip; }
 .brand { padding: .35rem .5rem 1.35rem; letter-spacing: -.02em; }
 .brand > span:last-child { font-family: var(--font-unbounded), var(--font-ui); font-size: .92rem; letter-spacing: -.05em; }
 .brand-mark { border-radius: 12px; background: color-mix(in oklch, var(--brand) 14%, var(--panel)); border: 1px solid color-mix(in oklch, var(--brand) 25%, var(--border)); }
-.nav { gap: 1rem; }
-.nav-links { gap: .3rem; }
+.nav { gap: 1rem; min-inline-size: 0; overflow-x: clip; }
+.nav-links { gap: .3rem; min-inline-size: 0; inline-size: 100%; overflow-x: clip; }
 .nav a, .nav button { min-block-size: 2.75rem; border-radius: 10px; color: var(--muted); font-size: .86rem; transition: background .22s ease, color .22s ease, transform .22s ease; }
 .nav a:hover, .nav button:hover { color: var(--text); background: color-mix(in oklch, var(--brand) 8%, transparent); transform: translateX(2px); }
 .nav a[aria-current="page"] { color: var(--brand-strong); background: color-mix(in oklch, var(--brand) 13%, transparent); box-shadow: inset 3px 0 0 var(--brand); }
@@ -123,8 +125,18 @@ body {
 .role-editor-empty { min-block-size: 18rem; place-items: center; align-content: center; text-align: center; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted); }
 .role-editor-empty h3 { color: var(--text); }
 .notification-popover, .notification-page-card { border: 1px solid var(--border); background: var(--panel); }
+.notification-popover { max-inline-size: calc(100vw - 1rem); overflow-wrap: anywhere; }
 .notification-sound-settings, .notification-open-link { border-color: var(--border); }
 .notification-item:hover, .notification-item.is-unread { background: color-mix(in oklch, var(--brand) 8%, var(--panel)); }
+.board-notification-control { display: inline-flex; align-items: center; min-inline-size: 2.7rem; }
+.board-notification-control .notification-center { display: inline-flex; }
+.board-notification-control .nav-notification-button { inline-size: 2.7rem; block-size: 2.7rem; border-color: var(--border); background: var(--panel); }
+.board-notification-control .nav-notification-button:hover { border-color: var(--brand); color: var(--brand-strong); background: color-mix(in oklch, var(--brand) 8%, var(--panel)); }
+
+/* Keep the board toolbar inside the viewport at zoomed and narrow widths. */
+.board-topbar { min-inline-size: 0; }
+.board-topbar > * { min-inline-size: 0; }
+.board-topbar .filters-live { min-inline-size: 0; }
 
 /* Keep account tools in one predictable row instead of an orphaned third item. */
 .sidebar-account-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
@@ -137,10 +149,8 @@ body {
 /* The board is easier to scan when identity, views, and actions have a fixed rhythm. */
 .board-head {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas:
-    "identity views create"
-    "planned quick sort";
+  grid-template-columns: max-content max-content max-content minmax(0, 1fr) max-content max-content;
+  grid-template-areas: "identity views planned quick sort create";
   align-items: center;
   gap: .7rem;
   margin-block-end: 1rem;
@@ -149,7 +159,8 @@ body {
 .board-head > .spacer { display: none; }
 .board-view-tabs-inline { grid-area: views; justify-self: start; }
 .board-planned-toggle { grid-area: planned; }
-.board-quick-filters { grid-area: quick; min-inline-size: 0; }
+.board-quick-filters { grid-area: quick; min-inline-size: 0; flex-wrap: nowrap; }
+.board-quick-filters .button { padding-inline: .55rem; font-size: .76rem; white-space: nowrap; }
 .board-sort-control { grid-area: sort; }
 .board-head > .create-task-button { grid-area: create; justify-self: end; }
 .board-head > .quick-create { grid-column: 1 / -1; }
@@ -167,6 +178,31 @@ body {
   .board-quick-filters .button { flex: 1 1 10rem; justify-content: center; }
   .board-sort-control, .board-sort-control .compact-select, .board-head > .create-task-button { inline-size: 100%; justify-self: stretch; max-inline-size: none; }
   .sidebar-account-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .board-notification-control { justify-self: start; }
+}
+
+@media (min-width: 901px) and (max-width: 1399px) {
+  .board-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "identity views create"
+      "planned quick sort";
+  }
+  .board-quick-filters { flex-wrap: wrap; }
+}
+
+@media (max-width: 640px) {
+  .app { padding: .5rem; }
+  .topbar { border-radius: 12px; }
+  .board-topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .5rem; }
+  .board-topbar .filters-live { grid-column: 1 / -1; }
+  .board-topbar > .sync-pill { display: none; }
+  .board-topbar > .board-notification-control { grid-column: 2; }
+  .board-topbar > a[href="/board/tv"] { grid-column: 3; }
+  .board-topbar .board-notification-control .nav-notification-button { inline-size: 2.75rem; block-size: 2.75rem; }
+  .notification-popover { position: fixed; inset-inline: .5rem auto; inset-block-start: auto; inset-block-end: calc(4.5rem + env(safe-area-inset-bottom)); inline-size: min(420px, calc(100vw - 1rem)); }
+  .board-quick-filters { flex-wrap: wrap; }
+  .board-quick-filters .button { flex: 1 1 100%; }
 }
 
 @media (max-width: 900px) {
