@@ -55,6 +55,20 @@ ensure_notification_cron_secret() {
   fi
 }
 
+ensure_web_push_secret() {
+  if grep -Eq '^WEB_PUSH_SECRET=.+$' .env.production; then
+    return
+  fi
+
+  local push_secret
+  push_secret="$(openssl rand -hex 32)"
+  if grep -q '^WEB_PUSH_SECRET=' .env.production; then
+    sed -i "s/^WEB_PUSH_SECRET=.*/WEB_PUSH_SECRET=${push_secret}/" .env.production
+  else
+    printf '\nWEB_PUSH_SECRET=%s\n' "${push_secret}" >> .env.production
+  fi
+}
+
 recover_important_files_migration() {
   compose exec -T app npx prisma migrate resolve --rolled-back 20260714220000_important_files || true
 }
@@ -117,6 +131,7 @@ docker tag "${CANDIDATE_IMAGE}" "${LIVE_IMAGE}"
 cd "${APP_DIR}"
 ensure_telegram_webhook_secret
 ensure_notification_cron_secret
+ensure_web_push_secret
 compose up -d --no-deps --no-build --force-recreate app scheduler
 recover_important_files_migration
 compose exec -T app npx prisma migrate deploy

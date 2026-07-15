@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, CheckCheck, FileText, Image as ImageIcon, Paperclip, Send, X } from "lucide-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ProfileUser } from "@/components/ProfileCard/ProfileCard";
 import { presenceLabel, presenceTone, setPresenceActivity } from "@/lib/presence";
@@ -121,6 +121,12 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
     setSelectedFile(null);
   }
 
+  function sendOnEnter(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing || sending) return;
+    event.preventDefault();
+    event.currentTarget.form?.requestSubmit();
+  }
+
   const status = presenceLabel(user);
   const initials = user.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase("ru-RU")).join("");
 
@@ -183,7 +189,7 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
           <span className="visually-hidden">Прикрепить файл до 15 МБ</span>
           <input ref={fileInputRef} type="file" name="file" onChange={(event) => setSelectedFile(event.currentTarget.files?.[0] ?? null)} />
         </label>
-        <textarea className="textarea" name="text" placeholder="Напишите сообщение…" maxLength={4000} rows={1} />
+        <textarea className="textarea" name="text" aria-label="Сообщение" placeholder="Напишите сообщение…" maxLength={4000} rows={1} enterKeyHint="send" onKeyDown={sendOnEnter} />
         <button className="button chat-compose-button" disabled={sending} aria-label="Отправить сообщение"><Send size={18} aria-hidden="true" /><span className="direct-chat-action-text">Отправить</span></button>
       </form>
       {error ? <p className="direct-chat-notice is-error" role="alert">{error}</p> : null}

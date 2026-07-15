@@ -482,12 +482,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
             {filters.withoutPlanned === "1" ? "Показать плановые" : "Без плановых работ"}
           </button>
           <div className="board-quick-filters" role="group" aria-label="Быстрые фильтры">
-            <button className={`button secondary compact-button ${filters.assignee === view.currentUser.id && filters.deadline === "overdue" ? "is-active" : ""}`} type="button" aria-pressed={filters.assignee === view.currentUser.id && filters.deadline === "overdue"} onClick={() => {
-              const active = filters.assignee === view.currentUser.id && filters.deadline === "overdue";
-              const next = active ? { ...filters, assignee: "", deadline: "" } : { ...filters, assignee: view.currentUser.id, deadline: "overdue" };
-              filtersRef.current = next; setFilters(next); void refresh(next, { syncUrl: true });
-            }}>Мои просроченные</button>
-            <button className={`button secondary compact-button ${filters.deadline === "week" ? "is-active" : ""}`} type="button" aria-pressed={filters.deadline === "week"} onClick={() => updateFilter("deadline", filters.deadline === "week" ? "" : "week")}>На этой неделе</button>
             <button className={`button secondary compact-button ${filters.assignee === "unassigned" ? "is-active" : ""}`} type="button" aria-pressed={filters.assignee === "unassigned"} onClick={() => updateFilter("assignee", filters.assignee === "unassigned" ? "" : "unassigned")}>Без исполнителя</button>
           </div>
           <label className="board-sort-control">

@@ -225,6 +225,7 @@ node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient
 | `DATABASE_URL` | Да | Строка подключения к PostgreSQL |
 | `APP_URL` | Да | Публичный или локальный адрес приложения |
 | `SESSION_SECRET` | Да | Секрет сессий и авторизации scheduler-запросов |
+| `WEB_PUSH_SECRET` | Для Web Push | Отдельный секрет для стабильной VAPID-пары; production-деплой создаёт его автоматически |
 | `INVITED_EMAILS` | Нет | Разрешённые email через запятую |
 | `ALLOWED_EMAIL_DOMAINS` | Нет | Разрешённые домены через запятую |
 | `SMTP_HOST` | Нет | SMTP-сервер |
