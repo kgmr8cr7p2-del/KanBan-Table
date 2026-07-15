@@ -1,6 +1,6 @@
 let audioContext: AudioContext | null = null;
 const SOUND_KEY = "taskora-notification-sound";
-const VOLUME_KEY = "taskora-notification-volume-v2";
+const VOLUME_KEY = "taskora-notification-volume-v3";
 
 export function isNotificationSoundEnabled() {
   if (typeof window === "undefined") return false;
@@ -9,7 +9,9 @@ export function isNotificationSoundEnabled() {
 
 export function getNotificationSoundVolume() {
   if (typeof window === "undefined") return 1;
-  const value = Number(window.localStorage.getItem(VOLUME_KEY));
+  const storedValue = window.localStorage.getItem(VOLUME_KEY);
+  if (storedValue === null) return 1;
+  const value = Number(storedValue);
   return Number.isFinite(value) && value >= 0 && value <= 1 ? value : 1;
 }
 

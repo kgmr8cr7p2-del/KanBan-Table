@@ -87,7 +87,9 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
   }, [selectedFile]);
 
   useEffect(() => {
-    listRef.current?.lastElementChild?.scrollIntoView({ block: "end" });
+    const list = listRef.current;
+    if (!list) return;
+    list.scrollTop = list.scrollHeight;
   }, [messages.length]);
 
   useEffect(() => {
