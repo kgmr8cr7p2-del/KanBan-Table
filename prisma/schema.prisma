@@ -94,6 +94,7 @@ model User {
   personalBoards      Board[]                  @relation("PersonalBoardOwner")
   notifications       Notification[]
   pushSubscriptions   PushSubscription[]
+  taskSoundEvents     TaskSoundEvent[]
 }
 
 model UserInvite {
@@ -376,6 +377,18 @@ model PushSubscription {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+}
+
+model TaskSoundEvent {
+  id        String   @id @default(cuid())
+  kind      String
+  soundUrl  String
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 model TvNewsItem {

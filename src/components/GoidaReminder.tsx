@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { playNotificationSoundFile, primeNotificationSound } from "@/lib/chat-notification";
 
 const REMINDER_KEY_PREFIX = "team-kanban-evening-reminder";
 const REMINDER_DURATION_MS = 4000;
@@ -10,29 +11,45 @@ const MOSCOW_TIME_ZONE = "Europe/Moscow";
 
 export function GoidaReminder() {
   const [visible, setVisible] = useState(false);
-  const [playNonce, setPlayNonce] = useState(0);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
-  const playedEventsRef = useRef(new Set<string>());
-
-  function showReminder() {
-    if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
-    setVisible(true);
-    setPlayNonce((value) => value + 1);
-    hideTimerRef.current = window.setTimeout(() => setVisible(false), REMINDER_DURATION_MS);
-  }
+  const pendingRef = useRef(new Map<string, string>());
+  const completedRef = useRef(new Set<string>());
+  const playingRef = useRef(false);
 
   useEffect(() => {
+    const showReminder = () => {
+      if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+      setVisible(true);
+      hideTimerRef.current = window.setTimeout(() => setVisible(false), REMINDER_DURATION_MS);
+    };
+
+    const flushSounds = async () => {
+      if (playingRef.current) return;
+      playingRef.current = true;
+      try {
+        for (const [eventKey, storageKey] of pendingRef.current) {
+          const result = await playNotificationSoundFile("/goida.mp3");
+          if (result === "blocked" || result === "failed") break;
+          window.sessionStorage.setItem(storageKey, "played");
+          completedRef.current.add(eventKey);
+          pendingRef.current.delete(eventKey);
+        }
+      } finally {
+        playingRef.current = false;
+      }
+    };
+
+    const queueReminder = (eventKey: string) => {
+      const storageKey = `${REMINDER_KEY_PREFIX}-${eventKey}`;
+      if (completedRef.current.has(eventKey) || window.sessionStorage.getItem(storageKey) || pendingRef.current.has(eventKey)) return;
+      pendingRef.current.set(eventKey, storageKey);
+      showReminder();
+      void flushSounds();
+    };
+
     const checkReminder = () => {
       const event = getMoscowReminderEvent();
-      if (!event) return;
-
-      const storageKey = `${REMINDER_KEY_PREFIX}-${event.key}`;
-      if (playedEventsRef.current.has(event.key) || window.sessionStorage.getItem(storageKey)) return;
-
-      playedEventsRef.current.add(event.key);
-      window.sessionStorage.setItem(storageKey, "shown");
-      showReminder();
+      if (event) queueReminder(event.key);
     };
 
     const checkServerEvent = async () => {
@@ -41,62 +58,53 @@ export function GoidaReminder() {
         if (!response.ok) return;
         const data = await response.json();
         const eventId = data?.event?.id;
-        if (!eventId || typeof eventId !== "string") return;
-
-        const key = `server-${eventId}`;
-        const storageKey = `${REMINDER_KEY_PREFIX}-${key}`;
-        if (playedEventsRef.current.has(key) || window.sessionStorage.getItem(storageKey)) return;
-
-        playedEventsRef.current.add(key);
-        window.sessionStorage.setItem(storageKey, "shown");
-        showReminder();
+        if (eventId && typeof eventId === "string") queueReminder(`server-${eventId}`);
       } catch {
         // The scheduled local reminder still works if the server check is temporarily unavailable.
       }
     };
 
-    const visibilityHandler = () => {
-      if (document.visibilityState === "visible") {
-        checkReminder();
-        void checkServerEvent();
-      }
+    const unlockHandler = async () => {
+      await primeNotificationSound();
+      await flushSounds();
     };
-    document.addEventListener("visibilitychange", visibilityHandler);
+    const visibilityHandler = () => {
+      if (document.visibilityState !== "visible") return;
+      checkReminder();
+      void checkServerEvent();
+      void flushSounds();
+    };
+
     checkReminder();
     void checkServerEvent();
     const scheduleTimer = window.setInterval(checkReminder, 1000);
     const serverTimer = window.setInterval(() => void checkServerEvent(), 2000);
+    document.addEventListener("visibilitychange", visibilityHandler);
+    window.addEventListener("pointerdown", unlockHandler, { passive: true });
+    window.addEventListener("keydown", unlockHandler);
+    window.addEventListener("focus", unlockHandler);
+
     return () => {
       window.clearInterval(scheduleTimer);
       window.clearInterval(serverTimer);
       document.removeEventListener("visibilitychange", visibilityHandler);
+      window.removeEventListener("pointerdown", unlockHandler);
+      window.removeEventListener("keydown", unlockHandler);
+      window.removeEventListener("focus", unlockHandler);
       if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
     };
-    // showReminder intentionally uses state setters only and is safe for this interval lifecycle.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (!visible || !audioRef.current) return;
-    audioRef.current.currentTime = 0;
-    void audioRef.current.play().catch(() => undefined);
-  }, [playNonce, visible]);
-
-  return (
-    <>
-      <audio ref={audioRef} src="/goida.mp3" preload="auto" />
-      {visible ? (
-        <div className="goida-overlay" role="status" aria-live="polite">
-          <div className="goida-card">
-            <button className="goida-close" type="button" onClick={() => setVisible(false)} aria-label="Закрыть уведомление">
-              <X size={18} />
-            </button>
-            <img src="/goida.gif" alt="Рабочее уведомление" />
-          </div>
-        </div>
-      ) : null}
-    </>
-  );
+  return visible ? (
+    <div className="goida-overlay" role="status" aria-live="polite">
+      <div className="goida-card">
+        <button className="goida-close" type="button" onClick={() => setVisible(false)} aria-label="Закрыть уведомление">
+          <X size={18} />
+        </button>
+        <img src="/goida.gif" alt="Рабочее уведомление" />
+      </div>
+    </div>
+  ) : null;
 }
 
 function getMoscowReminderEvent() {

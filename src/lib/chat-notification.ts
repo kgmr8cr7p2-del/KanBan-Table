@@ -1,6 +1,9 @@
 let audioContext: AudioContext | null = null;
+const audioBufferCache = new Map<string, Promise<AudioBuffer>>();
 const SOUND_KEY = "taskora-notification-sound";
 const VOLUME_KEY = "taskora-notification-volume-v3";
+
+export type NotificationSoundResult = "played" | "disabled" | "blocked" | "failed";
 
 export function isNotificationSoundEnabled() {
   if (typeof window === "undefined") return false;
@@ -22,26 +25,69 @@ export function setNotificationSoundPreferences(enabled: boolean, volume: number
 }
 
 export async function primeNotificationSound() {
-  if (typeof window === "undefined" || !isNotificationSoundEnabled()) return;
+  if (typeof window === "undefined" || !isNotificationSoundEnabled()) return false;
   audioContext ??= new AudioContext();
-  if (audioContext.state === "suspended") await audioContext.resume();
+  if (audioContext.state === "suspended") await audioContext.resume().catch(() => undefined);
+  return audioContext.state === "running";
 }
 
-export async function playChatNotification(kind: "chat" | "mention" = "chat") {
-  if (typeof window === "undefined") return;
-  if (!isNotificationSoundEnabled()) return;
+export async function playChatNotification(kind: "chat" | "mention" = "chat"): Promise<NotificationSoundResult> {
+  if (typeof window === "undefined") return "failed";
+  if (!isNotificationSoundEnabled()) return "disabled";
   try {
-    await primeNotificationSound();
-    if (!audioContext) return;
+    const ready = await primeNotificationSound();
+    if (!ready || !audioContext) return "blocked";
     const start = audioContext.currentTime;
     const volume = getNotificationSoundVolume();
     const first = kind === "mention" ? 880 : 660;
     const second = kind === "mention" ? 1046 : 880;
     playTone(audioContext, first, start, 0.08, volume);
     playTone(audioContext, second, start + 0.1, 0.1, volume * 0.8);
+    return "played";
   } catch {
-    // Browsers may block audio until the user has interacted with the page.
+    return audioContext?.state === "running" ? "failed" : "blocked";
   }
+}
+
+export async function playNotificationSoundFile(soundUrl: string): Promise<NotificationSoundResult> {
+  if (typeof window === "undefined") return "failed";
+  if (!isNotificationSoundEnabled()) return "disabled";
+
+  try {
+    const ready = await primeNotificationSound();
+    if (!ready || !audioContext) return "blocked";
+    const context = audioContext;
+    const buffer = await loadAudioBuffer(context, soundUrl);
+    const source = context.createBufferSource();
+    const gain = context.createGain();
+    source.buffer = buffer;
+    gain.gain.value = getNotificationSoundVolume();
+    source.connect(gain);
+    gain.connect(context.destination);
+
+    return await new Promise<NotificationSoundResult>((resolve) => {
+      source.addEventListener("ended", () => resolve("played"), { once: true });
+      try {
+        source.start(0);
+      } catch {
+        resolve("failed");
+      }
+    });
+  } catch {
+    audioBufferCache.delete(soundUrl);
+    return audioContext?.state === "running" ? "failed" : "blocked";
+  }
+}
+
+function loadAudioBuffer(context: AudioContext, soundUrl: string) {
+  const cached = audioBufferCache.get(soundUrl);
+  if (cached) return cached;
+  const loading = fetch(soundUrl, { cache: "force-cache" }).then(async (response) => {
+    if (!response.ok) throw new Error(`Sound request failed: ${response.status}`);
+    return context.decodeAudioData(await response.arrayBuffer());
+  });
+  audioBufferCache.set(soundUrl, loading);
+  return loading;
 }
 
 function playTone(context: AudioContext, frequency: number, start: number, duration: number, volume: number) {

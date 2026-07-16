@@ -5,6 +5,7 @@ import { canDeleteTask } from "@/lib/permissions";
 import { logActivity } from "@/lib/activity";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { canAccessTask } from "@/lib/board-access";
+import { triggerTaskCompletionSoundEvent } from "@/lib/task-sound-event";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -25,6 +26,7 @@ export async function POST(_: Request, { params }: Params) {
         id: true,
         taskNumber: true,
         title: true,
+        priority: true,
       },
     });
 
@@ -39,6 +41,10 @@ export async function POST(_: Request, { params }: Params) {
         archived: true,
       },
     });
+
+    if (task.priority !== "PLANNED") {
+      await triggerTaskCompletionSoundEvent(access.column.board.ownerId ? user.id : null).catch(() => undefined);
+    }
 
     return ok({ ok: true });
   } catch (error) {

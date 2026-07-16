@@ -120,9 +120,10 @@ export async function PATCH(request: Request, { params }: Params) {
         `Стало: ${task.column.name}`,
         `Изменил: ${user.name}`,
       ].join("\n"));
-      if (!isCompletedColumn(existing.column.name) && isCompletedColumn(task.column.name)) {
-        triggerTaskCompletionSoundEvent();
-      }
+    }
+    if (task.priority !== "PLANNED" && changes.includes(ActivityAction.STATUS_CHANGED)
+      && !isCompletedColumn(existing.column.name) && isCompletedColumn(task.column.name)) {
+      await triggerTaskCompletionSoundEvent(isPersonalBoard ? user.id : null).catch(() => undefined);
     }
     if (!isPersonalBoard && task.priority !== "PLANNED" && changes.includes(ActivityAction.ASSIGNEE_CHANGED)) {
       await notifySharedTelegram("assignee_changed", formatAssigneeChangedMessage(task, user));

@@ -106,7 +106,9 @@ export async function POST(request: Request) {
         "task_created",
         formatTaskCreatedMessage(taskWithDetails, user, initialComment),
       );
-      triggerTaskSoundEvent();
+    }
+    if (input.priority !== "PLANNED") {
+      await triggerTaskSoundEvent("created", isPersonalBoard ? user.id : null).catch(() => undefined);
     }
     return ok({ task: taskWithDetails });
   } catch (error) {

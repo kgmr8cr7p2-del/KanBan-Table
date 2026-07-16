@@ -1,9 +1,23 @@
 import { timingSafeEqual } from "node:crypto";
-import { Prisma } from "@prisma/client";
+import { PermissionKey, Prisma } from "@prisma/client";
 import { requireVerifiedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendPersonalTaskReminder, sendSharedTaskReminder } from "@/lib/telegram";
 import { handleRouteError, ok } from "@/lib/http";
+import { createNotifications } from "@/lib/notifications";
+import { triggerTaskReminderSoundEvent } from "@/lib/task-sound-event";
+
+type ReminderTask = {
+  id: string;
+  taskNumber: number;
+  title: string;
+  priority: string;
+  deadline: Date | null;
+  reminderDaysBefore: number | null;
+  column: { name: string; board: { id: string; name: string; ownerId: string | null } };
+};
+
+type DeliveryResult = "sent" | "failed" | "duplicate";
 
 export async function POST(request: Request) {
   try {
@@ -48,32 +62,10 @@ export async function POST(request: Request) {
   }
 }
 
-async function dispatchReminder(task: {
-  id: string;
-  taskNumber: number;
-  title: string;
-  priority: string;
-  deadline: Date | null;
-  reminderDaysBefore: number | null;
-  column: { name: string; board: { id: string; name: string; ownerId: string | null } };
-}) {
-  if (task.priority === "PLANNED" || !task.deadline || task.reminderDaysBefore == null) return "failed" as const;
+async function dispatchReminder(task: ReminderTask): Promise<DeliveryResult> {
+  if (task.priority === "PLANNED" || !task.deadline || task.reminderDaysBefore == null) return "failed";
   const deadlineKey = task.deadline.toISOString().slice(0, 10);
-  const dispatchKey = `task-reminder:${task.id}:${deadlineKey}:${task.reminderDaysBefore}`;
-
-  try {
-    await prisma.notificationDispatch.create({
-      data: {
-        key: dispatchKey,
-        type: task.column.board.ownerId ? "personal_task_reminder" : "shared_task_reminder",
-        payload: { taskId: task.id, deadline: deadlineKey, daysBefore: task.reminderDaysBefore },
-      },
-    });
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return "duplicate" as const;
-    throw error;
-  }
-
+  const baseKey = `task-reminder:${task.id}:${deadlineKey}:${task.reminderDaysBefore}`;
   const message = [
     `Задача: #${task.taskNumber} ${task.title}`,
     `Доска: ${task.column.board.name}`,
@@ -81,13 +73,85 @@ async function dispatchReminder(task: {
     task.reminderDaysBefore === 0 ? "Напоминание: срок сегодня" : `Напоминание: за ${daysLabel(task.reminderDaysBefore)} до срока`,
   ].join("\n");
 
-  const delivery = task.column.board.ownerId
-    ? await sendPersonalTaskReminder(task.column.board.ownerId, message)
-    : await sendSharedTaskReminder(message);
-  if (delivery.sent > 0) return "sent" as const;
+  const [siteDelivery, telegramDelivery] = await Promise.all([
+    deliverSiteReminder(task, message, `${baseKey}:site`),
+    deliverTelegramReminder(task, message, `${baseKey}:telegram`),
+  ]);
+  if (siteDelivery === "sent" || telegramDelivery === "sent") return "sent";
+  if (siteDelivery === "duplicate" && telegramDelivery === "duplicate") return "duplicate";
+  return "failed";
+}
 
-  await prisma.notificationDispatch.deleteMany({ where: { key: dispatchKey } }).catch(() => undefined);
-  return "failed" as const;
+async function deliverSiteReminder(task: ReminderTask, message: string, dispatchKey: string): Promise<DeliveryResult> {
+  if (!await claimDispatch(dispatchKey, task, "site_task_reminder")) return "duplicate";
+  try {
+    const recipientIds = task.column.board.ownerId
+      ? [task.column.board.ownerId]
+      : (await prisma.user.findMany({
+          where: {
+            approvedAt: { not: null },
+            emailVerifiedAt: { not: null },
+            OR: [
+              { role: { systemKey: "ADMIN" } },
+              { role: { permissions: { has: PermissionKey.VIEW_BOARD } } },
+            ],
+          },
+          select: { id: true },
+        })).map((user) => user.id);
+    if (!recipientIds.length) throw new Error("No website reminder recipients");
+
+    const body = message.replaceAll("\n", " · ");
+    await createNotifications(recipientIds.map((userId) => ({
+      userId,
+      type: "SYSTEM" as const,
+      title: `Срок задачи #${task.taskNumber}`,
+      body,
+      href: `/board?task=${encodeURIComponent(task.id)}`,
+    })));
+    await triggerTaskReminderSoundEvent(task.column.board.ownerId ?? null).catch(() => undefined);
+    return "sent";
+  } catch {
+    await releaseDispatch(dispatchKey);
+    return "failed";
+  }
+}
+
+async function deliverTelegramReminder(task: ReminderTask, message: string, dispatchKey: string): Promise<DeliveryResult> {
+  if (!await claimDispatch(dispatchKey, task, task.column.board.ownerId ? "personal_task_reminder" : "shared_task_reminder")) return "duplicate";
+  try {
+    const delivery = task.column.board.ownerId
+      ? await sendPersonalTaskReminder(task.column.board.ownerId, message)
+      : await sendSharedTaskReminder(message);
+    if (delivery.sent > 0) return "sent";
+  } catch {
+    // The dispatch is released below so the scheduler can retry Telegram independently.
+  }
+  await releaseDispatch(dispatchKey);
+  return "failed";
+}
+
+async function claimDispatch(key: string, task: ReminderTask, type: string) {
+  try {
+    await prisma.notificationDispatch.create({
+      data: {
+        key,
+        type,
+        payload: {
+          taskId: task.id,
+          deadline: task.deadline?.toISOString().slice(0, 10),
+          daysBefore: task.reminderDaysBefore,
+        },
+      },
+    });
+    return true;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return false;
+    throw error;
+  }
+}
+
+function releaseDispatch(key: string) {
+  return prisma.notificationDispatch.deleteMany({ where: { key } }).catch(() => undefined);
 }
 
 async function authorizeRequest(request: Request) {

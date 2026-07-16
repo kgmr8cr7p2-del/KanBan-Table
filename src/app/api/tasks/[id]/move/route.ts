@@ -58,8 +58,8 @@ export async function POST(request: Request, { params }: Params) {
       `Изменил: ${user.name}`,
       returnedFromReviewToWork && nextDeadline ? `Новый срок: ${new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(nextDeadline)}` : null,
     ].filter(Boolean).join("\n"));
-    if (!isPersonalBoard && task.priority !== "PLANNED" && !isCompletedColumn(existing.column.name) && isCompletedColumn(destinationColumn.name)) {
-      triggerTaskCompletionSoundEvent();
+    if (task.priority !== "PLANNED" && !isCompletedColumn(existing.column.name) && isCompletedColumn(destinationColumn.name)) {
+      await triggerTaskCompletionSoundEvent(isPersonalBoard ? user.id : null).catch(() => undefined);
     }
     return ok({ task });
   } catch (error) {

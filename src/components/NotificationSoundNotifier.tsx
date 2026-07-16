@@ -15,7 +15,9 @@ export function NotificationSoundNotifier() {
       const nextUnread = Number(payload.unreadCount) || 0;
       if (previousUnread !== null && nextUnread > previousUnread) {
         const latest = payload.notifications?.[0];
-        void playChatNotification(latest?.type === "MENTION" ? "mention" : "chat");
+        if (latest?.type === "MENTION" || latest?.type === "CHAT_MESSAGE") {
+          void playChatNotification(latest.type === "MENTION" ? "mention" : "chat");
+        }
       }
       previousUnread = nextUnread;
     }
@@ -23,8 +25,8 @@ export function NotificationSoundNotifier() {
     const unlock = () => { void primeNotificationSound(); };
     void check();
     const timer = window.setInterval(() => void check(), 5000);
-    window.addEventListener("pointerdown", unlock, { once: true, passive: true });
-    window.addEventListener("keydown", unlock, { once: true });
+    window.addEventListener("pointerdown", unlock, { passive: true });
+    window.addEventListener("keydown", unlock);
     return () => {
       active = false;
       window.clearInterval(timer);
