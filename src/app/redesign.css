@@ -420,3 +420,375 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .nav a, .nav button, .button, .permission-option { transition: none; }
 }
+
+/* Responsive hardening: one predictable shell from ultrawide screens to high browser zoom. */
+html {
+  min-inline-size: 0;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+:where(body, .app, .main, .content, .panel, .topbar, .toolbar, form, fieldset, table) {
+  min-inline-size: 0;
+}
+
+:where(img, video, canvas, svg) {
+  max-inline-size: 100%;
+}
+
+:where(.input, .select, .textarea, .button) {
+  max-inline-size: 100%;
+}
+
+.content {
+  margin-inline: auto;
+}
+
+.board-content,
+.chats-page,
+.important-files-page,
+.reports-page {
+  max-inline-size: none;
+}
+
+.settings-page-head,
+.page-heading,
+.files-head,
+.chats-page-head {
+  min-inline-size: 0;
+}
+
+:where(.settings-page-head, .page-heading, .files-head, .chats-page-head) :where(h1, h2, p) {
+  overflow-wrap: anywhere;
+}
+
+@media (width <= 1280px) {
+  .app {
+    gap: .75rem;
+    padding: .75rem;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  .sidebar {
+    border-radius: 16px;
+    padding: .75rem;
+  }
+
+  .settings-choice,
+  .panel,
+  .settings-dialog-body {
+    min-inline-size: 0;
+  }
+}
+
+@media (width <= 1024px) and (width > 960px) {
+  .app {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .sidebar {
+    border-radius: 14px;
+    padding: .55rem;
+  }
+
+  .brand {
+    padding: .2rem .35rem .45rem;
+  }
+
+  .nav-desktop,
+  .nav-links {
+    min-inline-size: 0;
+  }
+
+  .nav-links {
+    scrollbar-width: none;
+    overscroll-behavior-inline: contain;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav a,
+  .nav button {
+    flex: 0 0 auto;
+    transform: none;
+  }
+}
+
+@media (width <= 960px) {
+  .app {
+    display: block;
+    block-size: 100dvh;
+    min-block-size: 100dvh;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .main {
+    display: block;
+    block-size: 100dvh;
+    min-block-size: 0;
+    overflow-x: clip;
+    overflow-y: auto;
+    padding-block-end: calc(4.35rem + env(safe-area-inset-bottom));
+    overscroll-behavior-y: contain;
+  }
+
+  .sidebar {
+    position: fixed;
+    z-index: 35;
+    inset: auto 0 0;
+    display: block;
+    min-block-size: auto;
+    overflow: visible;
+    border: 0;
+    border-block-start: 1px solid var(--border);
+    border-radius: 0;
+    background: color-mix(in oklch, var(--panel) 97%, transparent);
+    padding: .3rem max(.35rem, env(safe-area-inset-right)) max(.3rem, env(safe-area-inset-bottom)) max(.35rem, env(safe-area-inset-left));
+    box-shadow: 0 -10px 28px rgb(15 23 42 / 10%);
+  }
+
+  .content {
+    inline-size: 100%;
+    max-inline-size: none;
+    margin-inline: 0;
+  }
+
+  .notification-popover {
+    position: fixed;
+    inset-inline: .5rem;
+    inset-block: auto calc(4.5rem + env(safe-area-inset-bottom));
+    inline-size: auto;
+    max-block-size: min(34rem, calc(100dvh - 6rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .settings-dialog-backdrop {
+    padding: .75rem;
+  }
+
+  .settings-dialog {
+    inline-size: 100%;
+    max-block-size: calc(100dvh - 1.5rem);
+  }
+
+  .settings-dialog-head {
+    padding: 1rem;
+  }
+
+  .settings-dialog-body {
+    padding: .85rem;
+  }
+
+  .role-manager-layout,
+  .files-workspace,
+  .reports-dashboard,
+  .profile-editor-layout {
+    min-inline-size: 0;
+  }
+}
+
+@media (width <= 900px) and (width > 640px) {
+  .board-head {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    grid-template-areas:
+      "identity create"
+      "views views"
+      "planned quick"
+      "sort sort";
+    align-items: center;
+  }
+
+  .board-planned-toggle {
+    justify-self: stretch;
+  }
+
+  .board-quick-filters {
+    inline-size: auto;
+    justify-self: end;
+  }
+
+  .board-sort-control,
+  .board-sort-control .compact-select {
+    inline-size: 100%;
+  }
+
+  .board-head > .create-task-button {
+    inline-size: auto;
+    justify-self: end;
+  }
+}
+
+@media (width <= 640px) {
+  .app {
+    padding: 0;
+  }
+
+  .content {
+    padding: .75rem;
+  }
+
+  .board-head {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "identity" "create" "views" "planned" "quick" "sort";
+    align-items: stretch;
+  }
+
+  .board-copy,
+  .board-head > .create-task-button,
+  .board-view-tabs-inline,
+  .board-planned-toggle,
+  .board-quick-filters,
+  .board-sort-control {
+    inline-size: 100%;
+    justify-self: stretch;
+  }
+
+  .board-head > .create-task-button,
+  .board-planned-toggle,
+  .board-quick-filters .button {
+    justify-content: center;
+  }
+
+  .board-view-tabs-inline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-dialog-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .settings-dialog,
+  .settings-dialog-wide {
+    max-block-size: 100dvh;
+    border-inline: 0;
+    border-block-end: 0;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .role-editor-metrics,
+  .role-editor-actions,
+  .browser-push-actions,
+  .settings-sound-actions {
+    min-inline-size: 0;
+  }
+
+  .permission-toolbar-actions,
+  .permission-group-status,
+  .notification-popover-actions {
+    flex-wrap: wrap;
+  }
+
+  :where(.button, .compact-button) {
+    white-space: normal;
+  }
+}
+
+@media (width <= 390px) {
+  .content {
+    padding-inline: .6rem;
+  }
+
+  .mobile-nav > a,
+  .mobile-nav-more > summary {
+    min-block-size: 3.25rem;
+    font-size: .6rem;
+  }
+
+  .mobile-nav > a svg,
+  .mobile-nav-more > summary svg {
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+  }
+
+  .settings-choice {
+    grid-template-columns: 2.35rem minmax(0, 1fr) auto;
+    gap: .6rem;
+    padding: .75rem;
+  }
+
+  .settings-choice-icon {
+    inline-size: 2.35rem;
+    block-size: 2.35rem;
+  }
+
+  .role-editor-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .role-editor-actions .button:last-child {
+    grid-column: auto;
+  }
+
+  .task-drawer .task-modal-v2-head h2,
+  .task-modal-v2-head h2 {
+    font-size: 1.18rem;
+  }
+}
+
+@media (height <= 720px) and (width > 960px) {
+  .app {
+    gap: .5rem;
+    padding: .5rem;
+  }
+
+  .sidebar {
+    gap: .35rem;
+    border-radius: 14px;
+    padding: .5rem;
+  }
+
+  .brand {
+    padding: .15rem .35rem .35rem;
+  }
+
+  .nav {
+    gap: .25rem;
+  }
+
+  .nav a,
+  .nav button {
+    min-block-size: 2rem;
+    padding-block: .25rem;
+  }
+
+  .sidebar-account {
+    gap: .25rem;
+    padding-block-start: .4rem;
+  }
+
+  .content {
+    padding-block: .75rem;
+  }
+
+  .settings-dialog {
+    max-block-size: calc(100dvh - 1rem);
+  }
+}
+
+@media (orientation: landscape) and (height <= 540px) and (width <= 960px) {
+  .mobile-nav > a,
+  .mobile-nav-more > summary {
+    min-block-size: 2.85rem;
+    flex-direction: row;
+    gap: .3rem;
+  }
+
+  .main {
+    padding-block-end: calc(3.7rem + env(safe-area-inset-bottom));
+  }
+
+  .mobile-nav-menu,
+  .notification-popover {
+    inset-block-end: calc(3.7rem + env(safe-area-inset-bottom));
+    max-block-size: calc(100dvh - 4.5rem);
+    overflow-y: auto;
+  }
+}

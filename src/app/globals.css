@@ -7743,7 +7743,7 @@
     }
   }
 
-  @media (width <= 820px) {
+  @media (width <= 960px) {
     .app {
       display: block;
       block-size: 100dvh;
