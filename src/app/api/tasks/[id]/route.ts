@@ -13,6 +13,7 @@ import { tagConnects } from "@/lib/tags";
 import { triggerTaskCompletionSoundEvent } from "@/lib/task-sound-event";
 import { canAccessTask, getAccessibleColumn } from "@/lib/board-access";
 import { taskTitleKey } from "@/lib/task-title";
+import { notifySharedTaskEvent } from "@/lib/task-notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -114,19 +115,41 @@ export async function PATCH(request: Request, { params }: Params) {
       });
     }
     if (!isPersonalBoard && task.priority !== "PLANNED" && changes.includes(ActivityAction.STATUS_CHANGED)) {
-      await notifySharedTelegram("status_changed", [
+      const message = [
         `Задача: ${task.title}`,
         `Было: ${existing.column.name}`,
         `Стало: ${task.column.name}`,
         `Изменил: ${user.name}`,
-      ].join("\n"));
+      ].join("\n");
+      await Promise.allSettled([
+        notifySharedTelegram("status_changed", message),
+        notifySharedTaskEvent({
+          event: "status_changed",
+          actorId: user.id,
+          taskId: task.id,
+          taskNumber: task.taskNumber,
+          taskTitle: task.title,
+          body: message,
+        }),
+      ]);
     }
     if (task.priority !== "PLANNED" && changes.includes(ActivityAction.STATUS_CHANGED)
       && !isCompletedColumn(existing.column.name) && isCompletedColumn(task.column.name)) {
       await triggerTaskCompletionSoundEvent(isPersonalBoard ? user.id : null).catch(() => undefined);
     }
     if (!isPersonalBoard && task.priority !== "PLANNED" && changes.includes(ActivityAction.ASSIGNEE_CHANGED)) {
-      await notifySharedTelegram("assignee_changed", formatAssigneeChangedMessage(task, user));
+      const message = formatAssigneeChangedMessage(task, user);
+      await Promise.allSettled([
+        notifySharedTelegram("assignee_changed", message),
+        notifySharedTaskEvent({
+          event: "assignee_changed",
+          actorId: user.id,
+          taskId: task.id,
+          taskNumber: task.taskNumber,
+          taskTitle: task.title,
+          body: message,
+        }),
+      ]);
     }
     return ok({ task });
   } catch (error) {

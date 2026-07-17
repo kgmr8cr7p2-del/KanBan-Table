@@ -9,6 +9,7 @@ import { commentSchema } from "@/lib/validators";
 import { canAccessTask } from "@/lib/board-access";
 import { createNotifications } from "@/lib/notifications";
 import { resolveMentionedUserIds, truncateNotificationText } from "@/lib/mentions";
+import { notifySharedTaskEvent } from "@/lib/task-notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -46,11 +47,25 @@ export async function POST(request: Request, { params }: Params) {
         href: `/board?task=${encodeURIComponent(id)}`,
       }))).catch(() => undefined);
     }
-    if (!access.column.board.ownerId && task.priority !== "PLANNED") await notifySharedTelegram("comment_added", [
-      `Задача: ${task.title}`,
-      `Автор: ${user.name}`,
-      `Комментарий: ${input.text.slice(0, 260)}`,
-    ].join("\n"));
+    if (!access.column.board.ownerId && task.priority !== "PLANNED") {
+      const message = [
+        `Задача: ${task.title}`,
+        `Автор: ${user.name}`,
+        `Комментарий: ${input.text.slice(0, 260)}`,
+      ].join("\n");
+      await Promise.allSettled([
+        notifySharedTelegram("comment_added", message),
+        notifySharedTaskEvent({
+          event: "comment_added",
+          actorId: user.id,
+          taskId: task.id,
+          taskNumber: task.taskNumber,
+          taskTitle: task.title,
+          body: message,
+          excludeUserIds: mentionedUserIds,
+        }),
+      ]);
+    }
     return ok({ comment });
   } catch (error) {
     return handleRouteError(error);

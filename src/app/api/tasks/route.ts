@@ -11,6 +11,7 @@ import { tagConnects } from "@/lib/tags";
 import { triggerTaskSoundEvent } from "@/lib/task-sound-event";
 import { getAccessibleColumn } from "@/lib/board-access";
 import { taskTitleKey } from "@/lib/task-title";
+import { notifySharedTaskEvent } from "@/lib/task-notifications";
 
 const priorityLabels = {
   LOW: "Низкая",
@@ -102,10 +103,18 @@ export async function POST(request: Request) {
       details: { title: task.title },
     });
     if (!isPersonalBoard && input.priority !== "PLANNED") {
-      await notifySharedTelegram(
-        "task_created",
-        formatTaskCreatedMessage(taskWithDetails, user, initialComment),
-      );
+      const message = formatTaskCreatedMessage(taskWithDetails, user, initialComment);
+      await Promise.allSettled([
+        notifySharedTelegram("task_created", message),
+        notifySharedTaskEvent({
+          event: "task_created",
+          actorId: user.id,
+          taskId: taskWithDetails.id,
+          taskNumber: taskWithDetails.taskNumber,
+          taskTitle: taskWithDetails.title,
+          body: message,
+        }),
+      ]);
     }
     if (input.priority !== "PLANNED") {
       await triggerTaskSoundEvent("created", isPersonalBoard ? user.id : null).catch(() => undefined);

@@ -8,6 +8,7 @@ import { notifySharedTelegram } from "@/lib/telegram";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { triggerTaskCompletionSoundEvent } from "@/lib/task-sound-event";
 import { canAccessTask, getAccessibleColumn } from "@/lib/board-access";
+import { notifySharedTaskEvent } from "@/lib/task-notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -51,13 +52,26 @@ export async function POST(request: Request, { params }: Params) {
         details: { deadline: nextDeadline?.toISOString(), reason: "returned_from_review" },
       });
     }
-    if (!isPersonalBoard && task.priority !== "PLANNED") await notifySharedTelegram("status_changed", [
-      `Задача: ${task.title}`,
-      `Было: ${existing.column.name}`,
-      `Стало: ${task.column.name}`,
-      `Изменил: ${user.name}`,
-      returnedFromReviewToWork && nextDeadline ? `Новый срок: ${new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(nextDeadline)}` : null,
-    ].filter(Boolean).join("\n"));
+    if (!isPersonalBoard && task.priority !== "PLANNED") {
+      const message = [
+        `Задача: ${task.title}`,
+        `Было: ${existing.column.name}`,
+        `Стало: ${task.column.name}`,
+        `Изменил: ${user.name}`,
+        returnedFromReviewToWork && nextDeadline ? `Новый срок: ${new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(nextDeadline)}` : null,
+      ].filter(Boolean).join("\n");
+      await Promise.allSettled([
+        notifySharedTelegram("status_changed", message),
+        notifySharedTaskEvent({
+          event: "status_changed",
+          actorId: user.id,
+          taskId: task.id,
+          taskNumber: task.taskNumber,
+          taskTitle: task.title,
+          body: message,
+        }),
+      ]);
+    }
     if (task.priority !== "PLANNED" && !isCompletedColumn(existing.column.name) && isCompletedColumn(destinationColumn.name)) {
       await triggerTaskCompletionSoundEvent(isPersonalBoard ? user.id : null).catch(() => undefined);
     }

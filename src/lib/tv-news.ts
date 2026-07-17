@@ -8,6 +8,7 @@ const MAX_RESPONSE_BYTES = 6 * 1024 * 1024;
 type NewsCandidate = {
   sourceId: string;
   title: string;
+  summary: string;
   sourceUrl: string;
 };
 
@@ -20,6 +21,7 @@ type NewsRecord = NewsCandidate & {
 export type TvNewsPayload = {
   id: string;
   title: string;
+  summary: string;
   sourceUrl: string;
   shownAt: string;
   nextRefreshAt: string;
@@ -65,6 +67,9 @@ export async function getTvNews(now = new Date()): Promise<TvNewsPayload> {
   if (!nextCandidate) {
     if (latest) return serializeNews(latest, true);
     throw new Error("В разделе «Главное» пока нет новой новости");
+  }
+  if (!nextCandidate.summary) {
+    nextCandidate.summary = await fetchDzenStorySummary(nextCandidate.sourceUrl).catch(() => "");
   }
 
   try {
@@ -130,6 +135,7 @@ export function parseDzenMainNews(html: string): NewsCandidate[] {
       candidates.set(sourceId, {
         sourceId,
         title,
+        summary: extractSummaryNear(mainHtml, match.index ?? 0, title),
         sourceUrl: new URL(parsedUrl.pathname, DZEN_NEWS_URL).toString(),
       });
     } catch {
@@ -141,10 +147,34 @@ export function parseDzenMainNews(html: string): NewsCandidate[] {
   return [...candidates.values()];
 }
 
+async function fetchDzenStorySummary(sourceUrl: string) {
+  const response = await fetch(sourceUrl, {
+    cache: "no-store",
+    headers: {
+      accept: "text/html,application/xhtml+xml",
+      "accept-language": "ru-RU,ru;q=0.9",
+      cookie: "zen_sso_checked=1; zen_vk_sso_checked=1; Session_id=noauth; dzen_sess_id=noauth",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138.0.0.0 Safari/537.36",
+    },
+    redirect: "follow",
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!response.ok) return "";
+  const html = await response.text();
+  if (html.length > MAX_RESPONSE_BYTES) return "";
+  return normalizeSummary(
+    getMetaContent(html, "og:description")
+    ?? getMetaContent(html, "description")
+    ?? getJsonLdDescription(html)
+    ?? "",
+  );
+}
+
 function serializeNews(news: NewsRecord, stale: boolean): TvNewsPayload {
   return {
     id: news.id,
     title: news.title,
+    summary: news.summary,
     sourceUrl: news.sourceUrl,
     shownAt: news.shownAt.toISOString(),
     nextRefreshAt: new Date(news.lastCheckedAt.getTime() + ROTATION_INTERVAL_MS).toISOString(),
@@ -155,6 +185,72 @@ function serializeNews(news: NewsRecord, stale: boolean): TvNewsPayload {
 function getHtmlAttribute(tag: string, name: string) {
   const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, "i"));
   return match?.[1] ?? match?.[2] ?? null;
+}
+
+function extractSummaryNear(html: string, index: number, title: string) {
+  const windowHtml = html.slice(Math.max(0, index - 1800), index + 3200);
+  const text = normalizeSummary(stripTags(windowHtml));
+  if (!text) return "";
+  const titleIndex = text.indexOf(title);
+  const afterTitle = titleIndex >= 0 ? text.slice(titleIndex + title.length) : text;
+  return normalizeSummary(afterTitle).replace(/^[:\-\s]+/, "");
+}
+
+function getMetaContent(html: string, name: string) {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const patterns = [
+    new RegExp(`<meta\\b[^>]*(?:property|name)\\s*=\\s*["']${escapedName}["'][^>]*content\\s*=\\s*["']([^"']*)["'][^>]*>`, "i"),
+    new RegExp(`<meta\\b[^>]*content\\s*=\\s*["']([^"']*)["'][^>]*(?:property|name)\\s*=\\s*["']${escapedName}["'][^>]*>`, "i"),
+  ];
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match?.[1]) return decodeHtml(match[1]);
+  }
+  return null;
+}
+
+function getJsonLdDescription(html: string) {
+  for (const match of html.matchAll(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const payload = JSON.parse(decodeHtml(stripTags(match[1])));
+      const candidates = Array.isArray(payload) ? payload : [payload];
+      for (const item of candidates) {
+        const description = findDescription(item);
+        if (description) return description;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+function findDescription(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.description === "string") return record.description;
+  if (Array.isArray(record["@graph"])) {
+    for (const item of record["@graph"]) {
+      const description = findDescription(item);
+      if (description) return description;
+    }
+  }
+  return null;
+}
+
+function stripTags(value: string) {
+  return value
+    .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ");
+}
+
+function normalizeSummary(value: string) {
+  const normalized = normalizeText(value)
+    .replace(/^Дзен Новости\s*/i, "")
+    .replace(/^Новости\s*/i, "")
+    .trim();
+  return normalized.length > 520 ? `${normalized.slice(0, 519)}…` : normalized;
 }
 
 function normalizeText(value: string) {

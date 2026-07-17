@@ -395,6 +395,7 @@ model TvNewsItem {
   id            String   @id @default(cuid())
   sourceId      String   @unique
   title         String
+  summary       String   @default("")
   sourceUrl     String
   shownAt       DateTime @default(now())
   lastCheckedAt DateTime @default(now())

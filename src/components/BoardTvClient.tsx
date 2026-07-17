@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { CloudSun, Minimize2, Newspaper, Radio, Wind } from "lucide-react";
+import { ChevronDown, ChevronUp, CloudSun, Minimize2, Newspaper, Radio, Wind } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
 import { GoidaReminder } from "@/components/GoidaReminder";
@@ -64,6 +64,7 @@ type TvJoke = {
 type TvNews = {
   id: string;
   title: string;
+  summary: string;
   sourceUrl: string;
   shownAt: string;
   nextRefreshAt: string;
@@ -76,6 +77,7 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
   const [now, setNow] = useState(new Date());
   const [joke, setJoke] = useState<TvJoke>({ text: officeJokes[0], sourceUrl: null, updatedAt: "fallback" });
   const [news, setNews] = useState<TvNews | null>(initialNews);
+  const [newsExpanded, setNewsExpanded] = useState(false);
   const [newsUnavailable, setNewsUnavailable] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
   const [connectionState, setConnectionState] = useState<"live" | "stale">("live");
@@ -104,6 +106,22 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
     void refreshNews();
     const timer = window.setInterval(() => void refreshNews(), 60 * 1000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setNewsExpanded(true);
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setNewsExpanded(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -204,17 +222,27 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
         </section>
       </header>
 
-      <section className={`tv-news-strip${news?.stale ? " is-stale" : ""}`} aria-label="Главная новость Дзена" aria-live="polite">
+      <section className={`tv-news-strip${news?.stale ? " is-stale" : ""}${newsExpanded ? " is-expanded" : ""}`} aria-label="Главная новость Дзена" aria-live="polite" aria-expanded={newsExpanded}>
         <div className="tv-news-source">
           <span aria-hidden="true"><Newspaper size={18} /></span>
           <div><strong>Главное</strong><small>Дзен Новости</small></div>
         </div>
         {news ? (
-          <a className="tv-news-title" href={news.sourceUrl} target="_blank" rel="noreferrer" key={news.id}>{news.title}</a>
+          <div className="tv-news-copy" key={news.id}>
+            <a className="tv-news-title" href={news.sourceUrl} target="_blank" rel="noreferrer">{news.title}</a>
+            {newsExpanded ? (
+              <p className={news.summary ? "tv-news-summary" : "tv-news-summary is-empty"}>
+                {news.summary || "Полный текст новости доступен по ссылке на источник."}
+              </p>
+            ) : null}
+          </div>
         ) : (
           <span className="tv-news-title tv-news-placeholder">{newsUnavailable ? "Новости временно недоступны" : "Загружаем главную новость"}</span>
         )}
-        <span className="tv-news-refresh">{news ? nextNewsRefreshLabel(news.nextRefreshAt, now, news.stale) : "Обновление каждые 15 минут"}</span>
+        <div className="tv-news-status">
+          <span className="tv-news-refresh">{news ? nextNewsRefreshLabel(news.nextRefreshAt, now, news.stale) : "Обновление каждые 15 минут"}</span>
+          <span className="tv-news-key-hint">{newsExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}{newsExpanded ? "Свернуть" : "Раскрыть"}</span>
+        </div>
       </section>
 
       <section className="tv-layout">
