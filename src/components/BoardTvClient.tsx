@@ -71,6 +71,27 @@ type TvNews = {
   stale: boolean;
 };
 
+type TvTaskSnapshot = {
+  signature: string;
+  title: string;
+  columnId: string;
+  columnName: string;
+  priority: string;
+  deadline: string;
+  assigneeNames: string;
+  commentsCount: number;
+  filesCount: number;
+  checklistDone: number;
+  checklistTotal: number;
+};
+
+type TvTaskSpotlight = {
+  id: string;
+  kind: "created" | "updated";
+  task: Task;
+  changes: string[];
+};
+
 type TvMode = "standby" | "news" | "tasks" | "jokes" | "focus";
 
 const tvModes: Array<{ id: TvMode; label: string }> = [
@@ -84,6 +105,7 @@ const tvModes: Array<{ id: TvMode; label: string }> = [
 const FEATURE_HOLD_MS = 2 * 60 * 1000;
 const MANUAL_HOLD_MS = 2 * 60 * 1000;
 const AUTO_ROTATION_MS = 3 * 60 * 1000;
+const TASK_SPOTLIGHT_MS = 9000;
 
 export function BoardTvClient({ initialView, initialNews = null }: { initialView: View; initialNews?: TvNews | null }) {
   const [view, setView] = useState(initialView);
@@ -97,9 +119,12 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
   const [newsUnavailable, setNewsUnavailable] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
   const [connectionState, setConnectionState] = useState<"live" | "stale">("live");
+  const [taskSpotlight, setTaskSpotlight] = useState<TvTaskSpotlight | null>(null);
   const seenNewsIdRef = useRef<string | null>(initialNews?.id ?? null);
   const seenJokeUpdateRef = useRef<string | null>(null);
+  const taskSnapshotRef = useRef(buildTaskSnapshot(initialView));
   const featureReturnTimerRef = useRef<number | null>(null);
+  const taskSpotlightTimerRef = useRef<number | null>(null);
 
   const tasks = useMemo(() => view?.board?.columns?.flatMap((column: any) => column.tasks) ?? [], [view]);
   const summary = useMemo(() => buildSummary(tasks, view), [tasks, view]);
@@ -154,7 +179,10 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
   }, [joke.updatedAt]);
 
   useEffect(() => {
-    return () => clearFeatureReturnTimer();
+    return () => {
+      clearFeatureReturnTimer();
+      clearTaskSpotlightTimer();
+    };
   }, []);
 
   useEffect(() => {
@@ -204,6 +232,7 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
       const response = await fetch("/api/board");
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Board refresh failed");
+      detectTaskSpotlight(data);
       setView(data);
       setLastUpdatedAt(new Date());
       setConnectionState("live");
@@ -265,6 +294,12 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
     featureReturnTimerRef.current = null;
   }
 
+  function clearTaskSpotlightTimer() {
+    if (taskSpotlightTimerRef.current === null) return;
+    window.clearTimeout(taskSpotlightTimerRef.current);
+    taskSpotlightTimerRef.current = null;
+  }
+
   function holdManualMode() {
     clearFeatureReturnTimer();
     setManualModeUntil(Date.now() + MANUAL_HOLD_MS);
@@ -281,6 +316,43 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
       setManualModeUntil(0);
       featureReturnTimerRef.current = null;
     }, FEATURE_HOLD_MS);
+  }
+
+  function detectTaskSpotlight(nextView: View) {
+    const previousSnapshot = taskSnapshotRef.current;
+    const nextSnapshot = buildTaskSnapshot(nextView);
+    taskSnapshotRef.current = nextSnapshot;
+
+    const candidates: TvTaskSpotlight[] = [];
+    for (const [taskId, nextItem] of nextSnapshot) {
+      const previousItem = previousSnapshot.get(taskId);
+      if (!previousItem) {
+        const task = findTaskById(nextView, taskId);
+        if (task) candidates.push({ id: `${taskId}:created:${task.updatedAt ?? Date.now()}`, kind: "created", task, changes: ["Новая задача на доске"] });
+        continue;
+      }
+      if (previousItem.signature !== nextItem.signature) {
+        const task = findTaskById(nextView, taskId);
+        if (task) candidates.push({ id: `${taskId}:updated:${task.updatedAt ?? Date.now()}:${nextItem.signature}`, kind: "updated", task, changes: describeTaskSnapshotChanges(previousItem, nextItem) });
+      }
+    }
+
+    const spotlight = candidates.at(-1);
+    if (!spotlight) return;
+    showTaskSpotlight(spotlight);
+  }
+
+  function showTaskSpotlight(spotlight: TvTaskSpotlight) {
+    clearFeatureReturnTimer();
+    clearTaskSpotlightTimer();
+    setNewsExpanded(false);
+    setTvMode("tasks");
+    setManualModeUntil(Date.now() + TASK_SPOTLIGHT_MS + 3000);
+    setTaskSpotlight(spotlight);
+    taskSpotlightTimerRef.current = window.setTimeout(() => {
+      setTaskSpotlight(null);
+      taskSpotlightTimerRef.current = null;
+    }, TASK_SPOTLIGHT_MS);
   }
 
   return (
@@ -370,6 +442,7 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
       <TaskSoundNotifier />
       <GoidaReminder />
       <WeeklyReportReminder />
+      {taskSpotlight ? <TvTaskSpotlightOverlay spotlight={taskSpotlight} /> : null}
     </main>
   );
 }
@@ -529,9 +602,107 @@ function TvTaskCard({ task }: { task: Task }) {
   );
 }
 
+function TvTaskSpotlightOverlay({ spotlight }: { spotlight: TvTaskSpotlight }) {
+  const task = spotlight.task;
+  const done = isCompletedColumn(task.column?.name ?? "");
+  const assignees = taskAssignees(task).map((user: any) => user.name).join(", ") || "Не назначен";
+  const checklist = task.checklists?.length ? `${checklistProgress(task)}% чек-листа` : "Чек-лист не задан";
+  const filesCount = task.fileAttachments?.length ?? 0;
+  const commentsCount = task.comments?.length ?? 0;
+
+  return (
+    <aside className="tv-task-spotlight" aria-live="polite" aria-label="Обновление задачи">
+      <article className={`tv-task-spotlight-card tv-task-spotlight-${spotlight.kind}`}>
+        <div className="tv-task-spotlight-status">
+          <span>{spotlight.kind === "created" ? "Новая задача" : "Задача обновлена"}</span>
+          <strong>#{task.taskNumber}</strong>
+        </div>
+        <div className="tv-task-spotlight-main">
+          <span className="tv-task-spotlight-kicker">{task.column?.name ?? "Без статуса"} · {done ? "Закрыто" : priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
+          <h2>{task.title}</h2>
+          {task.description ? <p>{summarizeTaskText(task.description, 260)}</p> : null}
+        </div>
+        <dl className="tv-task-spotlight-facts">
+          <div><dt>Исполнители</dt><dd>{assignees}</dd></div>
+          <div><dt>Срок</dt><dd>{task.deadline ? dateShort(task.deadline) : "Не указан"}</dd></div>
+          <div><dt>Нефтебаза</dt><dd>{task.oilDepot?.name ?? "Без нефтебазы"}</dd></div>
+          <div><dt>Материалы</dt><dd>{commentsCount} комм. · {filesCount} файл. · {checklist}</dd></div>
+        </dl>
+        <div className="tv-task-spotlight-changes">
+          {spotlight.changes.slice(0, 4).map((change) => <span key={change}>{change}</span>)}
+        </div>
+      </article>
+    </aside>
+  );
+}
+
 function taskAssignees(task: Task) {
   if (task.assignees?.length) return task.assignees.map((item: any) => item.user);
   return task.assignee ? [task.assignee] : [];
+}
+
+function buildTaskSnapshot(view: View) {
+  const map = new Map<string, TvTaskSnapshot>();
+  for (const column of view?.board?.columns ?? []) {
+    for (const task of column.tasks ?? []) {
+      const checklistItems = task.checklists?.flatMap((checklist: any) => checklist.items ?? []) ?? [];
+      const checklistDone = checklistItems.filter((item: any) => item.completed).length;
+      const assigneeNames = taskAssignees(task).map((user: any) => user.name).sort().join(", ");
+      const snapshot: TvTaskSnapshot = {
+        signature: "",
+        title: task.title ?? "",
+        columnId: task.columnId ?? column.id ?? "",
+        columnName: task.column?.name ?? column.name ?? "",
+        priority: task.priority ?? "",
+        deadline: task.deadline ? new Date(task.deadline).toISOString().slice(0, 10) : "",
+        assigneeNames,
+        commentsCount: task.comments?.length ?? 0,
+        filesCount: task.fileAttachments?.length ?? 0,
+        checklistDone,
+        checklistTotal: checklistItems.length,
+      };
+      snapshot.signature = [
+        snapshot.title,
+        snapshot.columnId,
+        snapshot.priority,
+        snapshot.deadline,
+        snapshot.assigneeNames,
+        snapshot.commentsCount,
+        snapshot.filesCount,
+        snapshot.checklistDone,
+        snapshot.checklistTotal,
+        task.updatedAt ?? "",
+      ].join("|");
+      map.set(task.id, snapshot);
+    }
+  }
+  return map;
+}
+
+function findTaskById(view: View, taskId: string) {
+  for (const column of view?.board?.columns ?? []) {
+    const task = column.tasks?.find((candidate: Task) => candidate.id === taskId);
+    if (task) return task;
+  }
+  return null;
+}
+
+function describeTaskSnapshotChanges(previous: TvTaskSnapshot, next: TvTaskSnapshot) {
+  const changes: string[] = [];
+  if (previous.title !== next.title) changes.push("Изменено название");
+  if (previous.columnId !== next.columnId) changes.push(`Статус: ${previous.columnName} → ${next.columnName}`);
+  if (previous.priority !== next.priority) changes.push(`Приоритет: ${priorityLabels[next.priority as keyof typeof priorityLabels] ?? next.priority}`);
+  if (previous.deadline !== next.deadline) changes.push(`Срок: ${next.deadline ? dateShort(`${next.deadline}T00:00:00.000Z`) : "не указан"}`);
+  if (previous.assigneeNames !== next.assigneeNames) changes.push(`Исполнители: ${next.assigneeNames || "не назначены"}`);
+  if (previous.commentsCount !== next.commentsCount) changes.push(next.commentsCount > previous.commentsCount ? "Добавлен комментарий" : "Комментарии обновлены");
+  if (previous.filesCount !== next.filesCount) changes.push(next.filesCount > previous.filesCount ? "Добавлен файл" : "Файлы обновлены");
+  if (previous.checklistDone !== next.checklistDone || previous.checklistTotal !== next.checklistTotal) changes.push(`Чек-лист: ${next.checklistDone}/${next.checklistTotal}`);
+  return changes.length ? changes : ["Обновлены данные задачи"];
+}
+
+function summarizeTaskText(value: string, maxLength: number) {
+  const compact = value.replace(/\s+/g, " ").trim();
+  return compact.length > maxLength ? `${compact.slice(0, maxLength - 1)}…` : compact;
 }
 
 function nextTvMode(current: TvMode, direction: 1 | -1) {
