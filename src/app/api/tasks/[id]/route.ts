@@ -17,6 +17,14 @@ import { notifySharedTaskEvent } from "@/lib/task-notifications";
 
 type Params = { params: Promise<{ id: string }> };
 
+const priorityLabels = {
+  LOW: "Низкая",
+  PLANNED: "Плановые работы",
+  MEDIUM: "Средняя",
+  HIGH: "Высокая",
+  CRITICAL: "Критическая",
+};
+
 export async function PATCH(request: Request, { params }: Params) {
   try {
     const user = await requireVerifiedUser();
@@ -133,6 +141,44 @@ export async function PATCH(request: Request, { params }: Params) {
         }),
       ]);
     }
+    if (!isPersonalBoard && task.priority !== "PLANNED" && changes.includes(ActivityAction.PRIORITY_CHANGED)) {
+      const message = [
+        `Задача: ${task.title}`,
+        `Было: ${priorityLabels[existing.priority as keyof typeof priorityLabels]}`,
+        `Стало: ${priorityLabels[task.priority as keyof typeof priorityLabels]}`,
+        `Изменил: ${user.name}`,
+      ].join("\n");
+      await Promise.allSettled([
+        notifySharedTelegram("priority_changed", message),
+        notifySharedTaskEvent({
+          event: "priority_changed",
+          actorId: user.id,
+          taskId: task.id,
+          taskNumber: task.taskNumber,
+          taskTitle: task.title,
+          body: message,
+        }),
+      ]);
+    }
+    if (!isPersonalBoard && task.priority !== "PLANNED" && changes.includes(ActivityAction.DEADLINE_CHANGED)) {
+      const message = [
+        `Задача: ${task.title}`,
+        `Было: ${formatTaskDate(existing.deadline)}`,
+        `Стало: ${formatTaskDate(task.deadline)}`,
+        `Изменил: ${user.name}`,
+      ].join("\n");
+      await Promise.allSettled([
+        notifySharedTelegram("deadline_changed", message),
+        notifySharedTaskEvent({
+          event: "deadline_changed",
+          actorId: user.id,
+          taskId: task.id,
+          taskNumber: task.taskNumber,
+          taskTitle: task.title,
+          body: message,
+        }),
+      ]);
+    }
     if (task.priority !== "PLANNED" && changes.includes(ActivityAction.STATUS_CHANGED)
       && !isCompletedColumn(existing.column.name) && isCompletedColumn(task.column.name)) {
       await triggerTaskCompletionSoundEvent(isPersonalBoard ? user.id : null).catch(() => undefined);
@@ -189,6 +235,10 @@ function formatAssigneeChangedMessage(task: TaskWithDetails, user: { name: strin
     `Срок: ${task.deadline ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(task.deadline) : "не указан"}`,
     `Изменил: ${user.name} (${user.email})`,
   ].join("\n");
+}
+
+function formatTaskDate(value?: Date | null) {
+  return value ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "medium" }).format(value) : "не указан";
 }
 
 function sameIds(left: string[], right: string[]) {

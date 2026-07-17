@@ -7,13 +7,19 @@ type SharedTaskEvent =
   | "task_created"
   | "assignee_changed"
   | "status_changed"
-  | "comment_added";
+  | "priority_changed"
+  | "deadline_changed"
+  | "comment_added"
+  | "file_uploaded";
 
 const taskEventTitles: Record<SharedTaskEvent, string> = {
   task_created: "Новая задача",
   assignee_changed: "Исполнители обновлены",
   status_changed: "Статус задачи изменен",
+  priority_changed: "Приоритет задачи изменен",
+  deadline_changed: "Срок задачи изменен",
   comment_added: "Новый комментарий",
+  file_uploaded: "Файл добавлен к задаче",
 };
 
 export async function notifySharedTaskEvent(input: {

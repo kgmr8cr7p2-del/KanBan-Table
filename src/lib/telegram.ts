@@ -5,7 +5,10 @@ type TelegramEvent =
   | "task_created"
   | "assignee_changed"
   | "status_changed"
+  | "priority_changed"
+  | "deadline_changed"
   | "comment_added"
+  | "file_uploaded"
   | "deadline_soon"
   | "deadline_overdue"
   | "deadline_reminder"
@@ -19,7 +22,10 @@ const titles: Record<TelegramEvent, string> = {
   task_created: "Новая задача",
   assignee_changed: "Исполнители обновлены",
   status_changed: "Статус задачи изменён",
+  priority_changed: "Приоритет задачи изменён",
+  deadline_changed: "Срок задачи изменён",
   comment_added: "Новый комментарий",
+  file_uploaded: "Файл добавлен к задаче",
   deadline_soon: "Скоро дедлайн",
   deadline_overdue: "Дедлайн просрочен",
   deadline_reminder: "Напоминание о задаче",
@@ -32,7 +38,10 @@ const icons: Record<TelegramEvent, string> = {
   task_created: "🟣",
   assignee_changed: "👤",
   status_changed: "🔄",
+  priority_changed: "⚑",
+  deadline_changed: "📅",
   comment_added: "💬",
+  file_uploaded: "📎",
   deadline_soon: "⏳",
   deadline_overdue: "🔴",
   deadline_reminder: "🔔",
@@ -42,7 +51,7 @@ const icons: Record<TelegramEvent, string> = {
 };
 
 const taskEvents = new Set<TelegramEvent>([
-  "task_created", "assignee_changed", "status_changed", "comment_added",
+  "task_created", "assignee_changed", "status_changed", "priority_changed", "deadline_changed", "comment_added", "file_uploaded",
   "deadline_soon", "deadline_overdue", "deadline_reminder",
 ]);
 const telegramEnabledUser = {

@@ -143,6 +143,6 @@ export function NotificationCenter({ fullPage = false }: { fullPage?: boolean })
     />
   </div>;
 
-  if (fullPage) return <main className="content notification-page"><div className="page-heading"><div><span className="eyebrow">Обратная связь</span><h1>Уведомления</h1><p className="muted">Упоминания, новые сообщения и важные события в ваших чатах.</p></div></div>{content}</main>;
+  if (fullPage) return <main className="content notification-page"><div className="page-heading"><div><span className="eyebrow">Обратная связь</span><h1>Уведомления</h1><p className="muted">Задачи, дедлайны, файлы, упоминания и сообщения в одном рабочем центре.</p></div></div>{content}</main>;
   return <div className="notification-center"><button className="nav-notification-button" type="button" aria-label="Открыть центр уведомлений" aria-expanded={open} onClick={() => setOpen((current) => !current)}><Bell size={18} />{unread ? <span className="nav-unread-badge">{unread > 99 ? "99+" : unread}</span> : null}</button>{open ? content : null}</div>;
 }

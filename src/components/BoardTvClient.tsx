@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { CalendarClock, Clock3, CloudSun, ListChecks, Minimize2, Newspaper, Radio, Smile, Target, Wind } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
 import { GoidaReminder } from "@/components/GoidaReminder";
 import { WeeklyReportReminder } from "@/components/WeeklyReportReminder";
@@ -81,6 +81,10 @@ const tvModes: Array<{ id: TvMode; label: string }> = [
   { id: "focus", label: "Фокус дня" },
 ];
 
+const FEATURE_HOLD_MS = 2 * 60 * 1000;
+const MANUAL_HOLD_MS = 2 * 60 * 1000;
+const AUTO_ROTATION_MS = 3 * 60 * 1000;
+
 export function BoardTvClient({ initialView, initialNews = null }: { initialView: View; initialNews?: TvNews | null }) {
   const [view, setView] = useState(initialView);
   const [weather, setWeather] = useState<Weather | null>(null);
@@ -93,6 +97,9 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
   const [newsUnavailable, setNewsUnavailable] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
   const [connectionState, setConnectionState] = useState<"live" | "stale">("live");
+  const seenNewsIdRef = useRef<string | null>(initialNews?.id ?? null);
+  const seenJokeUpdateRef = useRef<string | null>(null);
+  const featureReturnTimerRef = useRef<number | null>(null);
 
   const tasks = useMemo(() => view?.board?.columns?.flatMap((column: any) => column.tasks) ?? [], [view]);
   const summary = useMemo(() => buildSummary(tasks, view), [tasks, view]);
@@ -123,12 +130,40 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
   }, []);
 
   useEffect(() => {
+    if (!news?.id) return;
+    if (!seenNewsIdRef.current) {
+      seenNewsIdRef.current = news.id;
+      return;
+    }
+    if (seenNewsIdRef.current === news.id) return;
+
+    seenNewsIdRef.current = news.id;
+    showTemporaryMode("news", { expandNews: true });
+  }, [news?.id]);
+
+  useEffect(() => {
+    if (!joke.updatedAt || joke.updatedAt === "fallback") return;
+    if (!seenJokeUpdateRef.current) {
+      seenJokeUpdateRef.current = joke.updatedAt;
+      return;
+    }
+    if (seenJokeUpdateRef.current === joke.updatedAt) return;
+
+    seenJokeUpdateRef.current = joke.updatedAt;
+    showTemporaryMode("jokes");
+  }, [joke.updatedAt]);
+
+  useEffect(() => {
+    return () => clearFeatureReturnTimer();
+  }, []);
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setTvMode("news");
         setNewsExpanded(true);
-        setManualModeUntil(Date.now() + 90_000);
+        holdManualMode();
       }
       if (event.key === "ArrowUp") {
         event.preventDefault();
@@ -137,12 +172,12 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
       if (event.key === "ArrowRight") {
         event.preventDefault();
         setTvMode((current) => nextTvMode(current, 1));
-        setManualModeUntil(Date.now() + 90_000);
+        holdManualMode();
       }
       if (event.key === "ArrowLeft") {
         event.preventDefault();
         setTvMode((current) => nextTvMode(current, -1));
-        setManualModeUntil(Date.now() + 90_000);
+        holdManualMode();
       }
     }
 
@@ -152,11 +187,12 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      if (Date.now() < manualModeUntil || newsExpanded) return;
+      if (Date.now() < manualModeUntil) return;
+      setNewsExpanded(false);
       setTvMode((current) => nextTvMode(current, 1));
-    }, 45_000);
+    }, AUTO_ROTATION_MS);
     return () => window.clearInterval(timer);
-  }, [manualModeUntil, newsExpanded]);
+  }, [manualModeUntil]);
 
   useEffect(() => {
     const timer = window.setInterval(() => void refreshBoard(), 15 * 1000);
@@ -223,6 +259,30 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
     }
   }
 
+  function clearFeatureReturnTimer() {
+    if (featureReturnTimerRef.current === null) return;
+    window.clearTimeout(featureReturnTimerRef.current);
+    featureReturnTimerRef.current = null;
+  }
+
+  function holdManualMode() {
+    clearFeatureReturnTimer();
+    setManualModeUntil(Date.now() + MANUAL_HOLD_MS);
+  }
+
+  function showTemporaryMode(mode: TvMode, options: { expandNews?: boolean } = {}) {
+    clearFeatureReturnTimer();
+    setTvMode(mode);
+    setNewsExpanded(Boolean(options.expandNews));
+    setManualModeUntil(Date.now() + FEATURE_HOLD_MS);
+    featureReturnTimerRef.current = window.setTimeout(() => {
+      setNewsExpanded(false);
+      setTvMode("standby");
+      setManualModeUntil(0);
+      featureReturnTimerRef.current = null;
+    }, FEATURE_HOLD_MS);
+  }
+
   return (
     <main className={`tv-page tv-mode-${tvMode}`}>
       <button className="button focus-exit tv-exit" type="button" onClick={() => void exitTvMode()}>
@@ -265,7 +325,7 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
           {tvModes.map((mode, index) => {
             const Icon = tvModeIcon(mode.id);
             return (
-              <button className={tvMode === mode.id ? "is-active" : ""} type="button" key={mode.id} onClick={() => { setTvMode(mode.id); setManualModeUntil(Date.now() + 90_000); }}>
+              <button className={tvMode === mode.id ? "is-active" : ""} type="button" key={mode.id} onClick={() => { setTvMode(mode.id); holdManualMode(); }}>
                 <small>{String(index + 1).padStart(2, "0")}</small>
                 <Icon size={16} />
                 <span>{mode.label}</span>
