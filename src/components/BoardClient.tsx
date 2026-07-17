@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskButton } from "@/components/CreateTaskButton";
@@ -1039,10 +1039,10 @@ function TaskDialog(props: {
           <div className="list">
             {props.task.fileAttachments.map((file: any) => (
               <a className="line-item file-line" key={file.id} href={file.url} target="_blank">
-                <Paperclip size={16} />
+                {isImageFile(file) ? <img className="task-file-thumb" src={file.url} alt="" /> : <Paperclip size={16} />}
                 <span>
                   <strong>{file.fileName}</strong>
-                  <small>Добавил: {file.uploader?.name ?? "Неизвестно"}</small>
+                  <small>{formatBytes(file.size)} · {file.mimeType || "файл"} · добавил {file.uploader?.name ?? "Неизвестно"}</small>
                 </span>
               </a>
             ))}
@@ -1070,6 +1070,24 @@ function TaskDialog(props: {
         </section>
       </aside>
     </div>
+  );
+}
+
+function TaskActivityTimeline({ logs }: { logs: any[] }) {
+  if (!logs?.length) return <p className="muted modal-activity-empty">Событий пока нет.</p>;
+  return (
+    <ol className="modal-activity-list">
+      {logs.slice(0, 20).map((log) => (
+        <li className="modal-activity-item" key={log.id}>
+          <span className="modal-activity-marker" aria-hidden="true" />
+          <div>
+            <strong>{activityLabel(log.action)}</strong>
+            <p>{activityDetails(log)}</p>
+            <small>{log.user?.name ?? "Taskora"} · {dateTime(log.createdAt)}</small>
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -1412,14 +1430,24 @@ function TaskDialogV2(props: {
           <div className="modal-files-list">
             {props.task.fileAttachments.map((file: any) => (
               <a className="file-pill" key={file.id} href={file.url} target="_blank">
-                <Paperclip size={15} />
+                {isImageFile(file) ? <img className="task-file-thumb" src={file.url} alt="" /> : <Paperclip size={15} />}
                 <span>
                   <strong>{file.fileName}</strong>
-                  <small>Добавил: {file.uploader?.name ?? "Неизвестно"}</small>
+                  <small>{formatBytes(file.size)} · {file.mimeType || "файл"} · добавил {file.uploader?.name ?? "Неизвестно"}</small>
                 </span>
               </a>
             ))}
           </div>
+        </article>
+        <article className="modal-mini-panel modal-activity-panel">
+          <header>
+            <span>
+              <History size={15} />
+              Лента событий
+            </span>
+            <b>{props.task.activityLogs.length}</b>
+          </header>
+          <TaskActivityTimeline logs={props.task.activityLogs} />
         </article>
           </section>
         </div>
@@ -1786,12 +1814,53 @@ function dateOnly(value: string) {
   return new Intl.DateTimeFormat("ru-RU").format(new Date(value));
 }
 
+function isImageFile(file: { mimeType?: string | null; fileName?: string | null }) {
+  return Boolean(file.mimeType?.startsWith("image/") || /\.(png|jpe?g|gif|webp|avif)$/i.test(file.fileName ?? ""));
+}
+
+function formatBytes(value?: number | null) {
+  const size = Number(value ?? 0);
+  if (!Number.isFinite(size) || size <= 0) return "размер неизвестен";
+  if (size < 1024) return `${size} Б`;
+  if (size < 1024 * 1024) return `${Math.round(size / 102.4) / 10} КБ`;
+  return `${Math.round(size / 1024 / 102.4) / 10} МБ`;
+}
+
 function timeOnly(value: Date) {
   return new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(value);
 }
 
 function dateTime(value: string) {
   return new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+}
+
+function activityDetails(log: any) {
+  const details = log.details ?? {};
+  if (log.action === "TASK_CREATED") return `Создана задача «${details.title ?? log.task?.title ?? "без названия"}».`;
+  if (log.action === "STATUS_CHANGED") {
+    const from = details.previousColumn ?? "предыдущий статус";
+    const to = details.column ?? "новый статус";
+    return details.returnedFromReviewToWork ? `Возврат с проверки: ${from} → ${to}. Срок пересчитан.` : `${from} → ${to}.`;
+  }
+  if (log.action === "ASSIGNEE_CHANGED") {
+    const before = Array.isArray(details.assigneesBefore) && details.assigneesBefore.length ? details.assigneesBefore.join(", ") : "не назначены";
+    const after = Array.isArray(details.assigneesAfter) && details.assigneesAfter.length ? details.assigneesAfter.join(", ") : "не назначены";
+    return `${before} → ${after}.`;
+  }
+  if (log.action === "COMMENT_ADDED") return details.text ? `Комментарий: ${details.text}` : "Добавлен комментарий.";
+  if (log.action === "FILE_UPLOADED") return details.fileName ? `Загружен файл: ${details.fileName}` : "Загружен файл.";
+  if (log.action === "CHECKLIST_CHANGED") return details.text ? `Чек-лист: ${details.text}` : "Обновлен чек-лист.";
+  if (details.label) return `${details.label}: ${formatActivityValue(details.oldValue)} → ${formatActivityValue(details.newValue)}.`;
+  if (details.field === "oilDepot") return `Нефтебаза: ${formatActivityValue(details.oldValue)} → ${formatActivityValue(details.newValue)}.`;
+  if (details.deadline) return `Новый срок: ${formatActivityValue(details.deadline)}.`;
+  return "Событие сохранено в журнале задачи.";
+}
+
+function formatActivityValue(value: unknown) {
+  if (value === null || value === undefined || value === "") return "не указано";
+  if (typeof value !== "string") return String(value);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(value)) return dateOnly(value);
+  return value;
 }
 
 function activityLabel(action: string) {

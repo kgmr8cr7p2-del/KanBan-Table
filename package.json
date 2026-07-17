@@ -7,6 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "health": "node scripts/health-check.mjs",
+    "test:e2e": "playwright test",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
@@ -41,6 +43,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/web-push": "^3.6.4",
+    "@playwright/test": "^1.54.2",
     "prisma": "^6.11.1",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"

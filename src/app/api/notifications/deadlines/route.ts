@@ -104,6 +104,7 @@ async function deliverSiteReminder(task: ReminderTask, message: string, dispatch
     await createNotifications(recipientIds.map((userId) => ({
       userId,
       type: "SYSTEM" as const,
+      category: "deadline" as const,
       title: `Срок задачи #${task.taskNumber}`,
       body,
       href: `/board?task=${encodeURIComponent(task.id)}`,

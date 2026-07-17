@@ -91,6 +91,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   telegramConnection  TelegramConnection?
   telegramConnectCode TelegramConnectCode?
+  notificationPreference NotificationPreference?
   personalBoards      Board[]                  @relation("PersonalBoardOwner")
   notifications       Notification[]
   pushSubscriptions   PushSubscription[]
@@ -357,6 +358,7 @@ model Notification {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      String
+  category  String    @default("general")
   title     String
   body      String
   href      String?
@@ -364,6 +366,20 @@ model Notification {
   createdAt DateTime  @default(now())
 
   @@index([userId, readAt, createdAt])
+  @@index([userId, category, readAt, createdAt])
+}
+
+model NotificationPreference {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  browserChat      Boolean  @default(true)
+  browserMentions  Boolean  @default(true)
+  browserTasks     Boolean  @default(true)
+  browserDeadlines Boolean  @default(true)
+  browserSystem    Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model PushSubscription {

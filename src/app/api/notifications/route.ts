@@ -8,9 +8,10 @@ export async function GET(request: Request) {
     const params = new URL(request.url).searchParams;
     const limit = Math.min(Math.max(Number(params.get("limit") || 30), 1), 100);
     const unreadOnly = params.get("unread") === "1";
+    const category = params.get("category") || "";
     const [items, unreadCount] = await Promise.all([
       prisma.notification.findMany({
-        where: { userId: user.id, readAt: unreadOnly ? null : undefined },
+        where: { userId: user.id, category: category || undefined, readAt: unreadOnly ? null : undefined },
         orderBy: { createdAt: "desc" },
         take: limit,
       }),
@@ -26,9 +27,15 @@ export async function POST(request: Request) {
   try {
     const user = await requireVerifiedUser();
     const body = await request.json().catch(() => ({}));
-    if (body?.action !== "read-all") return fail("Неизвестное действие", 400);
-    await prisma.notification.updateMany({ where: { userId: user.id, readAt: null }, data: { readAt: new Date() } });
-    return ok({});
+    if (body?.action === "read-all") {
+      await prisma.notification.updateMany({ where: { userId: user.id, readAt: null }, data: { readAt: new Date() } });
+      return ok({});
+    }
+    if (body?.action === "read-href" && typeof body.href === "string") {
+      await prisma.notification.updateMany({ where: { userId: user.id, href: body.href, readAt: null }, data: { readAt: new Date() } });
+      return ok({});
+    }
+    return fail("Неизвестное действие", 400);
   } catch (error) {
     return handleRouteError(error);
   }

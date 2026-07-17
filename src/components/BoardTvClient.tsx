@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { ChevronDown, ChevronUp, CloudSun, Minimize2, Newspaper, Radio, Wind } from "lucide-react";
+import { Activity, AlertTriangle, CalendarClock, ChevronDown, ChevronUp, CloudSun, LayoutDashboard, Minimize2, Newspaper, Radio, Wind } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
 import { GoidaReminder } from "@/components/GoidaReminder";
@@ -71,6 +71,15 @@ type TvNews = {
   stale: boolean;
 };
 
+type TvMode = "board" | "focus" | "deadlines" | "activity";
+
+const tvModes: Array<{ id: TvMode; label: string }> = [
+  { id: "board", label: "Доска" },
+  { id: "focus", label: "Фокус" },
+  { id: "deadlines", label: "Дедлайны" },
+  { id: "activity", label: "Активность" },
+];
+
 export function BoardTvClient({ initialView, initialNews = null }: { initialView: View; initialNews?: TvNews | null }) {
   const [view, setView] = useState(initialView);
   const [weather, setWeather] = useState<Weather | null>(null);
@@ -78,6 +87,7 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
   const [joke, setJoke] = useState<TvJoke>({ text: officeJokes[0], sourceUrl: null, updatedAt: "fallback" });
   const [news, setNews] = useState<TvNews | null>(initialNews);
   const [newsExpanded, setNewsExpanded] = useState(false);
+  const [tvMode, setTvMode] = useState<TvMode>("board");
   const [newsUnavailable, setNewsUnavailable] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
   const [connectionState, setConnectionState] = useState<"live" | "stale">("live");
@@ -117,6 +127,14 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
       if (event.key === "ArrowUp") {
         event.preventDefault();
         setNewsExpanded(false);
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setTvMode((current) => nextTvMode(current, 1));
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setTvMode((current) => nextTvMode(current, -1));
       }
     }
 
@@ -245,8 +263,17 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
         </div>
       </section>
 
+      <nav className="tv-mode-bar" aria-label="Режим TV-дашборда">
+        <span><LayoutDashboard size={16} /> Режим</span>
+        {tvModes.map((mode) => (
+          <button className={tvMode === mode.id ? "is-active" : ""} type="button" key={mode.id} onClick={() => setTvMode(mode.id)}>
+            {mode.label}
+          </button>
+        ))}
+      </nav>
+
       <section className="tv-layout">
-        <section className="tv-board" aria-label="Канбан-доска для телевизора">
+        {tvMode === "board" ? <section className="tv-board" aria-label="Канбан-доска для телевизора">
           {view?.board?.columns?.map((column: any) => (
             <article className="tv-column" key={column.id}>
               <header>
@@ -262,7 +289,10 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
               </div>
             </article>
           ))}
-        </section>
+        </section> : null}
+        {tvMode === "focus" ? <TvFocusDashboard tasks={tasks} /> : null}
+        {tvMode === "deadlines" ? <TvDeadlineDashboard tasks={tasks} /> : null}
+        {tvMode === "activity" ? <TvActivityDashboard logs={view?.activityLogs ?? []} /> : null}
       </section>
 
       <footer className="tv-footer">
@@ -308,6 +338,72 @@ function WeatherPanel({ weather }: { weather: Weather | null }) {
   );
 }
 
+function TvFocusDashboard({ tasks }: { tasks: Task[] }) {
+  const focusTasks = [...tasks]
+    .filter((task) => task.priority === "CRITICAL" || isOverdue(task) || isDueSoon(task))
+    .sort((a, b) => priorityRank(b.priority) - priorityRank(a.priority) || deadlineTime(a) - deadlineTime(b))
+    .slice(0, 12);
+
+  return (
+    <section className="tv-dashboard-grid tv-focus-dashboard" aria-label="Фокус TV-дашборда">
+      <article className="tv-dashboard-hero tv-dashboard-critical">
+        <AlertTriangle size={30} />
+        <div>
+          <strong>{focusTasks.filter((task) => task.priority === "CRITICAL").length}</strong>
+          <span>Критических задач в фокусе</span>
+        </div>
+      </article>
+      <article className="tv-dashboard-hero tv-dashboard-overdue">
+        <CalendarClock size={30} />
+        <div>
+          <strong>{tasks.filter(isOverdue).length}</strong>
+          <span>Просрочено и требует реакции</span>
+        </div>
+      </article>
+      <div className="tv-dashboard-list">
+        {focusTasks.length ? focusTasks.map((task) => <TvTaskCard key={task.id} task={task} />) : <div className="tv-empty-column">Критичных задач нет</div>}
+      </div>
+    </section>
+  );
+}
+
+function TvDeadlineDashboard({ tasks }: { tasks: Task[] }) {
+  const items = [...tasks]
+    .filter((task) => task.deadline && !isCompletedColumn(task.column?.name ?? ""))
+    .sort((a, b) => deadlineTime(a) - deadlineTime(b))
+    .slice(0, 15);
+
+  return (
+    <section className="tv-deadline-dashboard" aria-label="Ближайшие дедлайны">
+      {items.length ? items.map((task) => (
+        <article className={`tv-deadline-row ${isOverdue(task) ? "is-overdue" : ""}`} key={task.id}>
+          <span>#{task.taskNumber}</span>
+          <strong>{task.title}</strong>
+          <small>{task.oilDepot?.name ?? "Без нефтебазы"}</small>
+          <time>{task.deadline ? dateShort(task.deadline) : "без срока"}</time>
+        </article>
+      )) : <div className="tv-empty-column">Ближайших дедлайнов нет</div>}
+    </section>
+  );
+}
+
+function TvActivityDashboard({ logs }: { logs: any[] }) {
+  return (
+    <section className="tv-activity-dashboard" aria-label="Последняя активность">
+      {logs.slice(0, 16).map((log) => (
+        <article className="tv-activity-row" key={log.id}>
+          <Activity size={18} />
+          <div>
+            <strong>{activityLabel(log.action)}</strong>
+            <span>{log.task ? `#${log.task.taskNumber} ${log.task.title}` : "Доска"}</span>
+          </div>
+          <small>{log.user?.name ?? "Taskora"} · {hourOnly(log.createdAt)}</small>
+        </article>
+      ))}
+      {!logs.length ? <div className="tv-empty-column">Активности пока нет</div> : null}
+    </section>
+  );
+}
 
 function TvTaskCard({ task }: { task: Task }) {
   return (
@@ -334,6 +430,42 @@ function taskAssignees(task: Task) {
   return task.assignee ? [task.assignee] : [];
 }
 
+function nextTvMode(current: TvMode, direction: 1 | -1) {
+  const index = tvModes.findIndex((mode) => mode.id === current);
+  const nextIndex = (index + direction + tvModes.length) % tvModes.length;
+  return tvModes[nextIndex].id;
+}
+
+function priorityRank(priority: string) {
+  if (priority === "CRITICAL") return 5;
+  if (priority === "HIGH") return 4;
+  if (priority === "MEDIUM") return 3;
+  if (priority === "PLANNED") return 2;
+  return 1;
+}
+
+function deadlineTime(task: Task) {
+  return task.deadline ? new Date(task.deadline).getTime() : Number.MAX_SAFE_INTEGER;
+}
+
+function activityLabel(action: string) {
+  const labels: Record<string, string> = {
+    TASK_CREATED: "Создание задачи",
+    TITLE_CHANGED: "Название изменено",
+    DESCRIPTION_CHANGED: "Описание изменено",
+    STATUS_CHANGED: "Статус изменен",
+    PRIORITY_CHANGED: "Приоритет изменен",
+    START_DATE_CHANGED: "Дата начала изменена",
+    DEADLINE_CHANGED: "Дедлайн изменен",
+    ASSIGNEE_CHANGED: "Исполнители изменены",
+    COMMENT_ADDED: "Комментарий добавлен",
+    FILE_UPLOADED: "Файл загружен",
+    CHECKLIST_CHANGED: "Чек-лист изменен",
+    TASK_DELETED: "Задача удалена",
+    COLUMN_CHANGED: "Колонка изменена",
+  };
+  return labels[action] ?? action;
+}
 
 function buildSummary(tasks: Task[], view: View) {
   const completedColumnIds = new Set((view?.board?.columns ?? []).filter((column: any) => isCompletedColumn(column.name)).map((column: any) => column.id));

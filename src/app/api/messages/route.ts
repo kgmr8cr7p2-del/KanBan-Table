@@ -93,6 +93,7 @@ export async function POST(request: Request) {
     await createNotification({
       userId: targetId,
       type: "CHAT_MESSAGE",
+      category: "chat",
       title: "Новое сообщение",
       body: `${user.name}: ${truncateNotificationText(text || file?.name || "Вложение")}`,
       href: "/chats",

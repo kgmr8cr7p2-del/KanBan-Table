@@ -6,6 +6,8 @@ type PushNotice = {
   id: string;
   title: string;
   body: string;
+  type?: string;
+  category?: string;
   href?: string | null;
 };
 
@@ -17,6 +19,8 @@ export function getWebPushPublicKey() {
 }
 
 export async function sendWebPushNotification(userId: string, notice: PushNotice) {
+  if (!await isBrowserPushAllowed(userId, notice)) return { sent: 0, failed: 0, skipped: true };
+
   const subscriptions = await prisma.pushSubscription.findMany({
     where: { userId },
     select: { endpoint: true, p256dh: true, auth: true },
@@ -28,6 +32,7 @@ export async function sendWebPushNotification(userId: string, notice: PushNotice
     id: notice.id,
     title: notice.title,
     body: notice.body,
+    category: browserPushCategory(notice),
     href: notice.href || "/notifications",
     icon: "/taskora-icon.png",
     badge: "/taskora-icon.png",
@@ -57,6 +62,24 @@ export async function sendWebPushNotification(userId: string, notice: PushNotice
     await prisma.pushSubscription.deleteMany({ where: { endpoint: { in: expiredEndpoints } } });
   }
   return { sent, failed };
+}
+
+async function isBrowserPushAllowed(userId: string, notice: PushNotice) {
+  const preference = await prisma.notificationPreference.findUnique({ where: { userId } });
+  if (!preference) return true;
+  const category = browserPushCategory(notice);
+  if (category === "chat") return preference.browserChat;
+  if (category === "mention") return preference.browserMentions;
+  if (category === "task") return preference.browserTasks;
+  if (category === "deadline") return preference.browserDeadlines;
+  return preference.browserSystem;
+}
+
+function browserPushCategory(notice: PushNotice) {
+  if (notice.category) return notice.category;
+  if (notice.type === "CHAT_MESSAGE") return "chat";
+  if (notice.type === "MENTION") return "mention";
+  return "system";
 }
 
 function configureWebPush() {

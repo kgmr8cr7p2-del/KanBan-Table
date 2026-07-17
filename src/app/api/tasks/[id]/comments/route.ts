@@ -42,6 +42,7 @@ export async function POST(request: Request, { params }: Params) {
       await createNotifications(mentionedUserIds.map((userId) => ({
         userId,
         type: "MENTION" as const,
+        category: "mention" as const,
         title: "Вас упомянули в комментарии",
         body: `${user.name} упомянул вас в задаче «${task.title}»: ${truncateNotificationText(input.text)}`,
         href: `/board?task=${encodeURIComponent(id)}`,

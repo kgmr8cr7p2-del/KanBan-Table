@@ -1,21 +1,44 @@
 "use client";
 
-import { Bell, CheckCheck, Trash2 } from "lucide-react";
+import { Bell, CheckCheck, ListFilter, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
-type Notice = { id: string; type: string; title: string; body: string; href: string | null; readAt: string | null; createdAt: string };
+type Notice = { id: string; type: string; category: string; title: string; body: string; href: string | null; readAt: string | null; createdAt: string };
+
+const categoryFilters = [
+  { value: "", label: "Все" },
+  { value: "task", label: "Задачи" },
+  { value: "deadline", label: "Дедлайны" },
+  { value: "mention", label: "Упоминания" },
+  { value: "chat", label: "Чаты" },
+  { value: "system", label: "Системные" },
+] as const;
+
+const categoryLabels: Record<string, string> = {
+  task: "Задача",
+  deadline: "Дедлайн",
+  mention: "Упоминание",
+  chat: "Чат",
+  system: "Система",
+  general: "Общее",
+};
 
 export function NotificationCenter({ fullPage = false }: { fullPage?: boolean }) {
   const [items, setItems] = useState<Notice[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(fullPage);
+  const [category, setCategory] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Notice | "all" | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true;
     async function refresh() {
-      const response = await fetch("/api/notifications?limit=40", { cache: "no-store" }).catch(() => null);
+      const params = new URLSearchParams({ limit: fullPage ? "100" : "40" });
+      if (category) params.set("category", category);
+      if (unreadOnly) params.set("unread", "1");
+      const response = await fetch(`/api/notifications?${params.toString()}`, { cache: "no-store" }).catch(() => null);
       if (!response?.ok) return;
       const payload = await response.json().catch(() => ({}));
       if (!active) return;
@@ -26,7 +49,12 @@ export function NotificationCenter({ fullPage = false }: { fullPage?: boolean })
     void refresh();
     const timer = window.setInterval(() => void refresh(), 5000);
     return () => { active = false; window.clearInterval(timer); };
-  }, []);
+  }, [category, fullPage, unreadOnly]);
+
+  const taskHrefCounts = items.reduce<Record<string, number>>((acc, item) => {
+    if (item.href?.startsWith("/board?task=")) acc[item.href] = (acc[item.href] ?? 0) + 1;
+    return acc;
+  }, {});
 
   async function markRead(id: string) {
     const item = items.find((candidate) => candidate.id === id);
@@ -41,6 +69,14 @@ export function NotificationCenter({ fullPage = false }: { fullPage?: boolean })
     await fetch("/api/notifications", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "read-all" }) }).catch(() => undefined);
     setItems((current) => current.map((item) => ({ ...item, readAt: item.readAt ?? new Date().toISOString() })));
     setUnread(0);
+  }
+
+  async function markHrefRead(href: string) {
+    const unreadForHref = items.filter((item) => item.href === href && !item.readAt).length;
+    if (!unreadForHref) return;
+    await fetch("/api/notifications", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "read-href", href }) }).catch(() => undefined);
+    setItems((current) => current.map((item) => item.href === href ? { ...item, readAt: item.readAt ?? new Date().toISOString() } : item));
+    setUnread((current) => Math.max(0, current - unreadForHref));
   }
 
   async function deleteNotifications() {
@@ -72,13 +108,26 @@ export function NotificationCenter({ fullPage = false }: { fullPage?: boolean })
         {items.length ? <button className="button ghost compact-button danger-text" type="button" onClick={() => setDeleteTarget("all")}><Trash2 size={15} />Очистить все</button> : null}
       </div>
     </div>
+    <div className="notification-filter-bar" aria-label="Фильтр уведомлений">
+      <span><ListFilter size={14} /> Фильтр</span>
+      {categoryFilters.map((item) => (
+        <button className={category === item.value ? "is-active" : ""} type="button" key={item.value} onClick={() => setCategory(item.value)}>
+          {item.label}
+        </button>
+      ))}
+      <label>
+        <input type="checkbox" checked={unreadOnly} onChange={(event) => setUnreadOnly(event.currentTarget.checked)} />
+        Непрочитанные
+      </label>
+    </div>
     {error ? <p className="browser-push-message notification-error" role="status">{error}</p> : null}
     <div className="notification-list">
       {items.length ? items.map((item) => <article className={`notification-item ${item.readAt ? "" : "is-unread"}`} key={item.id}>
         {!item.readAt ? <span className={`notification-dot notification-dot-${item.type.toLowerCase()}`} aria-label="Непрочитанное уведомление" /> : null}
         <a className="notification-item-link" href={item.href || "#"} onClick={() => void markRead(item.id)}>
-          <strong>{item.title}</strong><span>{item.body}</span><small>{new Date(item.createdAt).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" })}</small>
+          <strong>{item.title}</strong><span>{item.body}</span><small><b>{categoryLabels[item.category] ?? item.category}</b> · {new Date(item.createdAt).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" })}</small>
         </a>
+        {item.href && taskHrefCounts[item.href] > 1 ? <button className="notification-task-read-button" type="button" onClick={() => void markHrefRead(item.href!)}>Прочитать по задаче</button> : null}
         <button className="notification-delete-button" type="button" aria-label={`Удалить уведомление «${item.title}»`} title="Удалить уведомление" onClick={() => setDeleteTarget(item)}><Trash2 size={15} /></button>
       </article>) : <p className="muted notification-empty">Уведомлений пока нет.</p>}
     </div>
