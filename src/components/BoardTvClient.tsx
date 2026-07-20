@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { CalendarClock, CheckCircle2, Clock3, CloudSun, Flame, Gauge, ListChecks, Minimize2, Newspaper, Radio, Smile, Target, TimerReset, Users, Wind } from "lucide-react";
+import { CheckCircle2, Clock3, CloudSun, Flame, ListChecks, Minimize2, Newspaper, Radio, Smile, Target, TimerReset, Wind } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
 import { GoidaReminder } from "@/components/GoidaReminder";
@@ -139,7 +139,7 @@ export function BoardTvClient({ initialView, initialNews = null, initialNow }: {
   useEffect(() => {
     function syncVisibleTaskLimit() {
       const shortLandscape = window.innerHeight <= 820 && window.innerWidth > 720;
-      setVisibleTaskLimit(shortLandscape ? 3 : 5);
+      setVisibleTaskLimit(shortLandscape ? 7 : 9);
     }
 
     syncVisibleTaskLimit();
@@ -432,44 +432,33 @@ export function BoardTvClient({ initialView, initialNews = null, initialNow }: {
 
 function TvOperationsBoard({ columns, summary, tasks, now, visibleTaskLimit }: { columns: any[]; summary: ReturnType<typeof buildSummary>; tasks: Task[]; now: Date; visibleTaskLimit: number }) {
   const completedPercent = summary.active + summary.completed ? Math.round((summary.completed / (summary.active + summary.completed)) * 100) : 0;
-  const dueSoonCount = tasks.filter((task) => isDueSoon(task)).length;
+  const activeTasks = tasks.filter((task) => !isCompletedColumn(task.column?.name ?? ""));
+  const dueSoonCount = activeTasks.filter((task) => isDueSoon(task)).length;
   const teamCount = new Set(tasks.flatMap((task) => taskAssignees(task).map((user: any) => user.id ?? user.name))).size;
-  const nextDeadline = [...tasks]
+  const nextDeadline = [...activeTasks]
     .filter((task) => task.deadline && !isCompletedColumn(task.column?.name ?? ""))
     .sort((a, b) => deadlineTime(a) - deadlineTime(b))[0];
   const pressure = Math.min(100, summary.active ? Math.round(((summary.overdue * 2 + summary.critical + dueSoonCount) / Math.max(1, summary.active)) * 34) : 0);
+  const focusQueue = buildFocusQueue(tasks).slice(0, 3);
 
   return (
     <section className="tv-ops-screen" aria-label="Операционная канбан-доска">
-      <aside className="tv-ops-rail" aria-label="Сводка смены">
-        <div className="tv-ops-rail-head">
-          <span>SHIFT STATUS</span>
-          <strong>{timeOnly(now)}</strong>
-        </div>
-        <div className="tv-ops-gauge">
-          <Gauge size={30} />
-          <div>
-            <span>Нагрузка</span>
-            <strong>{pressure}%</strong>
-          </div>
+      <header className="tv-ops-command" aria-label="Сводка смены">
+        <div className="tv-ops-command-main">
+          <span>SHIFT {timeOnly(now)}</span>
+          <strong>Нагрузка {pressure}%</strong>
           <meter min={0} max={100} value={pressure} />
         </div>
-        <div className="tv-ops-kpis">
-          <TvOpsMetric icon={<ListChecks size={18} />} label="Активно" value={summary.active} tone="blue" />
-          <TvOpsMetric icon={<Flame size={18} />} label="Критично" value={summary.critical} tone="red" />
-          <TvOpsMetric icon={<TimerReset size={18} />} label="До 3 дней" value={dueSoonCount} tone="amber" />
-          <TvOpsMetric icon={<CheckCircle2 size={18} />} label="Готово" value={`${completedPercent}%`} tone="green" />
-        </div>
-        <div className="tv-ops-deadline">
-          <span><CalendarClock size={17} /> Ближайший срок</span>
+        <TvOpsMetric icon={<ListChecks size={18} />} label="Активно" value={summary.active} tone="blue" />
+        <TvOpsMetric icon={<Flame size={18} />} label="Критично" value={summary.critical} tone="red" />
+        <TvOpsMetric icon={<TimerReset size={18} />} label="До 3 дней" value={dueSoonCount} tone="amber" />
+        <TvOpsMetric icon={<CheckCircle2 size={18} />} label="Готово" value={`${completedPercent}%`} tone="green" />
+        <div className="tv-ops-next">
+          <span>Ближайший срок</span>
           <strong>{nextDeadline ? `#${nextDeadline.taskNumber} ${nextDeadline.title}` : "Нет ближайших сроков"}</strong>
-          <small>{nextDeadline?.deadline ? `${dateShort(nextDeadline.deadline)} · ${nextDeadline.oilDepot?.name ?? "Без нефтебазы"}` : "План стабилен"}</small>
+          <small>{nextDeadline?.deadline ? `${dateShort(nextDeadline.deadline)} · ${nextDeadline.oilDepot?.name ?? "Без нефтебазы"}` : `Команда: ${teamCount || "-"}`}</small>
         </div>
-        <div className="tv-ops-team">
-          <span><Users size={17} /> Команда в задачах</span>
-          <strong>{teamCount || "-"}</strong>
-        </div>
-      </aside>
+      </header>
 
       <section className="tv-board" aria-label="Канбан-доска для телевизора">
         {columns.map((column: any) => (
@@ -484,7 +473,7 @@ function TvOperationsBoard({ columns, summary, tasks, now, visibleTaskLimit }: {
             </div>
             <div className="tv-task-list">
               {column.tasks.slice(0, visibleTaskLimit).map((task: Task) => (
-                <TvTaskCard key={task.id} task={task} />
+                <TvTaskRow key={task.id} task={task} />
               ))}
               {column.tasks.length > visibleTaskLimit ? <div className="tv-more-card">+{column.tasks.length - visibleTaskLimit} еще</div> : null}
               {!column.tasks.length ? <div className="tv-empty-column">Нет задач</div> : null}
@@ -492,6 +481,17 @@ function TvOperationsBoard({ columns, summary, tasks, now, visibleTaskLimit }: {
           </article>
         ))}
       </section>
+
+      <aside className="tv-ops-focus-strip" aria-label="Ближайшие действия">
+        <span>Ближайшие действия</span>
+        {focusQueue.length ? focusQueue.map((item, index) => (
+          <div className={`tv-focus-strip-row tv-focus-strip-${item.tone}`} key={item.task.id}>
+            <b>{index + 1}</b>
+            <strong>#{item.task.taskNumber} {item.task.title}</strong>
+            <small>{item.reason} · {taskOwnerLabel(item.task)}</small>
+          </div>
+        )) : <strong>Нет срочных задач</strong>}
+      </aside>
     </section>
   );
 }
@@ -539,35 +539,52 @@ function WeatherPanel({ weather }: { weather: Weather | null }) {
 }
 
 function TvStandby({ now, weather, news, newsUnavailable, joke, summary, tasks }: { now: Date; weather: Weather | null; news: TvNews | null; newsUnavailable: boolean; joke: TvJoke; summary: ReturnType<typeof buildSummary>; tasks: Task[] }) {
-  const nextDeadline = [...tasks]
-    .filter((task) => task.deadline && !isCompletedColumn(task.column?.name ?? ""))
-    .sort((a, b) => deadlineTime(a) - deadlineTime(b))[0];
+  const focusQueue = buildFocusQueue(tasks).slice(0, 6);
+  const activeTasks = tasks.filter((task) => !isCompletedColumn(task.column?.name ?? ""));
+  const byColumn = [...activeTasks.reduce((map, task) => {
+    const name = task.column?.name ?? "Без статуса";
+    map.set(name, (map.get(name) ?? 0) + 1);
+    return map;
+  }, new Map<string, number>())].slice(0, 5);
 
   return (
-    <section className="tv-standby" aria-label="Standby режим">
-      <article className="tv-standby-clock">
-        <span>{dateLong(now)}</span>
-        <strong>{timeOnly(now)}</strong>
-      </article>
-      <article className="tv-standby-side">
-        <WeatherPanel weather={weather} />
-        <div className="tv-standby-stats">
+    <section className="tv-standby tv-standby-briefing" aria-label="Оперативная сводка">
+      <article className="tv-standby-briefing-main">
+        <header>
+          <span>Оперативная сводка</span>
+          <strong>{timeOnly(now)}</strong>
+          <small>{dateLong(now)}</small>
+        </header>
+        <div className="tv-standby-scoreboard">
           <span><b>{summary.active}</b> активно</span>
+          <span><b>{summary.inProgress}</b> в работе</span>
           <span><b>{summary.overdue}</b> просрочено</span>
           <span><b>{summary.critical}</b> критично</span>
+          <span><b>{summary.completed}</b> готово</span>
+        </div>
+        <div className="tv-standby-column-load">
+          {byColumn.map(([name, count]) => (
+            <div key={name}>
+              <span>{name}</span>
+              <strong>{count}</strong>
+            </div>
+          ))}
         </div>
       </article>
+
+      <article className="tv-standby-priority">
+        <span><Target size={17} /> Очередь внимания</span>
+        {focusQueue.length ? focusQueue.map((item, index) => <TvFocusRow item={item} index={index} key={item.task.id} compact />) : <strong>Срочных задач нет</strong>}
+      </article>
+
       <article className="tv-standby-news">
         <span><Newspaper size={17} /> Новости</span>
         <strong>{news?.title ?? (newsUnavailable ? "Новости временно недоступны" : "Загружаем главную новость")}</strong>
         {news?.summary ? <p>{news.summary}</p> : null}
       </article>
-      <article className="tv-standby-footer-card">
-        <span><CalendarClock size={17} /> Ближайший срок</span>
-        <strong>{nextDeadline ? `#${nextDeadline.taskNumber} ${nextDeadline.title}` : "На горизонте спокойно"}</strong>
-        <small>{nextDeadline?.deadline ? `${dateShort(nextDeadline.deadline)} · ${nextDeadline.oilDepot?.name ?? "Без нефтебазы"}` : "Нет ближайших дедлайнов"}</small>
-      </article>
-      <article className="tv-standby-footer-card">
+
+      <article className="tv-standby-info">
+        <WeatherPanel weather={weather} />
         <span><Smile size={17} /> Пауза</span>
         <strong>{joke.text}</strong>
       </article>
@@ -619,24 +636,60 @@ function TvJokeStage({ joke, now, weather }: { joke: TvJoke; now: Date; weather:
 }
 
 function TvFocusDashboard({ tasks, summary }: { tasks: Task[]; summary: ReturnType<typeof buildSummary> }) {
-  const focusTasks = [...tasks]
-    .filter((task) => task.priority === "CRITICAL" || isOverdue(task) || isDueSoon(task))
-    .sort((a, b) => priorityRank(b.priority) - priorityRank(a.priority) || deadlineTime(a) - deadlineTime(b))
-    .slice(0, 8);
+  const focusQueue = buildFocusQueue(tasks).slice(0, 12);
 
   return (
     <section className="tv-focus-dashboard" aria-label="Фокус дня">
       <article className="tv-dashboard-hero tv-dashboard-critical">
         <Target size={30} />
         <div>
-          <strong>Фокус дня</strong>
-          <span>{summary.overdue} просрочено · {summary.critical} критично · {summary.inProgress} в работе</span>
+          <strong>Фокус дня: очередь действий</strong>
+          <span>{summary.overdue} просрочено · {summary.critical} критично · {summary.inProgress} в работе · закрытые задачи исключены</span>
         </div>
       </article>
-      <div className="tv-focus-list-large">
-        {focusTasks.length ? focusTasks.map((task) => <TvTaskCard key={task.id} task={task} />) : <div className="tv-empty-column">Критичных задач нет</div>}
+      <div className="tv-focus-queue">
+        {focusQueue.length ? focusQueue.map((item, index) => <TvFocusRow item={item} index={index} key={item.task.id} />) : <div className="tv-empty-column">Срочных задач нет</div>}
       </div>
     </section>
+  );
+}
+
+type TvFocusItem = {
+  task: Task;
+  reason: string;
+  score: number;
+  tone: "red" | "amber" | "blue" | "green";
+};
+
+function TvFocusRow({ item, index, compact = false }: { item: TvFocusItem; index: number; compact?: boolean }) {
+  const task = item.task;
+  return (
+    <article className={`tv-focus-row tv-focus-row-${item.tone}${compact ? " tv-focus-row-compact" : ""}`}>
+      <b>{index + 1}</b>
+      <div>
+        <strong>#{task.taskNumber} {task.title}</strong>
+        <span>{task.column?.name ?? "Без статуса"} · {task.oilDepot?.name ?? "Без нефтебазы"} · {taskOwnerLabel(task)}</span>
+      </div>
+      <small>{item.reason}</small>
+      <time>{task.deadline ? dateShort(task.deadline) : "без срока"}</time>
+    </article>
+  );
+}
+
+function TvTaskRow({ task }: { task: Task }) {
+  const done = isCompletedColumn(task.column?.name ?? "");
+  const progress = task.checklists?.length ? checklistProgress(task) : (done ? 100 : 0);
+  const risk = taskRiskLabel(task);
+  return (
+    <article className={`tv-task-row tv-task-row-${String(task.priority).toLowerCase()}${done ? " tv-task-row-done" : ""}`}>
+      <span className="tv-task-row-id">#{task.taskNumber}</span>
+      <strong>{task.title}</strong>
+      <span>{task.oilDepot?.name ?? "Без нефтебазы"}</span>
+      <span>{taskOwnerLabel(task)}</span>
+      <time>{task.deadline ? dateShort(task.deadline) : "-"}</time>
+      <small>{risk}</small>
+      <meter min={0} max={100} value={progress} />
+    </article>
   );
 }
 
@@ -661,6 +714,70 @@ function TvTaskCard({ task }: { task: Task }) {
       <div className="tv-task-progress" aria-hidden="true"><span style={{ inlineSize: `${progress}%` }} /></div>
     </article>
   );
+}
+
+function buildFocusQueue(tasks: Task[]): TvFocusItem[] {
+  return tasks
+    .filter((task) => !isCompletedColumn(task.column?.name ?? ""))
+    .map((task) => {
+      const overdueDays = daysOverdue(task);
+      const dueIn = daysUntilDeadline(task);
+      const priority = priorityRank(task.priority);
+      let score = priority * 10;
+      let reason = priorityLabels[task.priority as keyof typeof priorityLabels] ?? task.priority;
+      let tone: TvFocusItem["tone"] = priority >= 4 ? "amber" : "blue";
+
+      if (overdueDays > 0) {
+        score += 1000 + overdueDays * 12;
+        reason = overdueDays === 1 ? "Просрочено на 1 день" : `Просрочено на ${overdueDays} дн.`;
+        tone = "red";
+      } else if (dueIn === 0) {
+        score += 850;
+        reason = "Срок сегодня";
+        tone = "red";
+      } else if (dueIn === 1) {
+        score += 720;
+        reason = "Срок завтра";
+        tone = "amber";
+      } else if (dueIn > 1 && dueIn <= 3) {
+        score += 560 - dueIn * 20;
+        reason = `Срок через ${dueIn} дн.`;
+        tone = "amber";
+      } else if (task.priority === "CRITICAL") {
+        score += 430;
+        reason = "Критический приоритет";
+        tone = "red";
+      } else if (task.priority === "HIGH") {
+        score += 260;
+        reason = "Высокий приоритет";
+      }
+
+      if (isReviewColumn(task.column?.name ?? "")) score -= 120;
+      if (!task.deadline) score -= 60;
+
+      return { task, reason, score, tone };
+    })
+    .filter((item) => item.score >= 40)
+    .sort((a, b) => b.score - a.score || deadlineTime(a.task) - deadlineTime(b.task) || a.task.taskNumber - b.task.taskNumber);
+}
+
+function taskRiskLabel(task: Task) {
+  const overdueDays = daysOverdue(task);
+  if (overdueDays > 0) return overdueDays === 1 ? "overdue 1d" : `overdue ${overdueDays}d`;
+  const dueIn = daysUntilDeadline(task);
+  if (dueIn === 0) return "today";
+  if (dueIn === 1) return "tomorrow";
+  if (dueIn > 1 && dueIn <= 3) return `${dueIn}d`;
+  if (task.priority === "CRITICAL") return "critical";
+  if (task.priority === "HIGH") return "high";
+  return priorityLabels[task.priority as keyof typeof priorityLabels] ?? task.priority;
+}
+
+function taskOwnerLabel(task: Task) {
+  const assignees = taskAssignees(task).map((user: any) => user.name);
+  if (!assignees.length) return "Не назначен";
+  if (assignees.length === 1) return assignees[0];
+  return `${assignees[0]} +${assignees.length - 1}`;
 }
 
 function TvTaskSpotlightOverlay({ spotlight }: { spotlight: TvTaskSpotlight }) {
@@ -840,9 +957,27 @@ function isOverdue(task: Task) {
 }
 
 function isDueSoon(task: Task) {
-  if (!task.deadline || isOverdue(task)) return false;
-  const diff = new Date(task.deadline).getTime() - Date.now();
-  return diff <= 3 * 24 * 60 * 60 * 1000;
+  if (!task.deadline || isOverdue(task) || isCompletedColumn(task.column?.name ?? "")) return false;
+  const dueIn = daysUntilDeadline(task);
+  return dueIn >= 0 && dueIn <= 3;
+}
+
+function daysOverdue(task: Task) {
+  if (!task.deadline || isCompletedColumn(task.column?.name ?? "") || isReviewColumn(task.column?.name ?? "")) return 0;
+  const diff = startOfToday().getTime() - deadlineDay(task).getTime();
+  return Math.max(0, Math.floor(diff / 86_400_000));
+}
+
+function daysUntilDeadline(task: Task) {
+  if (!task.deadline) return Number.MAX_SAFE_INTEGER;
+  const diff = deadlineDay(task).getTime() - startOfToday().getTime();
+  return Math.floor(diff / 86_400_000);
+}
+
+function deadlineDay(task: Task) {
+  const value = new Date(task.deadline);
+  value.setHours(0, 0, 0, 0);
+  return value;
 }
 
 function isCompletedColumn(name: string) {
