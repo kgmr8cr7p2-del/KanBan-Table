@@ -102,7 +102,7 @@ const tvModes: Array<{ id: TvMode; label: string }> = [
   { id: "focus", label: "Фокус дня" },
 ];
 
-const FEATURE_HOLD_MS = 2 * 60 * 1000;
+const FEATURE_HOLD_MS = 60 * 1000;
 const MANUAL_HOLD_MS = 2 * 60 * 1000;
 const AUTO_ROTATION_MS = 3 * 60 * 1000;
 const TASK_SPOTLIGHT_MS = 9000;
@@ -113,6 +113,8 @@ export function BoardTvClient({ initialView, initialNews = null, initialNow }: {
   const [now, setNow] = useState(() => new Date(initialNow));
   const [joke, setJoke] = useState<TvJoke>({ text: officeJokes[0], sourceUrl: null, updatedAt: "fallback" });
   const [news, setNews] = useState<TvNews | null>(initialNews);
+  const [newsHistory, setNewsHistory] = useState<TvNews[]>([]);
+  const [jokeHistory, setJokeHistory] = useState<TvJoke[]>([]);
   const [tvMode, setTvMode] = useState<TvMode>("standby");
   const [visibleTaskLimit, setVisibleTaskLimit] = useState(5);
   const [manualModeUntil, setManualModeUntil] = useState(0);
@@ -120,8 +122,8 @@ export function BoardTvClient({ initialView, initialNews = null, initialNow }: {
   const [lastUpdatedAt, setLastUpdatedAt] = useState(() => new Date(initialNow));
   const [connectionState, setConnectionState] = useState<"live" | "stale">("live");
   const [taskSpotlight, setTaskSpotlight] = useState<TvTaskSpotlight | null>(null);
-  const seenNewsIdRef = useRef<string | null>(initialNews?.id ?? null);
-  const seenJokeUpdateRef = useRef<string | null>(null);
+  const previousNewsRef = useRef<TvNews | null>(initialNews);
+  const previousJokeRef = useRef<TvJoke | null>(null);
   const taskSnapshotRef = useRef(buildTaskSnapshot(initialView));
   const featureReturnTimerRef = useRef<number | null>(null);
   const taskSpotlightTimerRef = useRef<number | null>(null);
@@ -129,6 +131,7 @@ export function BoardTvClient({ initialView, initialNews = null, initialNow }: {
   const tasks = useMemo(() => view?.board?.columns?.flatMap((column: any) => column.tasks) ?? [], [view]);
   const summary = useMemo(() => buildSummary(tasks, view), [tasks, view]);
   const cleanNews = useMemo(() => news ? { ...news, summary: cleanNewsText(news.summary) } : null, [news]);
+  const cleanNewsHistory = useMemo(() => newsHistory.map((item) => ({ ...item, summary: cleanNewsText(item.summary) })), [newsHistory]);
   const activeModeIndex = tvModes.findIndex((mode) => mode.id === tvMode);
 
   useEffect(() => {
@@ -167,27 +170,36 @@ export function BoardTvClient({ initialView, initialNews = null, initialNow }: {
 
   useEffect(() => {
     if (!news?.id) return;
-    if (!seenNewsIdRef.current) {
-      seenNewsIdRef.current = news.id;
+    const previousNews = previousNewsRef.current;
+    if (!previousNews) {
+      previousNewsRef.current = news;
       return;
     }
-    if (seenNewsIdRef.current === news.id) return;
+    if (previousNews.id === news.id) {
+      previousNewsRef.current = news;
+      return;
+    }
 
-    seenNewsIdRef.current = news.id;
+    setNewsHistory((items) => prependNewsHistory(previousNews, items));
+    previousNewsRef.current = news;
     showTemporaryMode("news");
-  }, [news?.id]);
+  }, [news]);
 
   useEffect(() => {
     if (!joke.updatedAt || joke.updatedAt === "fallback") return;
-    if (!seenJokeUpdateRef.current) {
-      seenJokeUpdateRef.current = joke.updatedAt;
+    const previousJoke = previousJokeRef.current;
+    if (!previousJoke) {
+      previousJokeRef.current = joke;
       return;
     }
-    if (seenJokeUpdateRef.current === joke.updatedAt) return;
+    if (previousJoke.updatedAt === joke.updatedAt) return;
 
-    seenJokeUpdateRef.current = joke.updatedAt;
+    if (previousJoke.updatedAt !== "fallback") {
+      setJokeHistory((items) => prependJokeHistory(previousJoke, items));
+    }
+    previousJokeRef.current = joke;
     showTemporaryMode("jokes");
-  }, [joke.updatedAt]);
+  }, [joke]);
 
   useEffect(() => {
     return () => {
@@ -409,11 +421,11 @@ export function BoardTvClient({ initialView, initialNews = null, initialNow }: {
 
       <section className="tv-layout">
         {tvMode === "standby" ? <TvStandby now={now} weather={weather} news={cleanNews} newsUnavailable={newsUnavailable} summary={summary} tasks={tasks} activityLogs={view?.activityLogs ?? []} /> : null}
-        {tvMode === "news" ? <TvNewsReader news={cleanNews} unavailable={newsUnavailable} now={now} /> : null}
+        {tvMode === "news" ? <TvNewsReader news={cleanNews} history={cleanNewsHistory} unavailable={newsUnavailable} now={now} /> : null}
         {tvMode === "tasks" ? (
           <TvOperationsBoard columns={view?.board?.columns ?? []} summary={summary} tasks={tasks} now={now} visibleTaskLimit={visibleTaskLimit} />
         ) : null}
-        {tvMode === "jokes" ? <TvJokeStage joke={joke} now={now} weather={weather} /> : null}
+        {tvMode === "jokes" ? <TvJokeStage joke={joke} history={jokeHistory} now={now} weather={weather} /> : null}
         {tvMode === "focus" ? <TvFocusDashboard tasks={tasks} summary={summary} /> : null}
       </section>
 
@@ -616,7 +628,7 @@ function TvStandby({ now, weather, news, newsUnavailable, summary, tasks, activi
   );
 }
 
-function TvNewsReader({ news, unavailable, now }: { news: TvNews | null; unavailable: boolean; now: Date }) {
+function TvNewsReader({ news, history, unavailable, now }: { news: TvNews | null; history: TvNews[]; unavailable: boolean; now: Date }) {
   return (
     <section className="tv-news-reader" aria-label="Новости">
       <article className="tv-news-reader-card">
@@ -637,6 +649,7 @@ function TvNewsReader({ news, unavailable, now }: { news: TvNews | null; unavail
           </>
         )}
       </article>
+      <TvNewsHistory items={history} />
     </section>
   );
 }
@@ -646,6 +659,11 @@ type TvChartPoint = {
   created: number;
   updated: number;
   completed: number;
+};
+
+type TvChartCoordinate = {
+  x: number;
+  y: number;
 };
 
 type TvStatusRow = {
@@ -664,33 +682,52 @@ type TvRecentFocus = {
 };
 
 const tvChartColors = ["#60a5fa", "#34d399", "#f59e0b", "#f87171", "#a78bfa", "#22d3ee"];
+const tvChartTop = 8;
+const tvChartBottom = 92;
 
 function TvMiniLineChart({ data }: { data: TvChartPoint[] }) {
   const max = Math.max(1, ...data.flatMap((item) => [item.created, item.updated, item.completed]));
+  const ticks = buildTvChartTicks(max);
   const totals = data.reduce((sum, item) => ({
     created: sum.created + item.created,
     updated: sum.updated + item.updated,
     completed: sum.completed + item.completed,
   }), { created: 0, updated: 0, completed: 0 });
-  const created = chartPolyline(data.map((item) => item.created), max);
-  const updated = chartPolyline(data.map((item) => item.updated), max);
-  const completed = chartPolyline(data.map((item) => item.completed), max);
+  const created = chartCoordinates(data.map((item) => item.created), max);
+  const updated = chartCoordinates(data.map((item) => item.updated), max);
+  const completed = chartCoordinates(data.map((item) => item.completed), max);
 
   return (
     <figure className="tv-mini-chart">
-      <div className="tv-mini-chart-summary">
-        <span><b>{totals.created}</b>создано</span>
-        <span><b>{totals.updated}</b>обновлено</span>
-        <span><b>{totals.completed}</b>закрыто</span>
+      <div className="tv-mini-chart-body">
+        <div className="tv-mini-chart-y-axis" aria-hidden="true">
+          {ticks.map((tick) => (
+            <span key={tick.value} style={{ "--tick-y": `${tick.y}%` } as CSSProperties}>{tick.value}</span>
+          ))}
+        </div>
+        <div className="tv-mini-chart-plot">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="tvMiniCreatedFill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#60a5fa" stopOpacity=".18" />
+                <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {ticks.map((tick) => <line className="tv-mini-chart-grid" key={tick.value} x1="0" x2="100" y1={tick.y} y2={tick.y} />)}
+            <path className="tv-mini-chart-area" d={pointsToAreaPath(created)} />
+            <path className="tv-mini-chart-created" d={pointsToMonotonePath(created)} />
+            <path className="tv-mini-chart-updated" d={pointsToMonotonePath(updated)} />
+            <path className="tv-mini-chart-completed" d={pointsToMonotonePath(completed)} />
+          </svg>
+          <div className="tv-mini-chart-days">
+            {data.map((item) => <span key={item.label}>{item.label}</span>)}
+          </div>
+        </div>
       </div>
-      <svg viewBox="0 0 100 54" preserveAspectRatio="none" aria-hidden="true">
-        {[12, 26, 40].map((y) => <line className="tv-mini-chart-grid" key={y} x1="0" x2="100" y1={y} y2={y} />)}
-        <polyline className="tv-mini-chart-created" points={created} />
-        <polyline className="tv-mini-chart-updated" points={updated} />
-        <polyline className="tv-mini-chart-completed" points={completed} />
-      </svg>
-      <div className="tv-mini-chart-days">
-        {data.map((item) => <span key={item.label}>{item.label}</span>)}
+      <div className="tv-mini-chart-legend">
+        <span className="tv-mini-legend-created"><b>{totals.created}</b>создано</span>
+        <span className="tv-mini-legend-updated"><b>{totals.updated}</b>обновлено</span>
+        <span className="tv-mini-legend-completed"><b>{totals.completed}</b>закрыто</span>
       </div>
     </figure>
   );
@@ -737,7 +774,24 @@ function TvRecentFocusRow({ item }: { item: TvRecentFocus }) {
   );
 }
 
-function TvJokeStage({ joke, now, weather }: { joke: TvJoke; now: Date; weather: Weather | null }) {
+function TvNewsHistory({ items }: { items: TvNews[] }) {
+  return (
+    <aside className="tv-broadcast-history tv-news-history" aria-label="Предыдущие новости">
+      <header><span><Newspaper size={16} /> Ранее в новостях</span></header>
+      <div>
+        {items.length ? items.slice(0, 4).map((item) => (
+          <article key={item.id}>
+            <time>{hourOnly(item.shownAt)}</time>
+            <strong>{item.title}</strong>
+            <span>{item.summary || "Краткое описание недоступно."}</span>
+          </article>
+        )) : <p>Предыдущие новости появятся после следующего обновления ленты.</p>}
+      </div>
+    </aside>
+  );
+}
+
+function TvJokeStage({ joke, history, now, weather }: { joke: TvJoke; history: TvJoke[]; now: Date; weather: Weather | null }) {
   return (
     <section className="tv-joke-stage" aria-label="Анекдоты">
       <article className="tv-joke-stage-card">
@@ -751,7 +805,24 @@ function TvJokeStage({ joke, now, weather }: { joke: TvJoke; now: Date; weather:
         </div>
         <WeatherPanel weather={weather} />
       </aside>
+      <TvJokeHistory items={history} />
     </section>
+  );
+}
+
+function TvJokeHistory({ items }: { items: TvJoke[] }) {
+  return (
+    <aside className="tv-broadcast-history tv-joke-history" aria-label="Предыдущие анекдоты">
+      <header><span><Smile size={16} /> Ранее в анекдотах</span></header>
+      <div>
+        {items.length ? items.slice(0, 4).map((item) => (
+          <article key={`${item.updatedAt}-${item.text}`}>
+            <time>{hourOnly(item.updatedAt)}</time>
+            <strong>{item.text}</strong>
+          </article>
+        )) : <p>Предыдущие анекдоты появятся после следующего обновления.</p>}
+      </div>
+    </aside>
   );
 }
 
@@ -956,13 +1027,70 @@ function buildDepotRows(tasks: Task[]) {
   return rows.map(([name, count]) => ({ name, count, percent: Math.round((count / max) * 100) }));
 }
 
-function chartPolyline(values: number[], max: number) {
-  if (!values.length) return "";
-  return values.map((value, index) => {
-    const x = values.length === 1 ? 50 : (index / (values.length - 1)) * 100;
-    const y = 50 - (Math.max(0, value) / max) * 42;
-    return `${Math.round(x * 100) / 100},${Math.round(y * 100) / 100}`;
-  }).join(" ");
+function buildTvChartTicks(max: number) {
+  const step = Math.max(1, Math.ceil(max / 3));
+  const ceiling = step * 3;
+  return Array.from({ length: 4 }, (_, index) => {
+    const value = ceiling - step * index;
+    return { value, y: scaleTvChartY(value, ceiling) };
+  });
+}
+
+function chartCoordinates(values: number[], max: number): TvChartCoordinate[] {
+  return values.map((value, index) => ({
+    x: round(values.length === 1 ? 50 : (index / (values.length - 1)) * 100),
+    y: scaleTvChartY(value, max),
+  }));
+}
+
+function scaleTvChartY(value: number, max: number) {
+  return round(tvChartBottom - (Math.max(0, value) / max) * (tvChartBottom - tvChartTop));
+}
+
+function pointsToAreaPath(points: TvChartCoordinate[]) {
+  if (!points.length) return "";
+  return `${pointsToMonotonePath(points)} L ${points[points.length - 1].x} ${tvChartBottom} L ${points[0].x} ${tvChartBottom} Z`;
+}
+
+function pointsToMonotonePath(points: TvChartCoordinate[]) {
+  if (!points.length) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  const widths = points.slice(1).map((point, index) => point.x - points[index].x);
+  const slopes = points.slice(1).map((point, index) => (point.y - points[index].y) / widths[index]);
+  const tangents = points.map((_, index) => {
+    if (index === 0) return slopes[0];
+    if (index === points.length - 1) return slopes[slopes.length - 1];
+
+    const previous = slopes[index - 1];
+    const next = slopes[index];
+    if (previous === 0 || next === 0 || previous * next < 0) return 0;
+
+    const previousWidth = widths[index - 1];
+    const nextWidth = widths[index];
+    const firstWeight = 2 * nextWidth + previousWidth;
+    const secondWeight = nextWidth + 2 * previousWidth;
+    return (firstWeight + secondWeight) / (firstWeight / previous + secondWeight / next);
+  });
+
+  return points.slice(1).reduce((path, point, index) => {
+    const previous = points[index];
+    const width = widths[index];
+    const segmentMin = Math.min(previous.y, point.y);
+    const segmentMax = Math.max(previous.y, point.y);
+    const controlStartY = clamp(previous.y + (tangents[index] * width) / 3, segmentMin, segmentMax);
+    const controlEndY = clamp(point.y - (tangents[index + 1] * width) / 3, segmentMin, segmentMax);
+
+    return `${path} C ${round(previous.x + width / 3)} ${round(controlStartY)}, ${round(point.x - width / 3)} ${round(controlEndY)}, ${point.x} ${point.y}`;
+  }, `M ${points[0].x} ${points[0].y}`);
+}
+
+function round(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function recentFocusTone(task: Task): TvRecentFocus["tone"] {
@@ -1169,6 +1297,14 @@ function cleanNewsText(value: string) {
     .replace(/\s+([,.!?;:])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
+}
+
+function prependNewsHistory(item: TvNews, items: TvNews[]) {
+  return [item, ...items.filter((entry) => entry.id !== item.id)].slice(0, 6);
+}
+
+function prependJokeHistory(item: TvJoke, items: TvJoke[]) {
+  return [item, ...items.filter((entry) => entry.text !== item.text)].slice(0, 6);
 }
 
 function decodeHtmlEntities(value: string) {
