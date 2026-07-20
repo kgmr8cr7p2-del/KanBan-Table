@@ -11456,3 +11456,224 @@
     min-height: 3.85rem;
   }
 }
+
+/* Standby density pass: compact news, more operational signal. */
+.tv-standby-briefing {
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.24fr) minmax(22rem, .76fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.tv-standby-briefing-main,
+.tv-standby-priority {
+  grid-row: 1 / -1;
+}
+
+.tv-standby-briefing .tv-standby-news {
+  grid-column: 3;
+  grid-row: 1;
+  min-height: 11.25rem;
+  max-height: 15rem;
+  align-content: start;
+}
+
+.tv-standby-briefing .tv-standby-news strong {
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.tv-standby-briefing .tv-standby-news p {
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+.tv-standby-signals {
+  display: grid;
+  gap: .65rem;
+  grid-column: 3;
+  grid-row: 2;
+  border: 1px solid var(--tv-line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgb(31 40 47 / 96%), rgb(17 23 28 / 96%));
+  box-shadow: 0 16px 38px rgb(0 0 0 / 30%), inset 0 1px 0 rgb(255 255 255 / 7%);
+  padding: .8rem;
+}
+
+.tv-standby-signals > span {
+  display: flex;
+  align-items: center;
+  gap: .38rem;
+  color: #79b3ff;
+  font-size: .76rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.tv-standby-signals > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .45rem;
+}
+
+.tv-standby-signals small {
+  display: grid;
+  gap: .14rem;
+  min-width: 0;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 7px;
+  background: rgb(255 255 255 / 5%);
+  color: var(--tv-muted);
+  padding: .55rem;
+  font-size: .7rem;
+  font-weight: 900;
+}
+
+.tv-standby-signals b {
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.tv-standby-info {
+  grid-column: 3;
+  grid-row: 3;
+  min-height: 0;
+}
+
+.tv-standby-priority {
+  grid-template-rows: auto repeat(10, minmax(0, 1fr));
+  overflow: hidden;
+}
+
+.tv-standby-priority .tv-focus-row-compact {
+  min-height: 0;
+}
+
+.tv-standby-briefing-main {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+}
+
+.tv-standby-deadlines,
+.tv-standby-priority-mix,
+.tv-standby-shift-checks {
+  display: grid;
+  gap: .45rem;
+  min-width: 0;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 7px;
+  background: rgb(255 255 255 / 5%);
+  padding: .65rem;
+}
+
+.tv-standby-deadlines,
+.tv-standby-priority-mix {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tv-standby-priority-mix {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-self: end;
+}
+
+.tv-standby-deadlines > span,
+.tv-standby-priority-mix > span,
+.tv-standby-shift-checks > span {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  grid-column: 1 / -1;
+  color: #79b3ff;
+  font-size: .72rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.tv-standby-deadlines small,
+.tv-standby-priority-mix small,
+.tv-standby-shift-checks small {
+  display: grid;
+  gap: .16rem;
+  min-width: 0;
+  color: var(--tv-muted);
+  font-size: .7rem;
+  font-weight: 900;
+}
+
+.tv-standby-deadlines b,
+.tv-standby-priority-mix b,
+.tv-standby-shift-checks b {
+  color: #fff;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.tv-standby-shift-checks {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tv-standby-info {
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+
+@media (height <= 820px) {
+  .tv-standby-briefing .tv-standby-news {
+    min-height: 8.5rem;
+  }
+
+  .tv-standby-signals {
+    padding: .55rem;
+  }
+
+  .tv-standby-signals small {
+    padding: .42rem;
+  }
+
+  .tv-standby-priority {
+    grid-template-rows: auto repeat(8, minmax(0, 1fr));
+  }
+
+  .tv-standby-priority-mix {
+    display: none;
+  }
+
+  .tv-standby-info {
+    grid-template-rows: auto auto;
+  }
+
+  .tv-standby-info > span,
+  .tv-standby-info > strong {
+    display: none;
+  }
+
+  .tv-standby-shift-checks {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .tv-standby-shift-checks small:nth-of-type(n+5) {
+    display: none;
+  }
+
+  .tv-standby-deadlines,
+  .tv-standby-priority-mix,
+  .tv-standby-shift-checks {
+    padding: .48rem;
+  }
+
+  .tv-standby-deadlines b,
+  .tv-standby-priority-mix b,
+  .tv-standby-shift-checks b {
+    font-size: 1.18rem;
+  }
+
+  .tv-standby-shift-checks small {
+    font-size: .62rem;
+  }
+}
+
+@media (width <= 1100px) {
+  .tv-standby-signals {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}

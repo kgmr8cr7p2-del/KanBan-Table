@@ -539,13 +539,51 @@ function WeatherPanel({ weather }: { weather: Weather | null }) {
 }
 
 function TvStandby({ now, weather, news, newsUnavailable, joke, summary, tasks }: { now: Date; weather: Weather | null; news: TvNews | null; newsUnavailable: boolean; joke: TvJoke; summary: ReturnType<typeof buildSummary>; tasks: Task[] }) {
-  const focusQueue = buildFocusQueue(tasks).slice(0, 6);
+  const focusQueue = buildFocusQueue(tasks).slice(0, 10);
   const activeTasks = tasks.filter((task) => !isCompletedColumn(task.column?.name ?? ""));
+  const checklistTasks = activeTasks.filter((task) => task.checklists?.length);
+  const checklistAverage = checklistTasks.length ? Math.round(checklistTasks.reduce((sum, task) => sum + checklistProgress(task), 0) / checklistTasks.length) : 0;
+  const dueToday = activeTasks.filter((task) => daysUntilDeadline(task) === 0).length;
+  const dueSoon = activeTasks.filter((task) => {
+    const dueIn = daysUntilDeadline(task);
+    return dueIn > 0 && dueIn <= 3;
+  }).length;
   const byColumn = [...activeTasks.reduce((map, task) => {
     const name = task.column?.name ?? "Без статуса";
     map.set(name, (map.get(name) ?? 0) + 1);
     return map;
   }, new Map<string, number>())].slice(0, 5);
+  const priorityMix = [
+    { label: "Критич.", value: activeTasks.filter((task) => task.priority === "CRITICAL").length },
+    { label: "Высок.", value: activeTasks.filter((task) => task.priority === "HIGH").length },
+    { label: "Средн.", value: activeTasks.filter((task) => task.priority === "MEDIUM").length },
+    { label: "План.", value: activeTasks.filter((task) => task.priority === "PLANNED" || task.priority === "LOW").length },
+  ];
+  const unassignedCount = activeTasks.filter((task) => !taskAssignees(task).length).length;
+  const withoutDeadlineCount = activeTasks.filter((task) => !task.deadline).length;
+  const reviewCount = activeTasks.filter((task) => isReviewColumn(task.column?.name ?? "")).length;
+  const withChecklistCount = activeTasks.filter((task) => task.checklists?.length).length;
+  const deadlineMix = [
+    { label: "просрочено", value: summary.overdue },
+    { label: "сегодня", value: dueToday },
+    { label: "до 3 дней", value: dueSoon },
+  ];
+  const signals = [
+    { label: "Без исполнителя", value: unassignedCount },
+    { label: "Без срока", value: withoutDeadlineCount },
+    { label: "На проверке", value: reviewCount },
+    { label: "С чек-листом", value: withChecklistCount },
+  ];
+  const shiftChecks = [
+    { label: "Сегодня к сроку", value: dueToday },
+    { label: "Следующие 3 дня", value: dueSoon },
+    { label: "Назначено", value: activeTasks.filter((task) => taskAssignees(task).length).length },
+    { label: "Средний чек-лист", value: `${checklistAverage}%` },
+    { label: "Без исполнителя", value: unassignedCount },
+    { label: "Без срока", value: withoutDeadlineCount },
+    { label: "На проверке", value: reviewCount },
+    { label: "С чек-листом", value: withChecklistCount },
+  ];
 
   return (
     <section className="tv-standby tv-standby-briefing" aria-label="Оперативная сводка">
@@ -570,6 +608,18 @@ function TvStandby({ now, weather, news, newsUnavailable, joke, summary, tasks }
             </div>
           ))}
         </div>
+        <div className="tv-standby-deadlines">
+          <span><Clock3 size={16} /> Сроки</span>
+          {deadlineMix.map((item) => (
+            <small key={item.label}><b>{item.value}</b>{item.label}</small>
+          ))}
+        </div>
+        <div className="tv-standby-priority-mix">
+          <span><Flame size={16} /> Приоритеты</span>
+          {priorityMix.map((item) => (
+            <small key={item.label}><b>{item.value}</b>{item.label}</small>
+          ))}
+        </div>
       </article>
 
       <article className="tv-standby-priority">
@@ -583,8 +633,23 @@ function TvStandby({ now, weather, news, newsUnavailable, joke, summary, tasks }
         {news?.summary ? <p>{news.summary}</p> : null}
       </article>
 
+      <article className="tv-standby-signals">
+        <span><ListChecks size={17} /> Сигналы доски</span>
+        <div>
+          {signals.map((signal) => (
+            <small key={signal.label}><b>{signal.value}</b>{signal.label}</small>
+          ))}
+        </div>
+      </article>
+
       <article className="tv-standby-info">
         <WeatherPanel weather={weather} />
+        <div className="tv-standby-shift-checks">
+          <span><TimerReset size={17} /> Контроль смены</span>
+          {shiftChecks.map((item) => (
+            <small key={item.label}><b>{item.value}</b>{item.label}</small>
+          ))}
+        </div>
         <span><Smile size={17} /> Пауза</span>
         <strong>{joke.text}</strong>
       </article>
