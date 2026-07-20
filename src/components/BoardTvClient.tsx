@@ -1,7 +1,7 @@
 ﻿"use client";
 
-import { CalendarClock, Clock3, CloudSun, ListChecks, Minimize2, Newspaper, Radio, Smile, Target, Wind } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { CalendarClock, CheckCircle2, Clock3, CloudSun, Flame, Gauge, ListChecks, Minimize2, Newspaper, Radio, Smile, Target, TimerReset, Users, Wind } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
 import { GoidaReminder } from "@/components/GoidaReminder";
 import { WeeklyReportReminder } from "@/components/WeeklyReportReminder";
@@ -398,23 +398,9 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
       <section className="tv-layout">
         {tvMode === "standby" ? <TvStandby now={now} weather={weather} news={cleanNews} newsUnavailable={newsUnavailable} joke={joke} summary={summary} tasks={tasks} /> : null}
         {tvMode === "news" ? <TvNewsReader news={cleanNews} unavailable={newsUnavailable} now={now} /> : null}
-        {tvMode === "tasks" ? <section className="tv-board" aria-label="Канбан-доска для телевизора">
-          {view?.board?.columns?.map((column: any) => (
-            <article className={`tv-column${isCompletedColumn(column.name) ? " tv-column-done" : ""}`} key={column.id}>
-              <header>
-                <span>{column.name}</span>
-                <b>{column.tasks.length}</b>
-              </header>
-              <div className="tv-task-list">
-                {column.tasks.slice(0, 5).map((task: Task) => (
-                  <TvTaskCard key={task.id} task={task} />
-                ))}
-                {column.tasks.length > 5 ? <div className="tv-more-card">+{column.tasks.length - 5} еще</div> : null}
-                {!column.tasks.length ? <div className="tv-empty-column">Нет задач</div> : null}
-              </div>
-            </article>
-          ))}
-        </section> : null}
+        {tvMode === "tasks" ? (
+          <TvOperationsBoard columns={view?.board?.columns ?? []} summary={summary} tasks={tasks} now={now} />
+        ) : null}
         {tvMode === "jokes" ? <TvJokeStage joke={joke} now={now} weather={weather} /> : null}
         {tvMode === "focus" ? <TvFocusDashboard tasks={tasks} summary={summary} /> : null}
       </section>
@@ -429,6 +415,82 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
       <WeeklyReportReminder />
       {taskSpotlight ? <TvTaskSpotlightOverlay spotlight={taskSpotlight} /> : null}
     </main>
+  );
+}
+
+function TvOperationsBoard({ columns, summary, tasks, now }: { columns: any[]; summary: ReturnType<typeof buildSummary>; tasks: Task[]; now: Date }) {
+  const completedPercent = summary.active + summary.completed ? Math.round((summary.completed / (summary.active + summary.completed)) * 100) : 0;
+  const dueSoonCount = tasks.filter((task) => isDueSoon(task)).length;
+  const teamCount = new Set(tasks.flatMap((task) => taskAssignees(task).map((user: any) => user.id ?? user.name))).size;
+  const nextDeadline = [...tasks]
+    .filter((task) => task.deadline && !isCompletedColumn(task.column?.name ?? ""))
+    .sort((a, b) => deadlineTime(a) - deadlineTime(b))[0];
+  const pressure = Math.min(100, summary.active ? Math.round(((summary.overdue * 2 + summary.critical + dueSoonCount) / Math.max(1, summary.active)) * 34) : 0);
+
+  return (
+    <section className="tv-ops-screen" aria-label="Операционная канбан-доска">
+      <aside className="tv-ops-rail" aria-label="Сводка смены">
+        <div className="tv-ops-rail-head">
+          <span>SHIFT STATUS</span>
+          <strong>{timeOnly(now)}</strong>
+        </div>
+        <div className="tv-ops-gauge">
+          <Gauge size={30} />
+          <div>
+            <span>Нагрузка</span>
+            <strong>{pressure}%</strong>
+          </div>
+          <meter min={0} max={100} value={pressure} />
+        </div>
+        <div className="tv-ops-kpis">
+          <TvOpsMetric icon={<ListChecks size={18} />} label="Активно" value={summary.active} tone="blue" />
+          <TvOpsMetric icon={<Flame size={18} />} label="Критично" value={summary.critical} tone="red" />
+          <TvOpsMetric icon={<TimerReset size={18} />} label="До 3 дней" value={dueSoonCount} tone="amber" />
+          <TvOpsMetric icon={<CheckCircle2 size={18} />} label="Готово" value={`${completedPercent}%`} tone="green" />
+        </div>
+        <div className="tv-ops-deadline">
+          <span><CalendarClock size={17} /> Ближайший срок</span>
+          <strong>{nextDeadline ? `#${nextDeadline.taskNumber} ${nextDeadline.title}` : "Нет ближайших сроков"}</strong>
+          <small>{nextDeadline?.deadline ? `${dateShort(nextDeadline.deadline)} · ${nextDeadline.oilDepot?.name ?? "Без нефтебазы"}` : "План стабилен"}</small>
+        </div>
+        <div className="tv-ops-team">
+          <span><Users size={17} /> Команда в задачах</span>
+          <strong>{teamCount || "-"}</strong>
+        </div>
+      </aside>
+
+      <section className="tv-board" aria-label="Канбан-доска для телевизора">
+        {columns.map((column: any) => (
+          <article className={`tv-column${isCompletedColumn(column.name) ? " tv-column-done" : ""}`} key={column.id}>
+            <header>
+              <span>{column.name}</span>
+              <b>{column.tasks.length}</b>
+            </header>
+            <div className="tv-column-signal">
+              <span>CRIT {column.tasks.filter((task: Task) => task.priority === "CRITICAL").length}</span>
+              <span>OVERDUE {column.tasks.filter((task: Task) => isOverdue(task)).length}</span>
+            </div>
+            <div className="tv-task-list">
+              {column.tasks.slice(0, 5).map((task: Task) => (
+                <TvTaskCard key={task.id} task={task} />
+              ))}
+              {column.tasks.length > 5 ? <div className="tv-more-card">+{column.tasks.length - 5} еще</div> : null}
+              {!column.tasks.length ? <div className="tv-empty-column">Нет задач</div> : null}
+            </div>
+          </article>
+        ))}
+      </section>
+    </section>
+  );
+}
+
+function TvOpsMetric({ icon, label, value, tone }: { icon: ReactNode; label: string; value: number | string; tone: "blue" | "green" | "amber" | "red" }) {
+  return (
+    <div className={`tv-ops-metric tv-ops-metric-${tone}`}>
+      {icon}
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   );
 }
 
@@ -568,6 +630,7 @@ function TvFocusDashboard({ tasks, summary }: { tasks: Task[]; summary: ReturnTy
 
 function TvTaskCard({ task }: { task: Task }) {
   const done = isCompletedColumn(task.column?.name ?? "");
+  const progress = task.checklists?.length ? checklistProgress(task) : (done ? 100 : 0);
   return (
     <article className={`tv-task tv-task-${String(task.priority).toLowerCase()}${done ? " tv-task-done" : ""}`}>
       <div className="tv-task-top">
@@ -583,6 +646,7 @@ function TvTaskCard({ task }: { task: Task }) {
         <span>{taskAssignees(task).map((user: any) => user.name).join(", ") || "Не назначен"}</span>
         {task.checklists?.length ? <small>{checklistProgress(task)}%</small> : null}
       </div>
+      <div className="tv-task-progress" aria-hidden="true"><span style={{ inlineSize: `${progress}%` }} /></div>
     </article>
   );
 }

@@ -10146,3 +10146,599 @@
     justify-self: start;
   }
 }
+
+/* Taskora TV production-board refresh */
+.tv-page {
+  --tv-bg: #090b0d;
+  --tv-bg-2: #11161a;
+  --tv-shell: #151b20;
+  --tv-shell-2: #0e1216;
+  --tv-card: #1b232a;
+  --tv-card-2: #222c34;
+  --tv-ink: #f4f7f5;
+  --tv-muted: #9aa8a2;
+  --tv-muted-2: #65746d;
+  --tv-line: rgb(228 238 232 / 13%);
+  --tv-blue: #3d8bfd;
+  --tv-cyan: #22b8cf;
+  --tv-green: #2fbf71;
+  --tv-amber: #f4a62a;
+  --tv-orange: #f06b3a;
+  --tv-red: #ef4056;
+  --tv-violet: #8275ff;
+  gap: .62rem;
+  background:
+    linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px) 0 0 / 40px 40px,
+    linear-gradient(90deg, rgb(255 255 255 / 3%) 1px, transparent 1px) 0 0 / 40px 40px,
+    linear-gradient(180deg, #151b20 0%, #090b0d 58%, #07090b 100%);
+  color: var(--tv-ink);
+  padding: .7rem;
+}
+
+.tv-title-block,
+.tv-clock-card,
+.tv-weather-card,
+.tv-joke-card,
+.tv-column,
+.tv-standby-clock,
+.tv-standby-side,
+.tv-standby-news,
+.tv-standby-footer-card,
+.tv-news-reader-card,
+.tv-joke-stage-card,
+.tv-joke-stage-side > div,
+.tv-dashboard-hero,
+.tv-task-spotlight-card {
+  border: 1px solid var(--tv-line);
+  background: linear-gradient(180deg, rgb(31 40 47 / 96%), rgb(17 23 28 / 96%));
+  box-shadow: 0 16px 38px rgb(0 0 0 / 34%), inset 0 1px 0 rgb(255 255 255 / 7%);
+  color: var(--tv-ink);
+}
+
+.tv-mode-bar {
+  min-height: 3.35rem;
+  border-color: rgb(255 255 255 / 10%);
+  background: linear-gradient(180deg, #1f2529, #101417);
+  box-shadow: 0 14px 34px rgb(0 0 0 / 38%), inset 0 1px 0 rgb(255 255 255 / 7%);
+}
+
+.tv-mode-current span,
+.tv-mode-switcher button small,
+.tv-mode-switcher button svg,
+.tv-mode-meter span {
+  color: #74837d;
+}
+
+.tv-mode-current strong {
+  color: #f7fbf8;
+}
+
+.tv-mode-switcher button {
+  border-color: rgb(255 255 255 / 8%);
+  background: rgb(255 255 255 / 4%);
+  color: #b6c1bc;
+}
+
+.tv-mode-switcher button.is-active {
+  border-color: rgb(61 139 253 / 58%);
+  background: linear-gradient(180deg, rgb(44 96 154 / 62%), rgb(24 55 94 / 72%));
+  color: #ffffff;
+}
+
+.tv-mode-switcher button.is-active::after,
+.tv-mode-meter span.is-active {
+  background: var(--tv-blue);
+}
+
+.tv-hero {
+  grid-template-columns: minmax(19rem, 1fr) minmax(10rem, .32fr) minmax(20rem, .76fr) minmax(18rem, .64fr);
+  gap: .62rem;
+}
+
+.tv-title-block,
+.tv-clock-card,
+.tv-weather-card,
+.tv-joke-card {
+  min-block-size: 5rem;
+}
+
+.tv-title-block h1,
+.tv-clock-card strong,
+.tv-weather-card strong,
+.tv-joke-card strong,
+.tv-standby-clock strong,
+.tv-standby-news strong,
+.tv-standby-footer-card strong,
+.tv-news-reader-card h2,
+.tv-joke-stage-card strong,
+.tv-focus-dashboard .tv-dashboard-hero strong {
+  color: var(--tv-ink);
+}
+
+.tv-live-pill {
+  border-color: rgb(47 191 113 / 24%);
+  background: rgb(47 191 113 / 12%);
+  color: #61df9a;
+}
+
+.tv-live-stale {
+  border-color: rgb(244 166 42 / 28%);
+  background: rgb(244 166 42 / 13%);
+  color: #ffc46a;
+}
+
+.tv-compact-stats span,
+.tv-task-top b,
+.tv-task-meta time,
+.tv-task-bottom small,
+.tv-reader-meta a {
+  border: 1px solid rgb(255 255 255 / 10%);
+  background: rgb(255 255 255 / 7%);
+  color: #dce6e1;
+}
+
+.tv-weather-card svg {
+  color: var(--tv-cyan);
+}
+
+.tv-weather-card span,
+.tv-weather-card small,
+.tv-clock-card span,
+.tv-joke-card span,
+.tv-standby-clock span,
+.tv-standby-news p,
+.tv-standby-footer-card small,
+.tv-reader-meta {
+  color: var(--tv-muted);
+}
+
+.tv-ops-screen {
+  display: grid;
+  grid-template-columns: minmax(15rem, .2fr) minmax(0, 1fr);
+  gap: .62rem;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tv-ops-rail {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, auto) auto auto;
+  align-content: start;
+  gap: .58rem;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #20272c, #101417);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 32%), inset 0 1px 0 rgb(255 255 255 / 7%);
+  padding: .72rem;
+}
+
+.tv-ops-rail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .6rem;
+  border-bottom: 1px solid var(--tv-line);
+  padding-bottom: .58rem;
+}
+
+.tv-ops-rail-head span,
+.tv-ops-gauge span,
+.tv-ops-metric span,
+.tv-ops-deadline span,
+.tv-ops-team span,
+.tv-column-signal span {
+  color: var(--tv-muted);
+  font-size: .64rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.tv-ops-rail-head strong {
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tv-ops-gauge {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .7rem;
+  align-items: center;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgb(61 139 253 / 15%), rgb(21 27 32 / 100%));
+  padding: .8rem;
+}
+
+.tv-ops-gauge svg {
+  color: var(--tv-blue);
+}
+
+.tv-ops-gauge strong {
+  display: block;
+  color: #ffffff;
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.tv-ops-gauge meter {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: .5rem;
+}
+
+.tv-ops-gauge meter::-webkit-meter-bar {
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 10%);
+}
+
+.tv-ops-gauge meter::-webkit-meter-optimum-value,
+.tv-ops-gauge meter::-webkit-meter-suboptimum-value,
+.tv-ops-gauge meter::-webkit-meter-even-less-good-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--tv-blue), var(--tv-amber), var(--tv-red));
+}
+
+.tv-ops-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+}
+
+.tv-ops-metric {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: .28rem .45rem;
+  min-height: 5.2rem;
+  align-content: center;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 8px;
+  background: #161d22;
+  padding: .68rem;
+}
+
+.tv-ops-metric svg {
+  grid-row: span 2;
+}
+
+.tv-ops-metric strong {
+  color: #ffffff;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.tv-ops-metric-blue svg { color: var(--tv-blue); }
+.tv-ops-metric-green svg { color: var(--tv-green); }
+.tv-ops-metric-amber svg { color: var(--tv-amber); }
+.tv-ops-metric-red svg { color: var(--tv-red); }
+
+.tv-ops-deadline,
+.tv-ops-team {
+  display: grid;
+  gap: .32rem;
+  min-width: 0;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 8px;
+  background: #151b20;
+  padding: .72rem;
+}
+
+.tv-ops-deadline span,
+.tv-ops-team span {
+  display: flex;
+  align-items: center;
+  gap: .38rem;
+}
+
+.tv-ops-deadline svg {
+  color: var(--tv-amber);
+}
+
+.tv-ops-team svg {
+  color: var(--tv-green);
+}
+
+.tv-ops-deadline strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: .98rem;
+  line-height: 1.22;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.tv-ops-deadline small {
+  overflow: hidden;
+  color: var(--tv-muted);
+  font-size: .75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tv-ops-team strong {
+  color: #ffffff;
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.tv-board {
+  grid-auto-columns: minmax(15.4rem, 1fr);
+  gap: .6rem;
+}
+
+.tv-column {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  border-color: rgb(255 255 255 / 10%);
+  background: linear-gradient(180deg, #20272d, #12171b);
+}
+
+.tv-column > header {
+  min-height: 3.05rem;
+  border-bottom: 1px solid var(--tv-line);
+  color: #f6fbf8;
+  padding: .7rem .75rem .55rem;
+}
+
+.tv-column > header b {
+  background: rgb(255 255 255 / 9%);
+  color: #ffffff;
+}
+
+.tv-column-signal {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .35rem;
+  border-bottom: 1px solid var(--tv-line);
+  padding: .5rem .62rem;
+}
+
+.tv-column-signal span {
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 5%);
+  padding: .3rem .4rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tv-column-done {
+  border-color: rgb(47 191 113 / 28%);
+  background: linear-gradient(180deg, #1e3028, #111b17);
+}
+
+.tv-column-done::after {
+  content: "DONE";
+  color: #63de9a;
+}
+
+.tv-column-done > header {
+  color: #dff8e9;
+}
+
+.tv-column-done > header span::before {
+  content: "OK";
+  background: var(--tv-green);
+}
+
+.tv-task-list {
+  gap: .5rem;
+  padding: .58rem;
+}
+
+.tv-task {
+  position: relative;
+  min-height: 7.1rem;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 12%);
+  background: linear-gradient(180deg, #2d3840, #20282f);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgb(0 0 0 / 24%), inset 0 1px 0 rgb(255 255 255 / 10%);
+}
+
+.tv-task::before {
+  width: .34rem;
+}
+
+.tv-task h2 {
+  color: #ffffff;
+  font-size: .96rem;
+  line-height: 1.18;
+}
+
+.tv-task-top span,
+.tv-task-meta span,
+.tv-task-bottom span {
+  color: rgb(255 255 255 / 74%);
+}
+
+.tv-task-low {
+  background: linear-gradient(180deg, #248757, #16633f);
+}
+
+.tv-task-planned {
+  background: linear-gradient(180deg, #594fc3, #38327e);
+}
+
+.tv-task-medium {
+  background: linear-gradient(180deg, #c98422, #8e5b16);
+}
+
+.tv-task-high {
+  background: linear-gradient(180deg, #d65d35, #95381f);
+}
+
+.tv-task-critical {
+  background: linear-gradient(180deg, #d9374e, #8f1d30);
+}
+
+.tv-task-done {
+  border-color: rgb(99 222 154 / 30%);
+  background: linear-gradient(180deg, #244234, #17251e);
+  color: rgb(255 255 255 / 76%);
+}
+
+.tv-task-done h2 {
+  color: rgb(255 255 255 / 78%);
+  text-decoration-color: rgb(255 255 255 / 40%);
+}
+
+.tv-task-progress {
+  height: .32rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 22%);
+}
+
+.tv-task-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgb(255 255 255 / 72%);
+}
+
+.tv-more-card,
+.tv-empty-column {
+  border-color: rgb(255 255 255 / 10%);
+  background: rgb(255 255 255 / 5%);
+  color: var(--tv-muted);
+}
+
+.tv-standby {
+  grid-template-columns: minmax(0, 1.1fr) minmax(20rem, .5fr);
+}
+
+.tv-standby-clock {
+  background:
+    linear-gradient(rgb(255 255 255 / 4%) 1px, transparent 1px) 0 0 / 52px 52px,
+    linear-gradient(180deg, #222b31, #11171b);
+}
+
+.tv-standby-clock strong {
+  font-size: clamp(5.5rem, 11vw, 9.5rem);
+  text-shadow: 0 0 28px rgb(61 139 253 / 18%);
+}
+
+.tv-standby-stats span {
+  border-color: rgb(255 255 255 / 9%);
+  background: #151b20;
+  color: var(--tv-muted);
+}
+
+.tv-standby-stats b {
+  color: #ffffff;
+}
+
+.tv-standby-news > span,
+.tv-standby-footer-card > span,
+.tv-reader-kicker,
+.tv-joke-stage-card > span {
+  color: #79b3ff;
+}
+
+.tv-news-reader-card,
+.tv-joke-stage-card {
+  background:
+    linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(180deg, #222a31, #11171b);
+}
+
+.tv-news-reader-card p {
+  color: #b8c5bf;
+}
+
+.tv-focus-dashboard .tv-dashboard-hero {
+  border-color: rgb(239 64 86 / 28%);
+  background: linear-gradient(180deg, rgb(92 31 42 / 82%), rgb(34 19 24 / 92%));
+}
+
+.tv-focus-dashboard .tv-dashboard-hero svg {
+  color: #ff8795;
+}
+
+.tv-focus-dashboard .tv-dashboard-hero span {
+  color: #ffc5cc;
+}
+
+.tv-footer {
+  border-top-color: rgb(255 255 255 / 9%);
+  color: #78847f;
+}
+
+.tv-task-spotlight {
+  background: rgb(5 8 10 / 78%);
+}
+
+.tv-task-spotlight-card {
+  border-color: rgb(255 255 255 / 14%);
+  background: linear-gradient(180deg, #222b31, #11171b);
+}
+
+.tv-task-spotlight-main h2,
+.tv-task-spotlight-status strong {
+  color: #ffffff;
+}
+
+@media (height <= 820px) {
+  .tv-ops-rail {
+    gap: .46rem;
+    padding: .58rem;
+  }
+
+  .tv-ops-gauge,
+  .tv-ops-metric,
+  .tv-ops-deadline,
+  .tv-ops-team {
+    padding: .56rem;
+  }
+
+  .tv-ops-metric {
+    min-height: 4.4rem;
+  }
+
+  .tv-task {
+    min-height: 6.25rem;
+  }
+}
+
+@media (width <= 1100px) {
+  .tv-ops-screen {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .tv-ops-rail {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .tv-ops-rail-head,
+  .tv-ops-gauge,
+  .tv-ops-deadline,
+  .tv-ops-team {
+    min-height: 5rem;
+  }
+
+  .tv-ops-kpis {
+    grid-column: span 2;
+  }
+}
+
+@media (width <= 720px) {
+  .tv-ops-rail,
+  .tv-ops-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .tv-ops-kpis {
+    grid-column: auto;
+  }
+}
