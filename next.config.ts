@@ -12,7 +12,7 @@ const contentSecurityPolicy = [
   "media-src 'self'",
   "connect-src 'self' https://api.open-meteo.com",
   "style-src 'self' 'unsafe-inline'",
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
   "worker-src 'self' blob:",
   ...(isProduction ? ["upgrade-insecure-requests"] : []),
 ].join("; ");

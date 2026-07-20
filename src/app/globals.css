@@ -10536,6 +10536,10 @@
 
 .tv-task {
   position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(2.35rem, auto) auto auto;
+  align-content: start;
+  gap: .4rem;
   min-height: 7.1rem;
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / 12%);
@@ -10549,15 +10553,26 @@
 }
 
 .tv-task h2 {
+  display: block;
+  min-height: 2.35rem;
+  max-height: 2.35rem;
+  overflow: hidden;
   color: #ffffff;
-  font-size: .96rem;
+  font-size: 1rem;
+  font-weight: 900;
   line-height: 1.18;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: initial;
+  line-clamp: none;
 }
 
 .tv-task-top span,
-.tv-task-meta span,
-.tv-task-bottom span {
+.tv-task-meta span {
   color: rgb(255 255 255 / 74%);
+}
+
+.tv-ops-screen .tv-task-bottom {
+  display: none;
 }
 
 .tv-task-low {
@@ -10706,6 +10721,15 @@
 
   .tv-task {
     min-height: 6.25rem;
+  }
+
+  .tv-ops-screen .tv-task {
+    min-height: 5.7rem;
+    grid-template-rows: auto minmax(2.35rem, auto) auto;
+  }
+
+  .tv-ops-screen .tv-task-meta span {
+    display: none;
   }
 }
 

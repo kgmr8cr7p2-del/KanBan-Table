@@ -107,16 +107,17 @@ const MANUAL_HOLD_MS = 2 * 60 * 1000;
 const AUTO_ROTATION_MS = 3 * 60 * 1000;
 const TASK_SPOTLIGHT_MS = 9000;
 
-export function BoardTvClient({ initialView, initialNews = null }: { initialView: View; initialNews?: TvNews | null }) {
+export function BoardTvClient({ initialView, initialNews = null, initialNow }: { initialView: View; initialNews?: TvNews | null; initialNow: string }) {
   const [view, setView] = useState(initialView);
   const [weather, setWeather] = useState<Weather | null>(null);
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState(() => new Date(initialNow));
   const [joke, setJoke] = useState<TvJoke>({ text: officeJokes[0], sourceUrl: null, updatedAt: "fallback" });
   const [news, setNews] = useState<TvNews | null>(initialNews);
   const [tvMode, setTvMode] = useState<TvMode>("standby");
+  const [visibleTaskLimit, setVisibleTaskLimit] = useState(5);
   const [manualModeUntil, setManualModeUntil] = useState(0);
   const [newsUnavailable, setNewsUnavailable] = useState(false);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState(new Date());
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(() => new Date(initialNow));
   const [connectionState, setConnectionState] = useState<"live" | "stale">("live");
   const [taskSpotlight, setTaskSpotlight] = useState<TvTaskSpotlight | null>(null);
   const seenNewsIdRef = useRef<string | null>(initialNews?.id ?? null);
@@ -133,6 +134,17 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    function syncVisibleTaskLimit() {
+      const shortLandscape = window.innerHeight <= 820 && window.innerWidth > 720;
+      setVisibleTaskLimit(shortLandscape ? 3 : 5);
+    }
+
+    syncVisibleTaskLimit();
+    window.addEventListener("resize", syncVisibleTaskLimit);
+    return () => window.removeEventListener("resize", syncVisibleTaskLimit);
   }, []);
 
   useEffect(() => {
@@ -399,7 +411,7 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
         {tvMode === "standby" ? <TvStandby now={now} weather={weather} news={cleanNews} newsUnavailable={newsUnavailable} joke={joke} summary={summary} tasks={tasks} /> : null}
         {tvMode === "news" ? <TvNewsReader news={cleanNews} unavailable={newsUnavailable} now={now} /> : null}
         {tvMode === "tasks" ? (
-          <TvOperationsBoard columns={view?.board?.columns ?? []} summary={summary} tasks={tasks} now={now} />
+          <TvOperationsBoard columns={view?.board?.columns ?? []} summary={summary} tasks={tasks} now={now} visibleTaskLimit={visibleTaskLimit} />
         ) : null}
         {tvMode === "jokes" ? <TvJokeStage joke={joke} now={now} weather={weather} /> : null}
         {tvMode === "focus" ? <TvFocusDashboard tasks={tasks} summary={summary} /> : null}
@@ -418,7 +430,7 @@ export function BoardTvClient({ initialView, initialNews = null }: { initialView
   );
 }
 
-function TvOperationsBoard({ columns, summary, tasks, now }: { columns: any[]; summary: ReturnType<typeof buildSummary>; tasks: Task[]; now: Date }) {
+function TvOperationsBoard({ columns, summary, tasks, now, visibleTaskLimit }: { columns: any[]; summary: ReturnType<typeof buildSummary>; tasks: Task[]; now: Date; visibleTaskLimit: number }) {
   const completedPercent = summary.active + summary.completed ? Math.round((summary.completed / (summary.active + summary.completed)) * 100) : 0;
   const dueSoonCount = tasks.filter((task) => isDueSoon(task)).length;
   const teamCount = new Set(tasks.flatMap((task) => taskAssignees(task).map((user: any) => user.id ?? user.name))).size;
@@ -471,10 +483,10 @@ function TvOperationsBoard({ columns, summary, tasks, now }: { columns: any[]; s
               <span>OVERDUE {column.tasks.filter((task: Task) => isOverdue(task)).length}</span>
             </div>
             <div className="tv-task-list">
-              {column.tasks.slice(0, 5).map((task: Task) => (
+              {column.tasks.slice(0, visibleTaskLimit).map((task: Task) => (
                 <TvTaskCard key={task.id} task={task} />
               ))}
-              {column.tasks.length > 5 ? <div className="tv-more-card">+{column.tasks.length - 5} еще</div> : null}
+              {column.tasks.length > visibleTaskLimit ? <div className="tv-more-card">+{column.tasks.length - visibleTaskLimit} еще</div> : null}
               {!column.tasks.length ? <div className="tv-empty-column">Нет задач</div> : null}
             </div>
           </article>

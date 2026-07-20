@@ -10,5 +10,5 @@ export default async function BoardTvPage() {
   const serializable = JSON.parse(JSON.stringify(view));
   const initialNews = await getTvNews().catch(() => null);
 
-  return <BoardTvClient initialView={serializable} initialNews={initialNews} />;
+  return <BoardTvClient initialView={serializable} initialNews={initialNews} initialNow={new Date().toISOString()} />;
 }
