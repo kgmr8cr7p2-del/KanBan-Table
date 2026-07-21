@@ -29,7 +29,7 @@ const standbyTimeZones = [
   { city: "Санкт-Петербург", label: "офис", timeZone: "Europe/Moscow" },
   { city: "Омск", label: "+3 к МСК", timeZone: "Asia/Omsk" },
   { city: "Челябинск", label: "+2 к МСК", timeZone: "Asia/Yekaterinburg" },
-  { city: "Тобольск", label: "+2 к МСК", timeZone: "Asia/Yekaterinburg" },
+  { city: "Ноябрьск", label: "+2 к МСК", timeZone: "Asia/Yekaterinburg" },
 ];
 
 const weatherLabels: Record<number, string> = {
