@@ -588,6 +588,14 @@ body {
   font-size: .8rem;
 }
 
+.ai-task-button:disabled {
+  border-color: var(--border);
+  background: var(--panel-2);
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .78;
+}
+
 .ai-task-assistant {
   display: grid;
   grid-auto-rows: max-content;

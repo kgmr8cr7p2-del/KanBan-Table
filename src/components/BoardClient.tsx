@@ -552,17 +552,19 @@ export function BoardClient({ initialView }: { initialView: View }) {
               ))}
             </select>
           </label>
-          {view.permissions.canCreateTask || view.ai?.taskDraftEnabled ? (
+          {view.permissions.canCreateTask ? (
             <div className="board-create-actions">
-              {view.ai?.taskDraftEnabled ? (
-                <button className="button secondary compact-button ai-task-button" type="button" onClick={openAiAssistant}>
-                  <Sparkles size={17} />
-                  ИИ-помощник
-                </button>
-              ) : null}
-              {view.permissions.canCreateTask ? (
-                <CreateTaskButton onClick={openCreateTask} />
-              ) : null}
+              <button
+                className="button secondary compact-button ai-task-button"
+                type="button"
+                disabled={!view.ai?.taskDraftEnabled}
+                title={view.ai?.taskDraftEnabled ? "Создать черновик задачи с ИИ" : "ИИ не настроен на сервере"}
+                onClick={openAiAssistant}
+              >
+                <Sparkles size={17} />
+                ИИ-помощник
+              </button>
+              <CreateTaskButton onClick={openCreateTask} />
             </div>
           ) : null}
           {view.permissions.canCreateTask ? (
