@@ -4241,16 +4241,34 @@
     font-size: .72rem;
   }
 
+  .modal-panel-head-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+  }
+
+  .modal-panel-toggle {
+    inline-size: 1.85rem;
+    block-size: 1.85rem;
+    min-inline-size: 1.85rem;
+    min-block-size: 1.85rem;
+    border-radius: 6px;
+  }
+
   .comment-draft {
     min-block-size: 10.8rem;
   }
 
   .modal-comments-panel {
-    min-block-size: 14rem;
+    min-block-size: 17rem;
   }
 
   .edit-comments-panel {
-    min-block-size: 12.4rem;
+    min-block-size: 16rem;
+  }
+
+  .comments-panel-expanded {
+    min-block-size: min(74vh, 48rem);
   }
 
   .modal-create-comments {
@@ -4292,10 +4310,15 @@
   }
 
   .modal-comments-list {
-    min-block-size: 3.8rem;
-    max-block-size: 10rem;
+    min-block-size: 8rem;
+    max-block-size: 16rem;
     overflow-y: auto;
     padding-inline-end: .15rem;
+  }
+
+  .comments-panel-expanded .modal-comments-list {
+    min-block-size: 22rem;
+    max-block-size: min(58vh, 36rem);
   }
 
   .modal-comment {

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { CurrentUser } from "@/lib/auth";
 import { cleanupOldCompletedTasks } from "@/lib/cleanup";
 import { accessibleBoardWhere } from "@/lib/board-access";
+import { isAiTaskDraftEnabled } from "@/lib/ai-task-draft";
 import { canCreateTask, canDeleteTask, canManageColumns, canViewTaskFiles } from "@/lib/permissions";
 import { hasPermission } from "@/lib/role-permissions";
 
@@ -170,6 +171,9 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
       canCreateTask: Boolean(board.ownerId) || canCreateTask(user),
       canDeleteTask: Boolean(board.ownerId) || canDeleteTask(user),
       canAssign: Boolean(board.ownerId) || hasPermission(user, PermissionKey.CREATE_TASKS),
+    },
+    ai: {
+      taskDraftEnabled: isAiTaskDraftEnabled(),
     },
   };
 }

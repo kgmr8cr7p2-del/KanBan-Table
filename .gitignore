@@ -6,6 +6,7 @@ node_modules
 .env.local
 dist
 coverage
+test-results
 uploads
 .ui-audit
 .codex-artifacts

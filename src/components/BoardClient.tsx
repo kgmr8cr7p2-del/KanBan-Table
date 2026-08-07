@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskButton } from "@/components/CreateTaskButton";
@@ -19,6 +19,19 @@ const priorityLabels = {
 
 type View = any;
 type Task = any;
+type AiTaskDraft = {
+  title: string;
+  description: string;
+  prioritySuggestion: string | null;
+  priorityReason: string;
+  oilDepotId: string | null;
+  assigneeIds: string[];
+  existingTags: string[];
+  newTags: string[];
+  checklist: string[];
+  deadlineHint: string;
+  notes: string;
+};
 const emptyFilters = { q: "", priority: "", assignee: "", deadline: "", oilDepot: "", withoutPlanned: "", sort: "priority-deadline" };
 type Filters = typeof emptyFilters;
 type ViewMode = "board" | "list" | "timeline" | "mine";
@@ -37,6 +50,9 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [selected, setSelected] = useState<Task | null>(null);
   const [taskFullscreen, setTaskFullscreen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const [createDraft, setCreateDraft] = useState<AiTaskDraft | null>(null);
+  const [commentComposerResetKey, setCommentComposerResetKey] = useState(0);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropColumn, setDropColumn] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -74,10 +90,11 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   useEffect(() => {
     if (createOpen) setPresenceActivity("Создаёт новую задачу");
+    else if (aiAssistantOpen) setPresenceActivity("Собирает черновик задачи");
     else if (activeTask) setPresenceActivity(`Работает с задачей #${activeTask.taskNumber}`);
     else setPresenceActivity(null);
     return () => setPresenceActivity(null);
-  }, [createOpen, activeTask?.id, activeTask?.taskNumber]);
+  }, [createOpen, aiAssistantOpen, activeTask?.id, activeTask?.taskNumber]);
 
   function openTask(task: Task) {
     setError("");
@@ -90,6 +107,26 @@ export function BoardClient({ initialView }: { initialView: View }) {
     setError("");
     setSelected(null);
     setTaskFullscreen(false);
+    setAiAssistantOpen(false);
+    setCreateDraft(null);
+    setCreateOpen(true);
+  }
+
+  function openAiAssistant() {
+    setError("");
+    setSelected(null);
+    setTaskFullscreen(false);
+    setCreateOpen(false);
+    setCreateDraft(null);
+    setAiAssistantOpen(true);
+  }
+
+  function applyAiDraft(draft: AiTaskDraft) {
+    setError("");
+    setSelected(null);
+    setTaskFullscreen(false);
+    setCreateDraft(draft);
+    setAiAssistantOpen(false);
     setCreateOpen(true);
   }
 
@@ -97,6 +134,13 @@ export function BoardClient({ initialView }: { initialView: View }) {
     setError("");
     setTaskFullscreen(false);
     setSelected(null);
+  }
+
+  function closeCreateFlow() {
+    setError("");
+    setCreateOpen(false);
+    setAiAssistantOpen(false);
+    setCreateDraft(null);
   }
 
   async function refresh(nextFilters = filtersRef.current, options: { syncUrl?: boolean; boardId?: string } = {}) {
@@ -137,25 +181,27 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible" && !createOpen && !selected) {
+      if (document.visibilityState === "visible" && !createOpen && !aiAssistantOpen && !selected) {
         void refresh(filtersRef.current);
       }
     }, 10000);
     return () => window.clearInterval(timer);
-  }, [createOpen, selected]);
+  }, [createOpen, aiAssistantOpen, selected]);
 
   useEffect(() => {
-    if (!createOpen && !selected) return;
+    if (!createOpen && !aiAssistantOpen && !selected) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setError("");
       setCreateOpen(false);
+      setAiAssistantOpen(false);
+      setCreateDraft(null);
       setTaskFullscreen(false);
       setSelected(null);
     };
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [createOpen, selected]);
+  }, [createOpen, aiAssistantOpen, selected]);
 
   useEffect(() => {
     document.documentElement.dataset.boardFocus = focusMode ? "true" : "false";
@@ -214,6 +260,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
       return;
     }
     setCreateOpen(false);
+    setCreateDraft(null);
     await refresh();
   }
 
@@ -280,13 +327,21 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   async function addComment(formData: FormData) {
     if (!activeTask) return;
-    const text = String(formData.get("text") ?? "");
+    setError("");
+    const text = String(formData.get("text") ?? "").trim();
+    if (!text) return;
     const response = await fetch(`/api/tasks/${activeTask.id}/comments`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ text }),
     });
-    if (response.ok) await refresh();
+    if (response.ok) {
+      setCommentComposerResetKey((current) => current + 1);
+      await refresh();
+      return;
+    }
+    const data = await response.json().catch(() => ({}));
+    setError(data.error ?? "Не удалось отправить комментарий");
   }
 
   async function addChecklistItem(formData: FormData) {
@@ -497,8 +552,18 @@ export function BoardClient({ initialView }: { initialView: View }) {
               ))}
             </select>
           </label>
-          {view.permissions.canCreateTask ? (
-            <CreateTaskButton onClick={openCreateTask} />
+          {view.permissions.canCreateTask || view.ai?.taskDraftEnabled ? (
+            <div className="board-create-actions">
+              {view.ai?.taskDraftEnabled ? (
+                <button className="button secondary compact-button ai-task-button" type="button" onClick={openAiAssistant}>
+                  <Sparkles size={17} />
+                  ИИ-помощник
+                </button>
+              ) : null}
+              {view.permissions.canCreateTask ? (
+                <CreateTaskButton onClick={openCreateTask} />
+              ) : null}
+            </div>
           ) : null}
           {view.permissions.canCreateTask ? (
             <form className="toolbar quick-create" action={createTask}>
@@ -582,6 +647,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
             onArchive={() => setConfirmation("archive")}
             onDelete={() => setConfirmation("delete")}
             onAddComment={addComment}
+            commentComposerResetKey={commentComposerResetKey}
             onAddChecklistItem={addChecklistItem}
             onToggleChecklistItem={toggleChecklistItem}
             onDeleteChecklistItem={deleteChecklistItem}
@@ -591,10 +657,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
           </div>
         </aside>
       ) : null}
-      {createOpen ? (
+      {createOpen || aiAssistantOpen ? (
         <aside className="task-drawer-backdrop" aria-label="Создание задачи">
           <div className="task-drawer t-panel-slide" data-open="true" role="dialog" aria-modal="false" aria-labelledby="create-task-title">
-            <CreateTaskDialogV2 view={view} error={error} onClose={() => { setError(""); setCreateOpen(false); }} onCreate={createTask} />
+            {aiAssistantOpen ? (
+              <AiTaskAssistant view={view} onClose={closeCreateFlow} onApplyDraft={applyAiDraft} />
+            ) : (
+              <CreateTaskDialogV2 key={createDraft ? `ai-${createDraft.title}` : "manual"} view={view} draft={createDraft} error={error} onClose={closeCreateFlow} onCreate={createTask} />
+            )}
           </div>
         </aside>
       ) : null}
@@ -676,6 +746,11 @@ function TaskCard({
   const checklist = checklistProgress(task);
   const deadlineState = task.deadline ? deadlineText(task) : "";
   const done = isCompletedColumn(task.column?.name ?? "");
+  const assignees = taskAssigneeUsers(task);
+  const assigneeLabel = assignees.length
+    ? `${assignees.slice(0, 2).map((user: any) => user.name).join(", ")}${assignees.length > 2 ? ` +${assignees.length - 2}` : ""}`
+    : "Не назначены";
+  const visibleTags = task.tags.slice(0, 2);
   return (
     <div
       className={`task-card priority-card-${task.priority} ${done ? "task-card-done" : ""} ${dragging ? "dragging" : ""}`}
@@ -694,33 +769,40 @@ function TaskCard({
         if (event.key === " ") onOpen();
       }}
     >
-      <span className="task-title">
-        <span className="task-number">#{task.taskNumber}</span>
-        {task.title}
-      </span>
-      {task.oilDepot ? (
-        <div className="task-depot">
-          <span className="task-depot-icon" aria-hidden="true">
-            <Building2 size={14} />
-          </span>
-          <span className="task-depot-copy">
-            <small>Нефтебаза</small>
-            <strong>{task.oilDepot.name}</strong>
-          </span>
-        </div>
-      ) : null}
-      {task.description ? <p className="task-description">{task.description}</p> : null}
-      <div className="meta-row">
-        <span className={`chip ${done ? "priority-DONE" : `priority-${task.priority}`}`}>{done ? "Закрыто" : priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
-        {taskAssigneeUsers(task).map((user: any) => <span className="chip" key={user.id}>{user.name}</span>)}
-      </div>
-      <div className="meta-row">
+      <div className="task-card-head">
+        <span className={`task-priority-signal ${done ? "priority-DONE" : `priority-${task.priority}`}`}>
+          {done ? "Закрыто" : priorityLabels[task.priority as keyof typeof priorityLabels]}
+        </span>
         {task.deadline ? (
-          <span className={`chip ${deadlineTone(task)}`}>
+          <span className={`task-deadline-signal ${deadlineTone(task)}`}>
             <Calendar size={13} />
             {deadlineState}
           </span>
         ) : null}
+      </div>
+      <span className="task-title">
+        <span className="task-number">#{task.taskNumber}</span>
+        {task.title}
+      </span>
+      {task.description ? <p className="task-description">{task.description}</p> : null}
+      <div className="task-context-row">
+        {task.oilDepot ? (
+          <div className="task-depot">
+            <span className="task-depot-icon" aria-hidden="true">
+              <Building2 size={14} />
+            </span>
+            <span className="task-depot-copy">
+              <small>Нефтебаза</small>
+              <strong>{task.oilDepot.name}</strong>
+            </span>
+          </div>
+        ) : null}
+        <span className="task-assignee-summary">
+          <UserRound size={13} />
+          {assigneeLabel}
+        </span>
+      </div>
+      <div className="task-secondary-row">
         {task.reminderDaysBefore != null ? (
           <span className="chip reminder-chip" title={`Telegram-напоминание: ${reminderLabel(task.reminderDaysBefore)}`}>
             <Bell size={13} />
@@ -739,11 +821,12 @@ function TaskCard({
             {task.fileAttachments.length}
           </span>
         ) : null}
-        {task.tags.map((item: any) => (
+        {visibleTags.map((item: any) => (
           <span className="chip" key={item.tag.id}>
             {item.tag.name}
           </span>
         ))}
+        {task.tags.length > visibleTags.length ? <span className="chip">+{task.tags.length - visibleTags.length}</span> : null}
       </div>
       {checklist.total ? (
         <div className="progress" aria-label={`Чек-лист выполнен на ${checklist.percent}%`}>
@@ -860,6 +943,7 @@ function TaskDialog(props: {
   onArchive: () => void;
   onDelete: () => void;
   onAddComment: (formData: FormData) => void;
+  commentComposerResetKey?: number;
   onAddChecklistItem: (formData: FormData) => void;
   onToggleChecklistItem: (id: string, completed: boolean) => void;
   onDeleteChecklistItem: (id: string) => void;
@@ -1092,10 +1176,111 @@ function TaskActivityTimeline({ logs }: { logs: any[] }) {
   );
 }
 
-function CreateTaskDialogV2(props: { view: View; error?: string; onClose: () => void; onCreate: (formData: FormData) => void }) {
+function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft: (draft: AiTaskDraft) => void }) {
+  const [prompt, setPrompt] = useState("");
+  const [draft, setDraft] = useState<AiTaskDraft | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function buildDraft(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    setDraft(null);
+    try {
+      const response = await fetch("/api/ai/task-draft", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ boardId: props.view.board.id, prompt }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "Не удалось собрать черновик");
+      setDraft(data.draft);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Не удалось собрать черновик");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const oilDepotName = draft?.oilDepotId ? props.view.oilDepots.find((depot: any) => depot.id === draft.oilDepotId)?.name : "";
+  const assigneeNames = draft?.assigneeIds?.length
+    ? props.view.users.filter((user: any) => draft.assigneeIds.includes(user.id)).map((user: any) => user.name)
+    : [];
+  const draftTags = draft ? [...draft.existingTags, ...draft.newTags] : [];
+
+  return (
+    <section className="task-modal-v2 ai-task-assistant">
+      <header className="task-modal-v2-head">
+        <div>
+          <h2 id="create-task-title">ИИ-помощник</h2>
+          <div className="modal-badges compact">
+            <span className="modal-badge badge-purple"><Sparkles size={15} />Черновик задачи</span>
+            <span className="modal-badge badge-purple-soft">DeepSeek</span>
+          </div>
+        </div>
+        <button className="button icon secondary modal-close" type="button" title="Закрыть" onClick={props.onClose}>
+          <X size={18} />
+        </button>
+      </header>
+
+      <form className="ai-task-form" onSubmit={buildDraft}>
+        <label className="field">
+          <span className="label">Опишите проблему или задачу</span>
+          <textarea
+            className="textarea ai-task-prompt"
+            value={prompt}
+            onChange={(event) => setPrompt(event.currentTarget.value)}
+            placeholder="Например: нужно проверить герметичность трубопровода на Речном терминале, высокий приоритет, ответственный Илья"
+            maxLength={4000}
+            required
+            autoFocus
+          />
+        </label>
+        <div className="ai-task-actions">
+          <button className="button secondary" type="button" onClick={props.onClose}>Отмена</button>
+          <button className="button" disabled={loading || prompt.trim().length < 8}>
+            <Sparkles size={17} />
+            {loading ? "Собираю..." : "Собрать черновик"}
+          </button>
+        </div>
+      </form>
+
+      {error ? <p className="task-modal-error ai-task-error" role="alert">{error}</p> : null}
+
+      {draft ? (
+        <article className="ai-draft-card">
+          <header>
+            <span>Предложение</span>
+            {draft.prioritySuggestion ? <b>{priorityLabels[draft.prioritySuggestion as keyof typeof priorityLabels] ?? draft.prioritySuggestion}</b> : null}
+          </header>
+          <h3>{draft.title}</h3>
+          {draft.description ? <p>{draft.description}</p> : null}
+          <dl className="ai-draft-facts">
+            {draft.priorityReason ? <div><dt>Почему такой приоритет</dt><dd>{draft.priorityReason}</dd></div> : null}
+            {oilDepotName ? <div><dt>Нефтебаза</dt><dd>{oilDepotName}</dd></div> : null}
+            {assigneeNames.length ? <div><dt>Исполнители</dt><dd>{assigneeNames.join(", ")}</dd></div> : null}
+            {draft.deadlineHint ? <div><dt>Распознанный срок</dt><dd>{draft.deadlineHint}</dd></div> : null}
+            {draftTags.length ? <div><dt>Теги</dt><dd>{draftTags.join(", ")}{draft.newTags.length ? " · есть новые" : ""}</dd></div> : null}
+            {draft.checklist.length ? <div><dt>Чеклист</dt><dd>{draft.checklist.join("; ")}</dd></div> : null}
+            {draft.notes ? <div><dt>Заметка</dt><dd>{draft.notes}</dd></div> : null}
+          </dl>
+          <button className="button ai-draft-apply" type="button" onClick={() => props.onApplyDraft(draft)}>
+            <Check size={17} />
+            Заполнить форму
+          </button>
+        </article>
+      ) : null}
+    </section>
+  );
+}
+
+function CreateTaskDialogV2(props: { view: View; draft?: AiTaskDraft | null; error?: string; onClose: () => void; onCreate: (formData: FormData) => void }) {
   const firstColumn = props.view.board.columns[0];
   const isPersonalBoard = Boolean(props.view.board.ownerId);
-  const [checklistItems, setChecklistItems] = useState([""]);
+  const draft = props.draft;
+  const draftTags = draft ? [...draft.existingTags, ...draft.newTags].join(", ") : "";
+  const [checklistItems, setChecklistItems] = useState(() => (draft?.checklist.length ? draft.checklist : [""]));
 
   return (
     <section className="task-modal-v2">
@@ -1119,12 +1304,21 @@ function CreateTaskDialogV2(props: { view: View; error?: string; onClose: () => 
             <section className="modal-field-stack">
               <label className="field">
                 <span className="label">Название</span>
-                <input className="input" name="title" placeholder="Что нужно сделать?" required autoFocus />
+                <input className="input" name="title" placeholder="Что нужно сделать?" defaultValue={draft?.title ?? ""} required autoFocus />
               </label>
               <label className="field">
                 <span className="label">Описание</span>
-                <textarea className="textarea modal-description" name="description" placeholder="Добавьте контекст, ссылки, критерии готовности..." />
+                <textarea className="textarea modal-description" name="description" placeholder="Добавьте контекст, ссылки, критерии готовности..." defaultValue={draft?.description ?? ""} />
               </label>
+              {draft ? (
+                <div className="ai-draft-note">
+                  <Sparkles size={16} />
+                  <span>
+                    Черновик заполнен ИИ. Проверьте приоритет, исполнителя, нефтебазу и дедлайн перед созданием.
+                    {draft.deadlineHint ? ` Распознанный срок: ${draft.deadlineHint}.` : ""}
+                  </span>
+                </div>
+              ) : null}
             </section>
 
             <section className="modal-work-grid modal-create-work-grid" aria-label="Рабочие блоки задачи">
@@ -1206,7 +1400,7 @@ function CreateTaskDialogV2(props: { view: View; error?: string; onClose: () => 
               <label className="field modal-property-field">
                 <span className="property-icon"><Flag size={19} /></span>
                 <span className="label">Приоритет</span>
-                <select className="select" name="priority" defaultValue="MEDIUM">
+                <select className="select" name="priority" defaultValue={draft?.prioritySuggestion ?? "MEDIUM"}>
                   {Object.entries(priorityLabels).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
@@ -1229,7 +1423,7 @@ function CreateTaskDialogV2(props: { view: View; error?: string; onClose: () => 
               {!isPersonalBoard ? <label className="field modal-property-field">
                 <span className="property-icon"><Building2 size={19} /></span>
                 <span className="label">Нефтебаза</span>
-                <select className="select" name="oilDepotId" defaultValue="">
+                <select className="select" name="oilDepotId" defaultValue={draft?.oilDepotId ?? ""}>
                   <option value="">Без нефтебазы</option>
                   {props.view.oilDepots
                     .filter((depot: any) => depot.active)
@@ -1240,7 +1434,13 @@ function CreateTaskDialogV2(props: { view: View; error?: string; onClose: () => 
                   ))}
                 </select>
               </label> : null}
-              {!isPersonalBoard ? <AssigneePicker users={props.view.users} /> : null}
+              {!isPersonalBoard ? <AssigneePicker users={props.view.users} defaultIds={draft?.assigneeIds ?? []} /> : null}
+              <label className="field modal-property-field">
+                <span className="property-icon"><Sparkles size={19} /></span>
+                <span className="label">Теги</span>
+                <input className="input" name="tags" defaultValue={draftTags} placeholder="Проверка, Документы" />
+                <small className="modal-property-help">Через запятую. Новые теги создадутся после сохранения.</small>
+              </label>
             </div>
           </aside>
         </div>
@@ -1271,6 +1471,7 @@ function TaskDialogV2(props: {
   onArchive: () => void;
   onDelete: () => void;
   onAddComment: (formData: FormData) => void;
+  commentComposerResetKey: number;
   onAddChecklistItem: (formData: FormData) => void;
   onToggleChecklistItem: (id: string, completed: boolean) => void;
   onDeleteChecklistItem: (id: string) => void;
@@ -1282,6 +1483,7 @@ function TaskDialogV2(props: {
   const editFormId = `task-edit-${props.task.id}`;
   const isPersonalBoard = Boolean(props.view.board.ownerId);
   const taskDone = isCompletedColumn(props.task.column?.name ?? "");
+  const [commentsExpanded, setCommentsExpanded] = useState(false);
 
   return (
     <section className="task-modal-v2">
@@ -1332,13 +1534,25 @@ function TaskDialogV2(props: {
           </section>
 
           <section className="modal-work-grid modal-work-grid-task" aria-label="Рабочие блоки задачи">
-        <article className="modal-mini-panel modal-comments-panel edit-comments-panel">
+        <article className={`modal-mini-panel modal-comments-panel edit-comments-panel ${commentsExpanded ? "comments-panel-expanded" : ""}`}>
           <header>
             <span>
               <MessageSquare size={15} />
               Комментарии
             </span>
-            <b>{props.task.comments.length}</b>
+            <div className="modal-panel-head-actions">
+              <b>{props.task.comments.length}</b>
+              <button
+                className="button icon secondary modal-panel-toggle"
+                type="button"
+                title={commentsExpanded ? "Свернуть комментарии" : "Раскрыть комментарии"}
+                aria-label={commentsExpanded ? "Свернуть комментарии" : "Раскрыть комментарии"}
+                aria-pressed={commentsExpanded}
+                onClick={() => setCommentsExpanded((current) => !current)}
+              >
+                {commentsExpanded ? <Minimize2 size={15} /> : <Expand size={15} />}
+              </button>
+            </div>
           </header>
           <div className="modal-comments-list">
             {props.task.comments.length ? (
@@ -1359,7 +1573,7 @@ function TaskDialogV2(props: {
             )}
           </div>
           <form className="modal-inline-form modal-comment-form" action={props.onAddComment}>
-            <MentionTextarea users={props.view.users} />
+            <MentionTextarea users={props.view.users} resetKey={`${props.task.id}-${props.commentComposerResetKey}`} />
             <button className="button modal-comment-send" title="Отправить комментарий">
               <Send size={16} />
               Отправить
@@ -1686,8 +1900,11 @@ function renderMentionText(text: string) {
   return text.split(/(@[\p{L}\p{N}._-]{2,40})/gu).map((part, index) => part.startsWith("@") ? <strong className="comment-mention" key={`${part}-${index}`}>{part}</strong> : part);
 }
 
-function MentionTextarea({ users }: { users: any[] }) {
+function MentionTextarea({ users, resetKey }: { users: any[]; resetKey?: string | number }) {
   const [value, setValue] = useState("");
+  useEffect(() => {
+    setValue("");
+  }, [resetKey]);
   const match = value.match(/(?:^|\s)@([^\s@]{1,40})$/u);
   const query = match?.[1]?.toLocaleLowerCase("ru-RU") ?? "";
   const suggestions = query ? users.filter((user) => `${user.name} ${user.handle ?? ""}`.toLocaleLowerCase("ru-RU").includes(query)).slice(0, 5) : [];

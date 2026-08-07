@@ -220,6 +220,156 @@ body {
 .board-notification-control .nav-notification-button { inline-size: 2.7rem; block-size: 2.7rem; border-color: var(--border); background: var(--panel); }
 .board-notification-control .nav-notification-button:hover { border-color: var(--brand); color: var(--brand-strong); background: color-mix(in oklch, var(--brand) 8%, var(--panel)); }
 
+/* Signal-first kanban cards: priority is the primary scan marker, deadline is secondary. */
+.task-card {
+  gap: .42rem;
+  min-block-size: 0;
+  padding: .68rem .72rem .68rem .92rem;
+  background: var(--panel);
+}
+
+.task-card:hover {
+  box-shadow: 0 10px 22px rgb(15 23 42 / 8%);
+}
+
+.task-card::before {
+  inline-size: .34rem;
+}
+
+.priority-card-HIGH::before { background: #ef6b2e; }
+.priority-card-CRITICAL::before { background: var(--critical); }
+
+.task-card-head,
+.task-context-row,
+.task-secondary-row {
+  display: flex;
+  align-items: center;
+  min-inline-size: 0;
+  gap: .35rem;
+}
+
+.task-card-head {
+  justify-content: space-between;
+}
+
+.task-priority-signal,
+.task-deadline-signal,
+.task-assignee-summary {
+  display: inline-flex;
+  align-items: center;
+  min-inline-size: 0;
+  gap: .25rem;
+  border-radius: 6px;
+  padding: .18rem .42rem;
+  font-size: .68rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.task-priority-signal {
+  max-inline-size: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-deadline-signal {
+  flex: 0 1 auto;
+  max-inline-size: 9.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-card .task-title {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: .92rem;
+  line-height: 1.22;
+}
+
+.task-card .task-number {
+  color: var(--brand-strong);
+}
+
+.task-card .task-description {
+  display: block;
+  margin: -.08rem 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: .74rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-context-row {
+  justify-content: space-between;
+}
+
+.task-context-row .task-depot {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.task-context-row .task-depot-icon {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border-radius: 5px;
+}
+
+.task-context-row .task-depot-copy small {
+  display: none;
+}
+
+.task-context-row .task-depot-copy strong {
+  font-size: .74rem;
+}
+
+.task-assignee-summary {
+  flex: 0 1 auto;
+  max-inline-size: 46%;
+  background: color-mix(in oklch, var(--brand) 8%, var(--panel));
+  color: var(--brand-strong);
+}
+
+.task-assignee-summary svg {
+  flex: 0 0 auto;
+}
+
+.task-assignee-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-secondary-row {
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+
+.task-secondary-row .chip {
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: .16rem .38rem;
+  font-size: .67rem;
+  font-weight: 760;
+}
+
+.task-card .progress {
+  block-size: .28rem;
+}
+
+.task-card-done .task-priority-signal {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 13%, transparent);
+}
+
+.task-card-done::after {
+  display: none;
+}
+
 /* Keep the board toolbar inside the viewport at zoomed and narrow widths. */
 .board-topbar { min-inline-size: 0; }
 .board-topbar > * { min-inline-size: 0; }
@@ -365,7 +515,9 @@ body {
   .board-quick-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12.25rem), 1fr)); }
   .board-quick-filters .button { inline-size: 100%; }
   .board-quick-filters .button { justify-content: center; }
-  .board-sort-control, .board-sort-control .compact-select, .board-head > .create-task-button { inline-size: 100%; justify-self: stretch; max-inline-size: none; }
+  .board-sort-control, .board-sort-control .compact-select, .board-create-actions, .board-head > .create-task-button { inline-size: 100%; justify-self: stretch; max-inline-size: none; }
+  .board-create-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); }
+  .board-create-actions .button { justify-content: center; }
   .sidebar-account-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .board-notification-control { justify-self: start; }
   .settings-choice-grid { grid-template-columns: 1fr; }
@@ -419,6 +571,145 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .nav a, .nav button, .button, .permission-option { transition: none; }
+}
+
+.board-create-actions {
+  grid-area: create;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  justify-self: end;
+  min-inline-size: 0;
+}
+
+.board-create-actions > .button {
+  min-block-size: 2.35rem;
+  padding-inline: .72rem;
+  font-size: .8rem;
+}
+
+.ai-task-assistant {
+  gap: 1rem;
+}
+
+.ai-task-form {
+  display: grid;
+  gap: .9rem;
+}
+
+.ai-task-prompt {
+  min-block-size: 11rem;
+  resize: vertical;
+}
+
+.ai-task-actions,
+.ai-draft-apply {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+}
+
+.ai-task-error {
+  margin: 0;
+}
+
+.ai-draft-card,
+.ai-draft-note {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in oklch, var(--brand) 5%, var(--panel));
+}
+
+.ai-draft-card {
+  display: grid;
+  gap: .85rem;
+  padding: 1rem;
+}
+
+.ai-draft-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  color: var(--brand-strong);
+  font-size: .72rem;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.ai-draft-card header b {
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  padding: .25rem .55rem;
+  font-size: .72rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ai-draft-card h3 {
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.ai-draft-card p,
+.ai-draft-facts dd,
+.ai-draft-note {
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.ai-draft-facts {
+  display: grid;
+  gap: .55rem;
+  margin: 0;
+}
+
+.ai-draft-facts div {
+  display: grid;
+  gap: .12rem;
+}
+
+.ai-draft-facts dt {
+  color: var(--text);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.ai-draft-facts dd {
+  margin: 0;
+}
+
+.ai-draft-apply {
+  justify-content: center;
+}
+
+.ai-draft-note {
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+  padding: .75rem .85rem;
+}
+
+.ai-draft-note svg {
+  flex: 0 0 auto;
+  color: var(--brand-strong);
+  margin-block-start: .12rem;
+}
+
+@media (max-width: 900px) {
+  .board-create-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    inline-size: 100%;
+    justify-self: stretch;
+  }
+
+  .board-create-actions .button {
+    justify-content: center;
+  }
 }
 
 /* Responsive hardening: one predictable shell from ultrawide screens to high browser zoom. */
@@ -619,6 +910,7 @@ html {
     inline-size: 100%;
   }
 
+  .board-create-actions,
   .board-head > .create-task-button {
     inline-size: auto;
     justify-self: end;
@@ -641,6 +933,7 @@ html {
   }
 
   .board-copy,
+  .board-create-actions,
   .board-head > .create-task-button,
   .board-view-tabs-inline,
   .board-planned-toggle,
@@ -650,6 +943,7 @@ html {
     justify-self: stretch;
   }
 
+  .board-create-actions .button,
   .board-head > .create-task-button,
   .board-planned-toggle,
   .board-quick-filters .button {
