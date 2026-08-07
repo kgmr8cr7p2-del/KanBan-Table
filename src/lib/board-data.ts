@@ -122,7 +122,7 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
       if (assignee && assignee !== "unassigned" && task.assigneeId !== assignee && !task.assignees.some((item) => item.userId === assignee)) return false;
       if (oilDepot && task.oilDepotId !== oilDepot) return false;
       if (tag && !task.tags.some((taskTag) => taskTag.tagId === tag)) return false;
-      if (deadline === "overdue" && (!task.deadline || task.deadline >= new Date() || isCompletedColumn(task.column.name) || isReviewColumn(task.column.name))) return false;
+      if (deadline === "overdue" && !isOverdueReportTask(task)) return false;
       if (deadline === "week") {
         const start = new Date();
         const day = start.getDay() || 7;
@@ -285,7 +285,8 @@ export async function getReportsData(filters?: URLSearchParams) {
 
 function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
   const now = new Date();
-  const soon = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const today = startOfToday(now);
+  const soon = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
   const isClosed = (task: ReportTask) => Boolean(task.archivedAt) || isCompletedColumn(task.column.name);
   const isClosedInPeriod = (task: ReportTask) => {
     const closedAt = task.archivedAt ?? (isCompletedColumn(task.column.name) ? task.updatedAt : null);
@@ -294,8 +295,8 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
   const active = tasks.filter((task) => !isClosed(task));
   const completed = tasks.filter(isClosed);
   const completedInPeriod = tasks.filter(isClosedInPeriod);
-  const overdue = active.filter((task) => task.deadline && task.deadline < now && !isReviewColumn(task.column.name));
-  const dueSoon = active.filter((task) => task.deadline && task.deadline >= now && task.deadline <= soon);
+  const overdue = active.filter((task) => isOverdueReportTask(task, today));
+  const dueSoon = active.filter((task) => task.deadline && deadlineDay(task.deadline) >= today && deadlineDay(task.deadline) <= soon);
   const inProgress = active.filter((task) => isWorkColumn(task.column.name));
   const progress = tasks.length ? Math.round((completed.length / tasks.length) * 100) : 0;
 
@@ -311,7 +312,7 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
       priority: task.priority,
       oilDepot: task.oilDepot?.name ?? "Без нефтебазы",
       assignee: taskAssignees(task).map((item) => item.name).join(", ") || "Не назначен",
-      overdue: task.deadline! < now && !isReviewColumn(task.column.name),
+      overdue: isOverdueReportTask(task, today),
     }));
 
   const recentTasks = [...active]
@@ -343,7 +344,7 @@ function buildDashboardReport(tasks: ReportTask[], from: Date, to: Date) {
       };
       if (!isClosed(task)) member.active += 1;
       if (isClosedInPeriod(task)) member.completed += 1;
-      if (!isClosed(task) && task.deadline && task.deadline < now && !isReviewColumn(task.column.name)) member.overdue += 1;
+      if (isOverdueReportTask(task, today)) member.overdue += 1;
       team.set(assignee.id, member);
     }
   }
@@ -394,6 +395,32 @@ function isoDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function startOfToday(now = new Date()) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Moscow",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(now).map((part) => [part.type, part.value]),
+  );
+  return new Date(`${parts.year}-${parts.month}-${parts.day}T00:00:00+03:00`);
+}
+
+function deadlineDay(deadline: Date) {
+  const day = new Date(deadline);
+  day.setHours(0, 0, 0, 0);
+  return day;
+}
+
+function isClosedReportTask(task: { archivedAt?: Date | null; column: { name: string } }) {
+  return Boolean(task.archivedAt) || isCompletedColumn(task.column.name);
+}
+
+function isOverdueReportTask(task: { archivedAt?: Date | null; deadline: Date | null; column: { name: string } }, today = startOfToday()) {
+  return Boolean(task.deadline && deadlineDay(task.deadline) < today && !isClosedReportTask(task) && !isReviewColumn(task.column.name));
+}
+
 function buildReports(tasks: TaskWithDetails[]) {
   const now = Date.now();
   return {
@@ -405,7 +432,8 @@ function buildReports(tasks: TaskWithDetails[]) {
 function buildReport(tasks: Array<{ createdAt: Date; updatedAt: Date; deadline: Date | null; column: { name: string }; oilDepot: { name: string } | null }>, since: Date) {
   const inPeriod = tasks.filter((task) => new Date(task.createdAt) >= since);
   const completed = tasks.filter((task) => isCompletedColumn(task.column.name) && new Date(task.updatedAt) >= since);
-  const overdue = tasks.filter((task) => task.deadline && new Date(task.deadline) < new Date() && !isCompletedColumn(task.column.name) && !isReviewColumn(task.column.name));
+  const today = startOfToday();
+  const overdue = tasks.filter((task) => isOverdueReportTask(task, today));
   const byOilDepot = new Map<string, number>();
 
   for (const task of inPeriod) {
@@ -436,7 +464,8 @@ function buildPeriodReport(
   const inRange = (date?: Date | null) => !!date && date >= from && date <= to;
   const created = tasks.filter((task) => inRange(task.createdAt));
   const closed = tasks.filter((task) => inRange(task.archivedAt) || (isCompletedColumn(task.column.name) && inRange(task.updatedAt)));
-  const overdue = tasks.filter((task) => !task.archivedAt && task.deadline && task.deadline < new Date() && !isCompletedColumn(task.column.name) && !isReviewColumn(task.column.name));
+  const today = startOfToday();
+  const overdue = tasks.filter((task) => isOverdueReportTask(task, today));
 
   return {
     created: created.length,
@@ -567,10 +596,11 @@ function buildBucketReport(
   to: Date,
 ) {
   const inRange = (date?: Date | null) => !!date && date >= from && date <= to;
+  const today = startOfToday();
   return {
     created: tasks.filter((task) => inRange(task.createdAt)).length,
     completed: tasks.filter((task) => inRange(task.archivedAt) || (isCompletedColumn(task.column.name) && inRange(task.updatedAt))).length,
-    overdue: tasks.filter((task) => !task.archivedAt && task.deadline && inRange(task.deadline) && !isCompletedColumn(task.column.name) && !isReviewColumn(task.column.name)).length,
+    overdue: tasks.filter((task) => task.deadline && inRange(task.deadline) && isOverdueReportTask(task, today)).length,
   };
 }
 

@@ -16,6 +16,24 @@ function startOfWeek(now = new Date()) {
   return moscowMidnight;
 }
 
+function startOfToday(now = new Date()) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Moscow",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(now).map((part) => [part.type, part.value]),
+  );
+  return new Date(`${parts.year}-${parts.month}-${parts.day}T00:00:00+03:00`);
+}
+
+function deadlineDay(deadline: Date) {
+  const day = new Date(deadline);
+  day.setHours(0, 0, 0, 0);
+  return day;
+}
+
 function isCompletedColumn(name: string) {
   const normalized = name.toLowerCase();
   return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete");
@@ -34,6 +52,7 @@ function isReviewColumn(name: string) {
 export async function getWeeklyReport() {
   const weekStart = startOfWeek();
   const now = new Date();
+  const today = startOfToday(now);
 
   const [allTasks, weeklyActivity] = await Promise.all([
     prisma.task.findMany({
@@ -72,7 +91,7 @@ export async function getWeeklyReport() {
   const inProgress = active.filter((t) => isWorkColumn(t.column.name));
   const inReview = active.filter((t) => isReviewColumn(t.column.name));
   const overdue = active.filter(
-    (t) => t.deadline && t.deadline < now && !isReviewColumn(t.column.name),
+    (t) => t.deadline && deadlineDay(t.deadline) < today && !isReviewColumn(t.column.name),
   );
   const critical = active.filter((t) => t.priority === "CRITICAL");
 
