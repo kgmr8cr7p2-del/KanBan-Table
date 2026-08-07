@@ -1248,7 +1248,14 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
 
       {error ? <p className="task-modal-error ai-task-error" role="alert">{error}</p> : null}
 
-      {draft ? (
+      {!draft ? (
+        <div className="ai-task-empty">
+          <span><Flag size={15} />Приоритет</span>
+          <span><Building2 size={15} />Нефтебаза</span>
+          <span><UserRound size={15} />Исполнители</span>
+          <span><CheckSquare size={15} />Чеклист</span>
+        </div>
+      ) : (
         <article className="ai-draft-card">
           <header>
             <span>Предложение</span>
@@ -1270,7 +1277,7 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
             Заполнить форму
           </button>
         </article>
-      ) : null}
+      )}
     </section>
   );
 }

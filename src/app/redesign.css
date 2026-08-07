@@ -589,28 +589,104 @@ body {
 }
 
 .ai-task-assistant {
-  gap: 1rem;
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: .8rem;
+  min-block-size: 100dvh;
+  background: var(--panel);
+}
+
+.task-drawer .ai-task-assistant .task-modal-v2-head {
+  position: static;
+  padding: 1.15rem 1.25rem .7rem;
+  border-block-end: 1px solid var(--border);
+}
+
+.ai-task-assistant .task-modal-v2-head h2 {
+  font-size: 1.45rem;
+  letter-spacing: 0;
+}
+
+.ai-task-assistant .modal-badges.compact {
+  gap: .35rem;
+  margin-block-start: .45rem;
+}
+
+.ai-task-assistant .modal-badge {
+  min-block-size: 1.45rem;
+  border-radius: 5px;
+  padding: .14rem .42rem;
+  font-size: .68rem;
 }
 
 .ai-task-form {
   display: grid;
-  gap: .9rem;
+  gap: .75rem;
+  padding: .35rem 1.25rem 0;
+}
+
+.ai-task-form .field {
+  gap: .45rem;
 }
 
 .ai-task-prompt {
-  min-block-size: 11rem;
+  min-block-size: 12.5rem;
+  max-block-size: min(30vh, 17rem);
   resize: vertical;
+  line-height: 1.48;
 }
 
-.ai-task-actions,
+.ai-task-actions {
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
+  gap: .55rem;
+}
+
+.ai-task-actions .button,
+.ai-draft-apply {
+  min-inline-size: 0;
+  min-block-size: 2.5rem;
+  border-radius: 6px;
+  padding: .55rem .75rem;
+  font-size: .82rem;
+  line-height: 1.1;
+}
+
 .ai-draft-apply {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: .5rem;
 }
 
 .ai-task-error {
-  margin: 0;
+  margin: .1rem 1.25rem 0;
+}
+
+.ai-task-empty {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
+  margin: .05rem 1.25rem 0;
+}
+
+.ai-task-empty span {
+  display: inline-flex;
+  min-inline-size: 0;
+  align-items: center;
+  gap: .4rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--muted);
+  padding: .55rem .6rem;
+  font-size: .76rem;
+  font-weight: 780;
+}
+
+.ai-task-empty svg {
+  flex: 0 0 auto;
+  color: var(--brand-strong);
 }
 
 .ai-draft-card,
@@ -623,7 +699,8 @@ body {
 .ai-draft-card {
   display: grid;
   gap: .85rem;
-  padding: 1rem;
+  margin: .15rem 1.25rem 1.25rem;
+  padding: .95rem;
 }
 
 .ai-draft-card header {
@@ -680,10 +757,6 @@ body {
 
 .ai-draft-facts dd {
   margin: 0;
-}
-
-.ai-draft-apply {
-  justify-content: center;
 }
 
 .ai-draft-note {
