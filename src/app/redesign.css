@@ -3067,3 +3067,24 @@ html {
     grid-template-areas: "active" "done" "due" "progress";
   }
 }
+
+/* On a wide board, keep the two high-use filters in the same action row as
+   the AI assistant. The sort control remains on its own edge-aligned row so
+   the primary actions stay visually grouped without squeezing the tabs. */
+@container board-workspace (min-width: 76rem) {
+  :root[data-interface-mode="new"] .board-head {
+    grid-template-columns: max-content minmax(0, 1fr) max-content max-content max-content;
+    grid-template-areas:
+      "identity views planned quick create"
+      "sort sort sort sort sort";
+  }
+
+  :root[data-interface-mode="new"] .board-planned-toggle,
+  :root[data-interface-mode="new"] .board-quick-filters {
+    justify-self: start;
+  }
+
+  :root[data-interface-mode="new"] .board-sort-control {
+    justify-self: end;
+  }
+}
