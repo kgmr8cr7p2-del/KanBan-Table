@@ -3315,7 +3315,15 @@ html {
 
 :root[data-interface-mode="new"] .chats-page {
   gap: clamp(.8rem, 1.6vw, 1.25rem);
+  block-size: auto;
+  max-block-size: none;
   min-block-size: calc(100dvh - 2rem);
+  overflow: visible;
+}
+
+:root[data-interface-mode="new"] .main:has(> .chats-page) {
+  grid-template-rows: auto;
+  overflow: auto;
 }
 
 :root[data-interface-mode="new"] .chats-page-head {
