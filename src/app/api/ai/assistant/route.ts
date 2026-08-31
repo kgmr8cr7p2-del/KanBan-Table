@@ -3,7 +3,7 @@ import { requireVerifiedUser } from "@/lib/auth";
 import { accessibleBoardWhere } from "@/lib/board-access";
 import { aiAssistantRecommendationSchema, aiAssistantRequestSchema, aiAssistantResponseSchema } from "@/lib/ai-assistant";
 import { deepSeekModel, isAiTaskDraftEnabled } from "@/lib/ai-task-draft";
-import { parseAiJson, stripAiWrappers } from "@/lib/ai-json";
+import { extractAiAnswer, parseAiJson, stripAiWrappers } from "@/lib/ai-json";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
@@ -15,6 +15,7 @@ const assistantSystemPrompt = [
   "Когда называешь задачу, указывай её номер в формате #123.",
   "Помогай расставить приоритеты, найти просроченные задачи и объяснить текущую загрузку.",
   "Если вопрос просит выбрать, что взять в работу, добавь 2–5 подходящих задач из контекста в recommendations; если выбор задач не нужен, верни пустой массив.",
+  "Для вопросов «какие», «сколько» и «перечисли» отвечай компактно и не добавляй recommendations, если пользователь не просит выбрать задачи.",
   "В recommendations используй только реальные taskId из контекста, максимум 6 элементов, и кратко объясни reason.",
   "recommendations — только массив объектов задач; текстовые советы и пояснения пиши в answer, а не отдельными строками в recommendations.",
   "Верни только JSON вида {\"answer\":\"...\",\"recommendations\":[{\"taskId\":\"...\",\"taskNumber\":123,\"title\":\"...\",\"column\":\"...\",\"priority\":\"HIGH\",\"deadline\":null,\"reason\":\"...\"}]} без markdown-обёртки.",
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
         response_format: { type: "json_object" },
         thinking: { type: "disabled" },
         temperature: 0.2,
-        max_tokens: 700,
+        max_tokens: 1400,
       }),
       signal: AbortSignal.timeout(30_000),
       cache: "no-store",
@@ -103,7 +104,10 @@ export async function POST(request: Request) {
 
     const parsed = parseAiJson(content);
     const parsedObject = isRecord(parsed) ? parsed : null;
-    const answerCandidate = parsedObject ? firstString(parsedObject, ["answer", "response", "message", "text"]) : stripAiWrappers(content);
+    const cleanedContent = stripAiWrappers(content);
+    const answerCandidate = (parsedObject ? firstString(parsedObject, ["answer", "response", "message", "text"]) : null)
+      ?? extractAiAnswer(content)
+      ?? (!parsedObject && !/['\"]answer['\"]\s*:/.test(cleanedContent) ? cleanedContent : null);
     const answerResult = aiAssistantResponseSchema.shape.answer.safeParse(answerCandidate);
     if (!answerResult.success) return fail("ИИ вернул пустой ответ. Попробуйте ещё раз.", 502);
 

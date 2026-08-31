@@ -31,3 +31,48 @@ export function stripAiWrappers(content: string) {
     .replace(/\s*```\s*$/i, "")
     .trim();
 }
+
+/**
+ * Recover the answer field when JSON Output was cut off after the answer
+ * (for example because recommendations made the completion too long).
+ */
+export function extractAiAnswer(content: string): string | null {
+  const cleaned = stripAiWrappers(content);
+  const key = /"answer"\s*:\s*"/i.exec(cleaned);
+  if (!key) return null;
+
+  const start = key.index + key[0].length;
+  let value = "";
+  let escaped = false;
+  for (let index = start; index < cleaned.length; index += 1) {
+    const character = cleaned[index];
+    if (escaped) {
+      value += `\\${character}`;
+      escaped = false;
+      continue;
+    }
+    if (character === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (character === '"') return decodeJsonString(value);
+    value += character;
+  }
+  if (escaped) value += "\\";
+  return decodeJsonString(value);
+}
+
+function decodeJsonString(value: string): string | null {
+  try {
+    const decoded = JSON.parse(`"${value}"`);
+    return typeof decoded === "string" && decoded.trim() ? decoded.trim() : null;
+  } catch {
+    const fallback = value
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\r")
+      .replace(/\\t/g, "\t")
+      .trim();
+    return fallback || null;
+  }
+}
