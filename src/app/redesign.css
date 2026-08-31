@@ -2586,3 +2586,378 @@ html {
     min-inline-size: 0;
   }
 }
+
+/* Colorful workspace layer: keep the bento layout calm, then reserve color for
+   actions, statuses, priorities, and progress so the board is scannable. */
+:root[data-interface-mode="new"] {
+  color-scheme: light;
+  --bg: #edf2f7;
+  --panel: #ffffff;
+  --panel-2: #f5f7fa;
+  --control: #ffffff;
+  --column-bg: #e8eef5;
+  --timeline-bg: #f5f8fb;
+  --card-low: #f1fbf5;
+  --card-medium: #fff8e9;
+  --card-high: #fff3ec;
+  --card-critical: #fff0f3;
+  --text: #172235;
+  --muted: #667085;
+  --border: #d8e0ea;
+  --brand: #3d67d9;
+  --brand-strong: #274bb7;
+  --brand-soft: #e8efff;
+  --success: #168457;
+  --warning: #a7670d;
+  --danger: #c4523f;
+  --critical: #b53259;
+  --planned: #765bd3;
+  --new-ink: #17263e;
+  --new-paper: #f8fbff;
+  --new-soft: #e5ebf3;
+  --new-line: #c9d5e3;
+  --accent-blue: #3d67d9;
+  --accent-teal: #0f8b8a;
+  --accent-green: #168457;
+  --accent-violet: #765bd3;
+  --accent-amber: #b8791a;
+  --accent-coral: #c45b3f;
+  --accent-rose: #b53259;
+  --shadow: 0 1px 0 rgb(16 24 40 / 3%), 0 14px 34px rgb(16 24 40 / 8%);
+}
+
+:root[data-theme="dark"][data-interface-mode="new"] {
+  color-scheme: dark;
+  --bg: #111a29;
+  --panel: #1b2739;
+  --panel-2: #24344a;
+  --control: #172337;
+  --column-bg: #172438;
+  --timeline-bg: #172337;
+  --card-low: #19332d;
+  --card-medium: #3a2e20;
+  --card-high: #3a2929;
+  --card-critical: #3d2330;
+  --text: #eef4fb;
+  --muted: #aebbd0;
+  --border: #35465f;
+  --brand: #87a9ff;
+  --brand-strong: #aac2ff;
+  --brand-soft: #27395a;
+  --success: #65d2a2;
+  --warning: #f0be67;
+  --danger: #f08f7d;
+  --critical: #f07e9c;
+  --planned: #b7a4ff;
+  --new-ink: #20304a;
+  --new-paper: #f3f7ff;
+  --new-soft: #273750;
+  --new-line: #3e526e;
+  --accent-blue: #87a9ff;
+  --accent-teal: #62d0cb;
+  --accent-green: #65d2a2;
+  --accent-violet: #b7a4ff;
+  --accent-amber: #f0be67;
+  --accent-coral: #f09a83;
+  --accent-rose: #f07e9c;
+  --shadow: 0 1px 0 rgb(255 255 255 / 5%), 0 18px 38px rgb(0 0 0 / 24%);
+}
+
+:root[data-interface-mode="new"] body,
+:root[data-interface-mode="new"] .brand > span:last-child {
+  font-family: var(--font-ui), "Segoe UI", sans-serif;
+}
+
+:root[data-interface-mode="new"] .sidebar,
+:root[data-interface-mode="new"] .topbar,
+:root[data-interface-mode="new"] .panel,
+:root[data-interface-mode="new"] .settings-block,
+:root[data-interface-mode="new"] .profile-editor-form,
+:root[data-interface-mode="new"] .new-board-stat-card,
+:root[data-interface-mode="new"] .new-board-progress-card {
+  box-shadow: var(--shadow);
+}
+
+:root[data-interface-mode="new"] .topbar,
+:root[data-interface-mode="new"] .panel,
+:root[data-interface-mode="new"] .settings-block,
+:root[data-interface-mode="new"] .profile-editor-form {
+  background: var(--panel);
+}
+
+/* A dark navy hero gives the light dashboard an anchor without returning to
+   monochrome; the surrounding cards carry the semantic colors. */
+:root[data-interface-mode="new"] .new-board-hero-card {
+  border-color: var(--new-ink);
+  background: var(--new-ink);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--new-ink) 22%, transparent);
+}
+
+:root[data-interface-mode="new"] .new-board-stat-card-dark {
+  border-color: color-mix(in srgb, var(--accent-blue) 38%, var(--border));
+  background: var(--brand);
+  color: var(--new-paper);
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--brand) 22%, transparent);
+}
+
+:root[data-interface-mode="new"] .new-board-stat-card-dark > span,
+:root[data-interface-mode="new"] .new-board-stat-card-dark small {
+  color: color-mix(in srgb, var(--new-paper) 82%, transparent);
+}
+
+:root[data-interface-mode="new"] .new-board-overview > .new-board-stat-card:nth-of-type(3) {
+  border-color: color-mix(in srgb, var(--accent-green) 28%, var(--border));
+  background: var(--card-low);
+}
+
+:root[data-interface-mode="new"] .new-board-overview > .new-board-stat-card:nth-of-type(3) strong {
+  color: var(--success);
+}
+
+:root[data-interface-mode="new"] .new-board-overview > .new-board-stat-card:nth-of-type(4) {
+  border-color: color-mix(in srgb, var(--accent-amber) 32%, var(--border));
+  background: var(--card-medium);
+}
+
+:root[data-interface-mode="new"] .new-board-overview > .new-board-stat-card:nth-of-type(4) strong {
+  color: var(--warning);
+}
+
+:root[data-interface-mode="new"] .new-board-progress-card {
+  border-color: color-mix(in srgb, var(--accent-blue) 18%, var(--border));
+}
+
+:root[data-interface-mode="new"] .new-board-card-heading strong {
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .new-board-column-progress-row:nth-child(6n + 1) .new-board-column-progress-track i { background: var(--accent-blue); }
+:root[data-interface-mode="new"] .new-board-column-progress-row:nth-child(6n + 2) .new-board-column-progress-track i { background: var(--accent-teal); }
+:root[data-interface-mode="new"] .new-board-column-progress-row:nth-child(6n + 3) .new-board-column-progress-track i { background: var(--accent-violet); }
+:root[data-interface-mode="new"] .new-board-column-progress-row:nth-child(6n + 4) .new-board-column-progress-track i { background: var(--accent-amber); }
+:root[data-interface-mode="new"] .new-board-column-progress-row:nth-child(6n + 5) .new-board-column-progress-track i { background: var(--accent-coral); }
+:root[data-interface-mode="new"] .new-board-column-progress-row:nth-child(6n + 6) .new-board-column-progress-track i { background: var(--accent-green); }
+
+/* Columns get quiet tints and a small labeled marker. The label/count still
+   carry the meaning for people who do not perceive color differences. */
+:root[data-interface-mode="new"] .column {
+  --column-accent: var(--accent-blue);
+  --column-tint: #edf3ff;
+  border-color: color-mix(in srgb, var(--column-accent) 19%, var(--border));
+  background: var(--column-tint);
+}
+
+:root[data-theme="dark"][data-interface-mode="new"] .column {
+  --column-tint: #1b2a40;
+}
+
+:root[data-interface-mode="new"] .column:nth-child(6n + 2) {
+  --column-accent: var(--accent-teal);
+  --column-tint: #eaf8f7;
+}
+
+:root[data-interface-mode="new"] .column:nth-child(6n + 3) {
+  --column-accent: var(--accent-violet);
+  --column-tint: #f1edff;
+}
+
+:root[data-interface-mode="new"] .column:nth-child(6n + 4) {
+  --column-accent: var(--accent-amber);
+  --column-tint: #fff7e8;
+}
+
+:root[data-interface-mode="new"] .column:nth-child(6n + 5) {
+  --column-accent: var(--accent-coral);
+  --column-tint: #fff1eb;
+}
+
+:root[data-interface-mode="new"] .column:nth-child(6n + 6) {
+  --column-accent: var(--accent-green);
+  --column-tint: #ecf9f2;
+}
+
+:root[data-theme="dark"][data-interface-mode="new"] .column:nth-child(6n + 2) { --column-tint: #183536; }
+:root[data-theme="dark"][data-interface-mode="new"] .column:nth-child(6n + 3) { --column-tint: #292644; }
+:root[data-theme="dark"][data-interface-mode="new"] .column:nth-child(6n + 4) { --column-tint: #3a3023; }
+:root[data-theme="dark"][data-interface-mode="new"] .column:nth-child(6n + 5) { --column-tint: #3b2a2b; }
+:root[data-theme="dark"][data-interface-mode="new"] .column:nth-child(6n + 6) { --column-tint: #1d3932; }
+
+:root[data-interface-mode="new"] .column-head {
+  color: var(--column-accent);
+}
+
+:root[data-interface-mode="new"] .column-head::before {
+  content: "";
+  inline-size: .38rem;
+  block-size: .38rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--column-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--column-accent) 14%, transparent);
+}
+
+:root[data-interface-mode="new"] .count {
+  background: color-mix(in srgb, var(--column-accent) 16%, var(--panel));
+  color: var(--column-accent);
+}
+
+:root[data-interface-mode="new"] .column-done {
+  --column-accent: var(--accent-green);
+  --column-tint: #eaf8f1;
+  border-color: color-mix(in srgb, var(--accent-green) 30%, var(--border));
+}
+
+:root[data-theme="dark"][data-interface-mode="new"] .column-done { --column-tint: #1c3931; }
+
+/* Priority surfaces use a restrained tint plus a text label, so color helps
+   scanning without becoming the only status signal. */
+:root[data-interface-mode="new"] .task-card {
+  --task-accent: var(--accent-blue);
+  --task-ink: #244cae;
+  --task-surface: #ffffff;
+  --task-chip: #edf3ff;
+  border-color: color-mix(in srgb, var(--task-accent) 22%, var(--border));
+  background: var(--task-surface);
+  box-shadow: 0 1px 0 rgb(16 24 40 / 3%), 0 8px 20px color-mix(in srgb, var(--task-accent) 8%, transparent);
+}
+
+:root[data-interface-mode="new"] .priority-card-LOW {
+  --task-accent: var(--accent-green);
+  --task-ink: #0f7048;
+  --task-surface: var(--card-low);
+  --task-chip: #dff4e8;
+}
+
+:root[data-interface-mode="new"] .priority-card-PLANNED {
+  --task-accent: var(--accent-violet);
+  --task-ink: #5a42b2;
+  --task-surface: #f7f3ff;
+  --task-chip: #ece5ff;
+}
+
+:root[data-interface-mode="new"] .priority-card-MEDIUM {
+  --task-accent: var(--accent-amber);
+  --task-ink: #87530a;
+  --task-surface: var(--card-medium);
+  --task-chip: #ffedc8;
+}
+
+:root[data-interface-mode="new"] .priority-card-HIGH {
+  --task-accent: var(--accent-coral);
+  --task-ink: #9b402c;
+  --task-surface: var(--card-high);
+  --task-chip: #ffe1d6;
+}
+
+:root[data-interface-mode="new"] .priority-card-CRITICAL {
+  --task-accent: var(--accent-rose);
+  --task-ink: #9c264b;
+  --task-surface: var(--card-critical);
+  --task-chip: #ffdce5;
+}
+
+:root[data-theme="dark"][data-interface-mode="new"] .priority-card-LOW { --task-ink: #8ce9bd; --task-surface: var(--card-low); --task-chip: #245442; }
+:root[data-theme="dark"][data-interface-mode="new"] .priority-card-PLANNED { --task-ink: #d3c7ff; --task-surface: #302a4d; --task-chip: #453b70; }
+:root[data-theme="dark"][data-interface-mode="new"] .priority-card-MEDIUM { --task-ink: #ffd992; --task-surface: var(--card-medium); --task-chip: #5a452b; }
+:root[data-theme="dark"][data-interface-mode="new"] .priority-card-HIGH { --task-ink: #ffb19d; --task-surface: var(--card-high); --task-chip: #5c3937; }
+:root[data-theme="dark"][data-interface-mode="new"] .priority-card-CRITICAL { --task-ink: #ffabc0; --task-surface: var(--card-critical); --task-chip: #613247; }
+
+:root[data-interface-mode="new"] .task-card::before {
+  background: var(--task-accent);
+}
+
+:root[data-interface-mode="new"] .task-card:hover {
+  border-color: color-mix(in srgb, var(--task-accent) 48%, var(--border));
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--task-accent) 14%, transparent);
+}
+
+:root[data-interface-mode="new"] .task-priority-signal {
+  border-color: color-mix(in srgb, var(--task-accent) 26%, var(--border));
+  background: var(--task-chip);
+  color: var(--task-ink);
+}
+
+:root[data-interface-mode="new"] .task-card .task-number {
+  color: var(--task-ink);
+}
+
+:root[data-interface-mode="new"] .task-assignee-summary {
+  border-color: color-mix(in srgb, var(--accent-blue) 24%, var(--border));
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .task-deadline-signal {
+  border-color: var(--border);
+  background: var(--panel);
+  color: var(--muted);
+}
+
+:root[data-interface-mode="new"] .task-deadline-signal.deadline-overdue {
+  border-color: color-mix(in srgb, var(--critical) 30%, var(--border));
+  background: color-mix(in srgb, var(--critical) 12%, var(--panel));
+  color: var(--critical);
+}
+
+:root[data-interface-mode="new"] .task-deadline-signal.deadline-today,
+:root[data-interface-mode="new"] .task-deadline-signal.deadline-soon {
+  border-color: color-mix(in srgb, var(--warning) 28%, var(--border));
+  background: color-mix(in srgb, var(--warning) 12%, var(--panel));
+  color: var(--warning);
+}
+
+:root[data-interface-mode="new"] .task-deadline-signal.deadline-review {
+  border-color: color-mix(in srgb, var(--accent-blue) 26%, var(--border));
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .task-card-done {
+  --task-accent: var(--accent-green);
+  --task-ink: #0f7048;
+  --task-surface: #edf9f3;
+  --task-chip: #d7f1e2;
+  border-color: color-mix(in srgb, var(--accent-green) 32%, var(--border));
+  background: var(--task-surface);
+}
+
+:root[data-theme="dark"][data-interface-mode="new"] .task-card-done {
+  --task-ink: #8ce9bd;
+  --task-surface: #1b3a31;
+  --task-chip: #265844;
+}
+
+:root[data-interface-mode="new"] .task-card-done .task-priority-signal {
+  border-color: color-mix(in srgb, var(--accent-green) 28%, var(--border));
+  background: var(--task-chip);
+  color: var(--task-ink);
+}
+
+:root[data-interface-mode="new"] .task-card .progress {
+  background: color-mix(in srgb, var(--task-accent) 14%, var(--panel));
+}
+
+:root[data-interface-mode="new"] .task-card .progress > span {
+  background: var(--task-accent);
+}
+
+:root[data-interface-mode="new"] .board-view-tabs-inline button.active,
+:root[data-interface-mode="new"] .board-view-tabs-inline button:hover,
+:root[data-interface-mode="new"] .nav a[aria-current="page"] {
+  background: var(--brand);
+  color: var(--new-paper);
+}
+
+:root[data-interface-mode="new"] .settings-choice-icon {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .button:not(.secondary):not(.ghost) {
+  border-color: var(--brand);
+  background: var(--brand);
+}
+
+:root[data-interface-mode="new"] .button:not(.secondary):not(.ghost):hover:not(:disabled) {
+  background: var(--brand-strong);
+}
