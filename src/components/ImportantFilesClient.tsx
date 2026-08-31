@@ -152,11 +152,18 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
 
       {canManage ? (
         <form className="files-upload-panel panel" action={uploadFile}>
-          <label className="field">
+          <div className="files-upload-intro">
+            <span className="files-upload-intro-icon"><UploadCloud size={20} aria-hidden="true" /></span>
+            <span>
+              <strong>Добавить в библиотеку</strong>
+              <small>Сохраните регламент, шаблон или инструкцию для всей команды.</small>
+            </span>
+          </div>
+          <label className="field files-upload-title">
             <span className="label">Название</span>
             <input className="input" name="title" placeholder="Например: Регламент запуска" />
           </label>
-          <label className="field">
+          <label className="field files-upload-category">
             <span className="label">Категория</span>
             <input className="input" name="category" placeholder="Регламенты, Скрипты, Шаблоны" />
           </label>
@@ -193,11 +200,11 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
             </div>
           ) : null}
           {files.map((file) => (
-            <button className={`important-file-row ${selected?.id === file.id ? "is-active" : ""}`} type="button" aria-pressed={selected?.id === file.id} key={file.id} onClick={() => setSelectedId(file.id)}>
+            <button className={`important-file-row file-kind-${fileKind(file.originalName)} ${selected?.id === file.id ? "is-active" : ""}`} type="button" aria-pressed={selected?.id === file.id} key={file.id} onClick={() => setSelectedId(file.id)}>
               <span className="important-file-icon">{iconFor(file.originalName)}</span>
               <span className="important-file-copy">
                 <strong>{file.title}</strong>
-                <small>{file.category || "Без категории"} · {formatBytes(file.size)}</small>
+                <small><span className="important-file-kind">{fileKindLabel(file.originalName)}</span><span aria-hidden="true"> · </span>{file.category || "Без категории"} · {formatBytes(file.size)}</small>
               </span>
             </button>
           ))}
@@ -212,17 +219,18 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
                   <h2>{selected.title}</h2>
                   <p className="muted">{selected.originalName} · {formatBytes(selected.size)} · загрузил {selected.uploadedBy.name}</p>
                 </div>
-                <span className="spacer" />
-                <a className="button secondary compact-button" href={`/api/important-files/${selected.id}/download`}>
-                  <Download size={16} />
-                  Скачать
-                </a>
-                {canManage ? (
-                  <button className="button danger compact-button" type="button" onClick={() => void deleteFile(selected.id)}>
-                    <Trash2 size={16} />
-                    Удалить
-                  </button>
-                ) : null}
+                <div className="files-preview-actions">
+                  <a className="button secondary compact-button" href={`/api/important-files/${selected.id}/download`}>
+                    <Download size={16} />
+                    Скачать
+                  </a>
+                  {canManage ? (
+                    <button className="button danger compact-button" type="button" onClick={() => void deleteFile(selected.id)}>
+                      <Trash2 size={16} />
+                      Удалить
+                    </button>
+                  ) : null}
+                </div>
               </div>
               {selected.description ? <p className="files-description">{selected.description}</p> : null}
               <PreviewPane preview={preview} loading={previewLoading} />
@@ -278,9 +286,26 @@ function PreviewPane({ preview, loading }: { preview: Preview | null; loading: b
 
 function iconFor(name: string) {
   const ext = name.split(".").pop()?.toLowerCase();
-  if (ext === "xlsx" || ext === "csv") return <FileSpreadsheet size={18} />;
+  if (ext === "xlsx" || ext === "xls" || ext === "csv") return <FileSpreadsheet size={18} />;
   if (ext === "docx" || ext === "doc") return <FileType2 size={18} />;
   return <FileText size={18} />;
+}
+
+function fileKind(name: string) {
+  const ext = name.split(".").pop()?.toLowerCase();
+  if (ext === "xlsx" || ext === "xls" || ext === "csv") return "sheet";
+  if (ext === "docx" || ext === "doc" || ext === "pdf") return "document";
+  if (ext === "md" || ext === "txt" || ext === "json" || ext === "xml" || ext === "yaml" || ext === "yml") return "text";
+  return "other";
+}
+
+function fileKindLabel(name: string) {
+  const ext = name.split(".").pop()?.toLowerCase();
+  if (ext === "xlsx" || ext === "xls" || ext === "csv") return "Таблица";
+  if (ext === "docx" || ext === "doc") return "Документ";
+  if (ext === "pdf") return "PDF";
+  if (ext === "md" || ext === "txt" || ext === "json" || ext === "xml" || ext === "yaml" || ext === "yml") return "Текст";
+  return ext ? ext.toUpperCase() : "Файл";
 }
 
 function formatBytes(value: number) {
