@@ -1,7 +1,7 @@
 "use client";
 
-import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { Download, FileSpreadsheet, FileText, FileType2, Search, ShieldCheck, Trash2, UploadCloud } from "lucide-react";
+import { type DragEvent, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Download, FileSpreadsheet, FileText, FileType2, Search, ShieldCheck, Trash2, UploadCloud, X } from "lucide-react";
 
 type ImportantFile = {
   id: string;
@@ -31,6 +31,12 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
   const [loading, setLoading] = useState(true);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [error, setError] = useState("");
+  const [uploadSelection, setUploadSelection] = useState<File | null>(null);
+  const [isDropActive, setIsDropActive] = useState(false);
+  const uploadDialogRef = useRef<HTMLDialogElement>(null);
+  const uploadFormRef = useRef<HTMLFormElement>(null);
+  const uploadTriggerRef = useRef<HTMLButtonElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   const selected = useMemo(() => files.find((file) => file.id === selectedId) ?? files[0] ?? null, [files, selectedId]);
 
@@ -48,6 +54,21 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
     setSelectedId(selected.id);
     void loadPreview(selected.id);
   }, [selected]);
+
+  useEffect(() => {
+    const dialog = uploadDialogRef.current;
+    if (!dialog) return;
+
+    function handleClose() {
+      setIsDropActive(false);
+      setUploadSelection(null);
+      uploadFormRef.current?.reset();
+      uploadTriggerRef.current?.focus();
+    }
+
+    dialog.addEventListener("close", handleClose);
+    return () => dialog.removeEventListener("close", handleClose);
+  }, []);
 
   async function loadFiles(nextQuery = query, nextCategory = category) {
     setLoading(true);
@@ -95,9 +116,48 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
       }
       setSelectedId(payload.file?.id ?? null);
       await loadFiles();
+      uploadDialogRef.current?.close();
     } catch {
       setError("Не удалось загрузить файл. Проверьте соединение и повторите попытку.");
     }
+  }
+
+  function openUploadDialog() {
+    setError("");
+    const dialog = uploadDialogRef.current;
+    if (!dialog) return;
+    if (typeof dialog.showModal === "function") {
+      dialog.showModal();
+      requestAnimationFrame(() => dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus());
+    }
+  }
+
+  function closeUploadDialog() {
+    uploadDialogRef.current?.close();
+  }
+
+  function setSelectedUploadFile(file: File | null) {
+    setUploadSelection(file);
+    if (!file) {
+      if (uploadInputRef.current) uploadInputRef.current.value = "";
+      return;
+    }
+
+    if (uploadInputRef.current) {
+      try {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        uploadInputRef.current.files = dataTransfer.files;
+      } catch {
+        // Browsers that do not allow assigning FileList still support the picker.
+      }
+    }
+  }
+
+  function handleUploadDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setIsDropActive(false);
+    setSelectedUploadFile(event.dataTransfer.files.item(0));
   }
 
   async function deleteFile(id: string) {
@@ -151,35 +211,108 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
       {error ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
 
       {canManage ? (
-        <form className="files-upload-panel panel" action={uploadFile}>
-          <div className="files-upload-intro">
-            <span className="files-upload-intro-icon"><UploadCloud size={20} aria-hidden="true" /></span>
+        <div className="files-upload-launcher">
+          <div className="files-upload-launcher-copy">
+            <span className="files-upload-launcher-icon"><UploadCloud size={20} aria-hidden="true" /></span>
             <span>
-              <strong>Добавить в библиотеку</strong>
-              <small>Сохраните регламент, шаблон или инструкцию для всей команды.</small>
+              <strong>Добавьте документ в библиотеку</strong>
+              <small>Регламенты, инструкции и шаблоны для всей команды.</small>
             </span>
           </div>
-          <label className="field files-upload-title">
-            <span className="label">Название</span>
-            <input className="input" name="title" placeholder="Например: Регламент запуска" />
-          </label>
-          <label className="field files-upload-category">
-            <span className="label">Категория</span>
-            <input className="input" name="category" placeholder="Регламенты, Скрипты, Шаблоны" />
-          </label>
-          <label className="field files-upload-description">
-            <span className="label">Описание</span>
-            <input className="input" name="description" placeholder="Коротко: зачем нужен файл" />
-          </label>
-          <label className="field files-upload-file">
-            <span className="label">Файл</span>
-            <input className="input" type="file" name="file" required />
-          </label>
-          <button className="button">
-            <UploadCloud size={17} />
-            Загрузить
+          <button ref={uploadTriggerRef} className="button files-upload-trigger" type="button" onClick={openUploadDialog}>
+            <UploadCloud size={17} aria-hidden="true" />
+            Загрузить файл
           </button>
-        </form>
+        </div>
+      ) : null}
+
+      {canManage ? (
+        <dialog
+          ref={uploadDialogRef}
+          className="files-upload-dialog"
+          aria-labelledby="files-upload-dialog-title"
+          aria-describedby="files-upload-dialog-description"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeUploadDialog();
+          }}
+        >
+          <form ref={uploadFormRef} className="files-upload-dialog-card" action={uploadFile}>
+            <header className="files-upload-dialog-head">
+              <div className="files-upload-dialog-icon"><UploadCloud size={24} aria-hidden="true" /></div>
+              <div className="files-upload-dialog-heading">
+                <span className="files-upload-dialog-kicker">Документы команды</span>
+                <h2 id="files-upload-dialog-title">Загрузить файл</h2>
+                <p id="files-upload-dialog-description">Выберите файл или перетащите его в окно.</p>
+              </div>
+              <button className="files-upload-dialog-close" type="button" aria-label="Закрыть окно загрузки" onClick={closeUploadDialog}>
+                <X size={20} aria-hidden="true" />
+              </button>
+            </header>
+
+            <div className="files-upload-dialog-body">
+              <label
+                className={`files-dropzone ${isDropActive ? "is-active" : ""} ${uploadSelection ? "has-file" : ""}`}
+                htmlFor="files-upload-file-input"
+                onDragEnter={(event) => { event.preventDefault(); setIsDropActive(true); }}
+                onDragOver={(event) => { event.preventDefault(); setIsDropActive(true); }}
+                onDragLeave={() => setIsDropActive(false)}
+                onDrop={handleUploadDrop}
+              >
+                <span className="files-dropzone-icon"><UploadCloud size={28} aria-hidden="true" /></span>
+                <strong>{uploadSelection ? uploadSelection.name : "Выберите файл или перетащите его сюда"}</strong>
+                <small>{uploadSelection ? `${formatBytes(uploadSelection.size)} · готов к загрузке` : "TXT, DOCX, PDF, XLSX · до 50 МБ"}</small>
+                <span className="button secondary files-dropzone-button">Выбрать файл</span>
+                <input
+                  ref={uploadInputRef}
+                  id="files-upload-file-input"
+                  className="files-upload-file-input"
+                  type="file"
+                  name="file"
+                  required
+                  onChange={(event) => setSelectedUploadFile(event.currentTarget.files?.item(0) ?? null)}
+                />
+              </label>
+
+              {uploadSelection ? (
+                <div className="files-upload-selected">
+                  <span className="important-file-icon">{iconFor(uploadSelection.name)}</span>
+                  <span>
+                    <strong>{uploadSelection.name}</strong>
+                    <small>{formatBytes(uploadSelection.size)} · файл выбран</small>
+                  </span>
+                  <button className="files-upload-selected-remove" type="button" aria-label={`Убрать файл ${uploadSelection.name}`} onClick={() => setSelectedUploadFile(null)}>
+                    <X size={18} aria-hidden="true" />
+                  </button>
+                </div>
+              ) : null}
+
+              <div className="files-upload-dialog-fields">
+                <label className="field">
+                  <span className="label">Название</span>
+                  <input className="input" name="title" placeholder="Например: Регламент запуска" />
+                </label>
+                <label className="field">
+                  <span className="label">Категория</span>
+                  <input className="input" name="category" placeholder="Регламенты, Скрипты, Шаблоны" />
+                </label>
+                <label className="field files-upload-dialog-description">
+                  <span className="label">Описание</span>
+                  <textarea className="textarea" name="description" rows={3} placeholder="Коротко: зачем нужен файл" />
+                </label>
+              </div>
+
+              {error ? <p className="files-upload-dialog-error" role="alert">{error}</p> : null}
+            </div>
+
+            <footer className="files-upload-dialog-actions">
+              <button className="button secondary" type="button" onClick={closeUploadDialog}>Отмена</button>
+              <button className="button" type="submit" data-autofocus>
+                <UploadCloud size={17} aria-hidden="true" />
+                Загрузить файл
+              </button>
+            </footer>
+          </form>
+        </dialog>
       ) : null}
 
       <section className="files-workspace">

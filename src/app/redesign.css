@@ -4697,3 +4697,373 @@ html {
     transition: none;
   }
 }
+
+/* Upload dialog: one clear entry point on the page, with the file workflow kept in context. */
+:root[data-interface-mode="new"] .files-upload-launcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--docs-space-2);
+  min-inline-size: 0;
+  border: 1px solid color-mix(in srgb, var(--accent-blue) 20%, var(--border));
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--accent-blue) 4%, var(--panel));
+  box-shadow: var(--shadow);
+  padding: var(--docs-space-2);
+}
+
+:root[data-interface-mode="new"] .files-upload-launcher-copy {
+  display: flex;
+  align-items: center;
+  gap: var(--docs-space-2);
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .files-upload-launcher-icon,
+:root[data-interface-mode="new"] .files-upload-dialog-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent-blue), color-mix(in srgb, var(--brand) 64%, #7b61ff));
+  color: #fff;
+}
+
+:root[data-interface-mode="new"] .files-upload-launcher-icon {
+  inline-size: 48px;
+  block-size: 48px;
+}
+
+:root[data-interface-mode="new"] .files-upload-launcher-copy > span:last-child {
+  display: grid;
+  gap: var(--docs-space-1);
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .files-upload-launcher-copy strong {
+  color: var(--text);
+  font-size: .9rem;
+}
+
+:root[data-interface-mode="new"] .files-upload-launcher-copy small {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+:root[data-interface-mode="new"] .files-upload-trigger {
+  flex: 0 0 auto;
+  min-block-size: 48px;
+  gap: var(--docs-space-1);
+  padding-inline: var(--docs-space-2);
+}
+
+:root[data-interface-mode="new"] dialog.files-upload-dialog {
+  inline-size: min(720px, calc(100% - 32px));
+  max-block-size: min(90dvh, 800px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 24px 72px rgb(16 24 40 / 22%);
+  padding: 0;
+}
+
+:root[data-interface-mode="new"] dialog.files-upload-dialog::backdrop {
+  background: rgb(15 23 42 / 42%);
+  backdrop-filter: blur(5px);
+}
+
+:root[data-interface-mode="new"] dialog.files-upload-dialog[open] {
+  animation: files-upload-dialog-in 180ms ease-out both;
+}
+
+@keyframes files-upload-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  max-block-size: inherit;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--docs-space-2);
+  border-block-end: 1px solid var(--border);
+  padding: var(--docs-space-3);
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-icon {
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: 16px;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-heading {
+  display: grid;
+  gap: var(--docs-space-1);
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-kicker {
+  color: var(--brand-strong);
+  font-size: .66rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-heading h2 {
+  color: var(--text);
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  line-height: 1.1;
+  letter-spacing: -.04em;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-heading p {
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-close,
+:root[data-interface-mode="new"] .files-upload-selected-remove {
+  display: grid;
+  inline-size: 40px;
+  block-size: 40px;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-close:hover,
+:root[data-interface-mode="new"] .files-upload-selected-remove:hover {
+  border-color: var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-body {
+  display: grid;
+  gap: var(--docs-space-2);
+  min-block-size: 0;
+  overflow: auto;
+  padding: var(--docs-space-3);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+:root[data-interface-mode="new"] .files-dropzone {
+  position: relative;
+  display: grid;
+  min-block-size: 224px;
+  place-content: center;
+  justify-items: center;
+  gap: var(--docs-space-1);
+  border: 2px dashed color-mix(in srgb, var(--accent-blue) 34%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent-blue) 3%, var(--panel));
+  padding: var(--docs-space-3);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+:root[data-interface-mode="new"] .files-dropzone:hover,
+:root[data-interface-mode="new"] .files-dropzone.is-active,
+:root[data-interface-mode="new"] .files-dropzone.has-file {
+  border-color: var(--accent-blue);
+  background: color-mix(in srgb, var(--accent-blue) 8%, var(--panel));
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--accent-blue) 8%, transparent);
+}
+
+:root[data-interface-mode="new"] .files-dropzone-icon {
+  display: grid;
+  inline-size: 56px;
+  block-size: 56px;
+  place-items: center;
+  margin-block-end: var(--docs-space-1);
+  border-radius: 16px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .files-dropzone strong {
+  max-inline-size: 44ch;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: .95rem;
+}
+
+:root[data-interface-mode="new"] .files-dropzone small {
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+:root[data-interface-mode="new"] .files-dropzone-button {
+  min-block-size: 40px;
+  margin-block-start: var(--docs-space-1);
+  padding-inline: var(--docs-space-2);
+  pointer-events: none;
+}
+
+:root[data-interface-mode="new"] .files-upload-file-input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+:root[data-interface-mode="new"] .files-dropzone:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--accent-blue) 24%, transparent);
+  outline-offset: 3px;
+}
+
+:root[data-interface-mode="new"] .files-upload-selected {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--docs-space-2);
+  min-inline-size: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel-2);
+  padding: var(--docs-space-2);
+}
+
+:root[data-interface-mode="new"] .files-upload-selected > span:nth-child(2) {
+  display: grid;
+  gap: var(--docs-space-1);
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .files-upload-selected strong,
+:root[data-interface-mode="new"] .files-upload-selected small {
+  overflow-wrap: anywhere;
+}
+
+:root[data-interface-mode="new"] .files-upload-selected strong {
+  color: var(--text);
+  font-size: .88rem;
+}
+
+:root[data-interface-mode="new"] .files-upload-selected small {
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--docs-space-2);
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-fields .field {
+  display: grid;
+  gap: var(--docs-space-1);
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-description {
+  grid-column: 1 / -1;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-description .textarea {
+  min-block-size: 96px;
+  resize: vertical;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-error {
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--danger) 8%, var(--panel));
+  color: var(--danger);
+  padding: var(--docs-space-1) var(--docs-space-2);
+  font-size: .8rem;
+  line-height: 1.45;
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--docs-space-1);
+  border-block-start: 1px solid var(--border);
+  padding: var(--docs-space-2) var(--docs-space-3);
+}
+
+:root[data-interface-mode="new"] .files-upload-dialog-actions .button {
+  min-block-size: 48px;
+  justify-content: center;
+  padding-inline: var(--docs-space-2);
+}
+
+@container documents-page (max-width: 40rem) {
+  :root[data-interface-mode="new"] .files-upload-launcher {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :root[data-interface-mode="new"] .files-upload-trigger {
+    inline-size: 100%;
+    justify-content: center;
+  }
+
+  :root[data-interface-mode="new"] dialog.files-upload-dialog {
+    inline-size: calc(100% - 16px);
+    max-block-size: calc(100dvh - 16px);
+    border-radius: 16px;
+  }
+
+  :root[data-interface-mode="new"] .files-upload-dialog-head,
+  :root[data-interface-mode="new"] .files-upload-dialog-body {
+    padding: var(--docs-space-2);
+  }
+
+  :root[data-interface-mode="new"] .files-upload-dialog-icon {
+    inline-size: 48px;
+    block-size: 48px;
+    border-radius: 12px;
+  }
+
+  :root[data-interface-mode="new"] .files-dropzone {
+    min-block-size: 200px;
+    padding: var(--docs-space-2);
+  }
+
+  :root[data-interface-mode="new"] .files-upload-dialog-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :root[data-interface-mode="new"] .files-upload-dialog-description {
+    grid-column: auto;
+  }
+
+  :root[data-interface-mode="new"] .files-upload-dialog-actions {
+    flex-direction: column-reverse;
+    padding: var(--docs-space-2);
+  }
+
+  :root[data-interface-mode="new"] .files-upload-dialog-actions .button {
+    inline-size: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-interface-mode="new"] dialog.files-upload-dialog[open],
+  :root[data-interface-mode="new"] .files-dropzone {
+    animation: none;
+    transition: none;
+  }
+}
