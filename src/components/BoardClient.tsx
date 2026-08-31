@@ -79,6 +79,18 @@ export function BoardClient({ initialView }: { initialView: View }) {
     [view, viewMode, filters.withoutPlanned, filters.sort],
   );
   const visibleTasks = useMemo(() => visibleColumns.flatMap((column: any) => column.tasks), [visibleColumns]);
+  const newBoardStats = useMemo(() => {
+    const completed = visibleColumns
+      .filter((column: any) => isCompletedColumn(column.name))
+      .reduce((total: number, column: any) => total + column.tasks.length, 0);
+    const withDeadline = visibleTasks.filter((task: Task) => Boolean(task.deadline)).length;
+    return {
+      total: visibleTasks.length,
+      active: Math.max(visibleTasks.length - completed, 0),
+      completed,
+      withDeadline,
+    };
+  }, [visibleColumns, visibleTasks]);
   const activeTask = selected ? tasks.find((task: Task) => task.id === selected.id) ?? selected : null;
   const activeTaskId = activeTask?.id ?? null;
   const activeTaskNumber = activeTask?.taskNumber ?? null;
@@ -663,6 +675,42 @@ export function BoardClient({ initialView }: { initialView: View }) {
             </form>
           ) : null}
         </div>
+        <section className="new-board-overview" aria-label="Обзор рабочей доски">
+          <article className="new-board-hero-card">
+            <span className="new-interface-kicker">Рабочая область · обзор</span>
+            <h2>{view.board.name}</h2>
+            <p>Все задачи команды в одном спокойном ритме. Сначала — важное, затем — следующий шаг.</p>
+            <div className="new-board-hero-meta"><span><i /> Автообновление включено</span><span>{newBoardStats.total} карточек в поле зрения</span></div>
+          </article>
+          <article className="new-board-stat-card new-board-stat-card-dark">
+            <span>Активно</span>
+            <strong>{newBoardStats.active}</strong>
+            <small>задач требуют внимания</small>
+          </article>
+          <article className="new-board-stat-card">
+            <span>Готово</span>
+            <strong>{newBoardStats.completed}</strong>
+            <small>выполнено на доске</small>
+          </article>
+          <article className="new-board-stat-card">
+            <span>Со сроком</span>
+            <strong>{newBoardStats.withDeadline}</strong>
+            <small>задач привязаны к дате</small>
+          </article>
+          <article className="new-board-progress-card">
+            <div className="new-board-card-heading"><span>Ритм работы</span><strong>{newBoardStats.total ? Math.round((newBoardStats.completed / newBoardStats.total) * 100) : 0}%</strong></div>
+            <div className="new-board-column-progress">
+              {visibleColumns.map((column: any) => {
+                const percent = newBoardStats.total ? Math.round((column.tasks.length / newBoardStats.total) * 100) : 0;
+                return <div className="new-board-column-progress-row" key={column.id}>
+                  <span>{column.name}</span>
+                  <b>{column.tasks.length}</b>
+                  <span className="new-board-column-progress-track"><i style={{ inlineSize: `${Math.min(100, Math.max(4, percent))}%` }} /></span>
+                </div>;
+              })}
+            </div>
+          </article>
+        </section>
         {error && !createOpen && !activeTask ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
         {viewMode === "list" ? <TaskTable tasks={visibleTasks} onOpen={openTask} personal={Boolean(view.board.ownerId)} /> : null}
         {viewMode === "timeline" ? <TaskTimeline tasks={visibleTasks} onOpen={openTask} /> : null}

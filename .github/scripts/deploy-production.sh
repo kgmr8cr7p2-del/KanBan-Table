@@ -73,7 +73,10 @@ ensure_web_push_secret() {
 }
 
 recover_important_files_migration() {
-  compose exec -T app npx prisma migrate resolve --rolled-back 20260714220000_important_files || true
+  # Keep the historical repair non-blocking, but run it in the same one-shot
+  # migration container used for normal deploys so the app does not need to be
+  # started before its database is ready.
+  compose run --rm --no-build migrate npx prisma migrate resolve --rolled-back 20260714220000_important_files || true
 }
 
 restore_previous_release() {
@@ -135,9 +138,10 @@ cd "${APP_DIR}"
 ensure_telegram_webhook_secret
 ensure_notification_cron_secret
 ensure_web_push_secret
-compose up -d --no-deps --no-build --force-recreate app scheduler
 recover_important_files_migration
-compose exec -T app npx prisma migrate deploy
+echo "Applying pending Prisma migrations..."
+compose run --rm --no-build migrate
+compose up -d --no-deps --no-build --force-recreate app scheduler
 
 healthy=0
 for _ in $(seq 1 30); do

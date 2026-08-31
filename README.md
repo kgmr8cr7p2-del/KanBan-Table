@@ -273,6 +273,7 @@ POST /api/notifications/deadlines
 | `npm run start` | Запускает собранное приложение |
 | `npm run prisma:generate` | Генерирует Prisma Client |
 | `npm run prisma:migrate` | Создаёт и применяет миграции в разработке |
+| `npm run prisma:migrate:deploy` | Применяет все добавленные миграции без интерактива |
 | `npm run prisma:studio` | Открывает Prisma Studio |
 | `npm run seed` | Создаёт роли, доску, колонки и базовую нефтебазу |
 | `npm run telegram:webhook` | Регистрирует webhook и команды Telegram-бота |
@@ -280,7 +281,7 @@ POST /api/notifications/deadlines
 Для production миграций используйте:
 
 ```bash
-npx prisma migrate deploy
+npm run prisma:migrate:deploy
 ```
 
 ## Структура проекта
@@ -365,10 +366,12 @@ docker network create regionfree-edge
 4. передаёт релиз на сервер по SSH;
 5. создаёт резервную копию предыдущей версии;
 6. собирает новый Docker-образ;
-7. перезапускает приложение и scheduler;
-8. выполняет `prisma migrate deploy`;
+7. запускает одноразовый контейнер `migrate`, который применяет все ожидающие миграции;
+8. перезапускает приложение и scheduler только после успешных миграций;
 9. проверяет доступность `/login`;
 10. регистрирует Telegram webhook, если задан токен.
+
+Каждый push в `main` повторяет эту проверку автоматически — вручную запускать миграции на сервере не требуется.
 
 При ошибке deploy-скрипт автоматически возвращает предыдущий релиз и Docker-образ.
 

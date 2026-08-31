@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import { ButtonBorderGlow } from "@/components/ButtonBorderGlow";
+import { INTERFACE_MODE_COOKIE, normalizeInterfaceMode } from "@/lib/interface-mode";
 import "./globals.css";
 import "./redesign.css";
 
@@ -15,9 +17,15 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const interfaceMode = normalizeInterfaceMode(cookieStore.get(INTERFACE_MODE_COOKIE)?.value);
+
   return (
-    <html lang="ru" suppressHydrationWarning>
+    <html lang="ru" data-interface-mode={interfaceMode} suppressHydrationWarning>
+      <head>
+        <meta name="color-scheme" content="light dark" />
+      </head>
       <body>
         <script
           dangerouslySetInnerHTML={{

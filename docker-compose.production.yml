@@ -15,6 +15,20 @@ services:
       timeout: 5s
       retries: 8
 
+  migrate:
+    build:
+      context: .
+    image: team-kanban-board-app:latest
+    restart: "no"
+    command: ["npm", "run", "prisma:migrate:deploy"]
+    environment:
+      DATABASE_URL: postgresql://kanban:${POSTGRES_PASSWORD}@postgres:5432/team_kanban?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default
+
   app:
     build:
       context: .
@@ -49,6 +63,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     expose:
       - "3000"
     networks:

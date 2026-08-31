@@ -6,10 +6,12 @@ import { TaskSoundNotifier } from "@/components/TaskSoundNotifier";
 import { NotificationSoundNotifier } from "@/components/NotificationSoundNotifier";
 import { WeeklyReportReminder } from "@/components/WeeklyReportReminder";
 import { PresenceTracker } from "@/components/PresenceTracker";
+import { InterfaceModeSync } from "@/components/InterfaceModeSync";
 
 export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
   return (
     <div className="app">
+      <InterfaceModeSync mode={user.interfaceMode === "new" ? "new" : "classic"} />
       <aside className="sidebar">
         <div className="brand">
           <span className="brand-mark">

@@ -1,18 +1,18 @@
 "use client";
 
-import { Bell, Building2, Database, MessageCircle, ShieldCheck, UsersRound, Volume2, X } from "lucide-react";
+import { Bell, Building2, Database, LayoutDashboard, MessageCircle, ShieldCheck, UsersRound, Volume2, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 export type SettingsPanel = {
   id: string;
   title: string;
   description: string;
-  icon: "bell" | "building" | "database" | "message" | "shield" | "users" | "volume";
+  icon: "bell" | "building" | "database" | "layout" | "message" | "shield" | "users" | "volume";
   content: ReactNode;
   wide?: boolean;
 };
 
-const icons = { bell: Bell, building: Building2, database: Database, message: MessageCircle, shield: ShieldCheck, users: UsersRound, volume: Volume2 } as const;
+const icons = { bell: Bell, building: Building2, database: Database, layout: LayoutDashboard, message: MessageCircle, shield: ShieldCheck, users: UsersRound, volume: Volume2 } as const;
 
 export function SettingsHub({
   panels,

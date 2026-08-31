@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { PermissionKey, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hashToken, randomToken } from "@/lib/crypto";
+import { INTERFACE_MODE_COOKIE, normalizeInterfaceMode } from "@/lib/interface-mode";
 import { hasPermission } from "@/lib/role-permissions";
 
 export const SESSION_COOKIE = "tkb_session";
@@ -28,6 +29,15 @@ export async function createSession(userId: string) {
     path: "/",
     expires: expiresAt,
   });
+
+  const account = await prisma.user.findUnique({ where: { id: userId }, select: { interfaceMode: true } });
+  cookieStore.set(INTERFACE_MODE_COOKIE, normalizeInterfaceMode(account?.interfaceMode), {
+    httpOnly: false,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: SESSION_DAYS * 24 * 60 * 60,
+  });
 }
 
 export async function destroySession() {
@@ -40,6 +50,7 @@ export async function destroySession() {
   } finally {
     // Clear the browser cookie even if the database is temporarily unavailable.
     cookieStore.delete(SESSION_COOKIE);
+    cookieStore.delete(INTERFACE_MODE_COOKIE);
   }
 }
 
