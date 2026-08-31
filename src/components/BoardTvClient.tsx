@@ -10,6 +10,7 @@ type View = any;
 type Task = any;
 type Weather = {
   unavailable?: boolean;
+  updatedAt?: string;
   office: { name: string; address: string; latitude?: number; longitude?: number };
   temperature?: number;
   apparentTemperature?: number;
@@ -17,6 +18,15 @@ type Weather = {
   windSpeed?: number;
   windGusts?: number;
   summary?: string;
+  hourlyForecast?: Array<{ time: string; temperature?: number; probability?: number; precipitation?: number; summary?: string }>;
+  tomorrow?: {
+    date: string;
+    temperatureMin?: number;
+    temperatureMax?: number;
+    precipitation?: number;
+    probability?: number;
+    summary?: string;
+  } | null;
   nextPrecipitation?: { time: string; probability?: number; precipitation?: number; summary: string } | null;
 };
 
@@ -598,7 +608,7 @@ function StandbyWeatherPanel({ weather }: { weather: Weather | null }) {
     <section className="tv-standby-weather-card" aria-label="Погода в офисе">
       <header>
         <span><CloudSun size={18} /> Погода</span>
-        <small>обновлено {hourOnly(weather.updatedAt)}</small>
+        <small>{weather.updatedAt ? `обновлено ${hourOnly(weather.updatedAt)}` : "время обновления неизвестно"}</small>
       </header>
       <div className="tv-standby-weather-now">
         <CloudSun size={34} />
@@ -1507,8 +1517,9 @@ function nextNewsRefreshLabel(nextRefreshAt: string, now: Date, stale: boolean) 
   return stale ? `Ожидаем новую · проверка через ${minutes} мин` : `Следующая через ${minutes} мин`;
 }
 
-function signed(value: number) {
-  return value > 0 ? `+${value}` : String(value);
+function signed(value: number | undefined) {
+  const normalized = Number(value ?? 0);
+  return normalized > 0 ? `+${normalized}` : String(normalized);
 }
 
 function startOfToday() {
