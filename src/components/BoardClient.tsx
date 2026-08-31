@@ -1370,27 +1370,30 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
         </button>
       </header>
 
-      <div className="ai-assistant-mode" role="tablist" aria-label="Режим ИИ-помощника">
-        <button type="button" role="tab" aria-selected={mode === "draft"} onClick={() => selectMode("draft")}>Создать задачу</button>
-        <button type="button" role="tab" aria-selected={mode === "ask"} onClick={() => selectMode("ask")}>Спросить о доске</button>
+      <div className="ai-assistant-mode" role="group" aria-label="Режим ИИ-помощника">
+        <button type="button" aria-pressed={mode === "draft"} onClick={() => selectMode("draft")}>Создать черновик</button>
+        <button type="button" aria-pressed={mode === "ask"} onClick={() => selectMode("ask")}>Задать вопрос</button>
       </div>
 
       <form className="ai-task-form" onSubmit={buildDraft}>
         <label className="field">
-          <span className="label">{mode === "draft" ? "Опишите проблему или задачу" : "Задайте вопрос по текущей доске"}</span>
+          <span className="label">{mode === "draft" ? "Опишите проблему или задачу" : "Задайте вопрос помощнику"}</span>
           <textarea
+            id="ai-assistant-prompt"
+            name="prompt"
             className="textarea ai-task-prompt"
             value={prompt}
             onChange={(event) => setPrompt(event.currentTarget.value)}
             placeholder={mode === "draft" ? "Например: нужно проверить герметичность трубопровода на Речном терминале, высокий приоритет, ответственный Илья" : "Например: какие задачи просрочены и что взять в работу сегодня?"}
             maxLength={mode === "draft" ? 4000 : 2400}
+            minLength={mode === "draft" ? 8 : 3}
             required
             autoFocus
           />
         </label>
         <div className="ai-task-actions">
           <button className="button secondary" type="button" onClick={props.onClose}>Отмена</button>
-          <button className="button" disabled={loading || prompt.trim().length < (mode === "draft" ? 8 : 3)}>
+          <button className="button" disabled={loading}>
             <Sparkles size={17} />
             {loading ? (mode === "draft" ? "Собираю..." : "Анализирую...") : (mode === "draft" ? "Собрать черновик" : "Спросить ИИ")}
           </button>
