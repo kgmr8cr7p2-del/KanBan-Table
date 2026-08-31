@@ -8,11 +8,11 @@ export const aiAssistantRequestSchema = z.object({
 
 export const aiAssistantRecommendationSchema = z.object({
   taskId: z.string().trim().min(1),
-  taskNumber: z.number().int().nonnegative(),
-  title: z.string().trim().min(1).max(180),
-  column: z.string().trim().min(1).max(120),
-  priority: z.nativeEnum(Priority),
-  deadline: z.string().trim().max(64).nullable().default(null),
+  taskNumber: z.number().int().nonnegative().optional().default(0),
+  title: z.string().trim().max(180).optional().default(""),
+  column: z.string().trim().max(120).optional().default(""),
+  priority: z.nativeEnum(Priority).optional().default(Priority.MEDIUM),
+  deadline: z.string().trim().max(64).nullable().optional().default(null),
   reason: z.string().trim().max(240).default(""),
 });
 

@@ -1,8 +1,9 @@
 import { Prisma } from "@prisma/client";
 import { requireVerifiedUser } from "@/lib/auth";
 import { accessibleBoardWhere } from "@/lib/board-access";
-import { aiAssistantRequestSchema, aiAssistantResponseSchema } from "@/lib/ai-assistant";
+import { aiAssistantRecommendationSchema, aiAssistantRequestSchema, aiAssistantResponseSchema } from "@/lib/ai-assistant";
 import { deepSeekModel, isAiTaskDraftEnabled } from "@/lib/ai-task-draft";
+import { parseAiJson, stripAiWrappers } from "@/lib/ai-json";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
@@ -15,6 +16,7 @@ const assistantSystemPrompt = [
   "Помогай расставить приоритеты, найти просроченные задачи и объяснить текущую загрузку.",
   "Если вопрос просит выбрать, что взять в работу, добавь 2–5 подходящих задач из контекста в recommendations; если выбор задач не нужен, верни пустой массив.",
   "В recommendations используй только реальные taskId из контекста, максимум 6 элементов, и кратко объясни reason.",
+  "recommendations — только массив объектов задач; текстовые советы и пояснения пиши в answer, а не отдельными строками в recommendations.",
   "Верни только JSON вида {\"answer\":\"...\",\"recommendations\":[{\"taskId\":\"...\",\"taskNumber\":123,\"title\":\"...\",\"column\":\"...\",\"priority\":\"HIGH\",\"deadline\":null,\"reason\":\"...\"}]} без markdown-обёртки.",
 ].join("\n");
 
@@ -99,18 +101,21 @@ export async function POST(request: Request) {
     const content = payload?.choices?.[0]?.message?.content;
     if (typeof content !== "string") return fail("DeepSeek вернул пустой ответ", 502);
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      return fail("ИИ вернул некорректный ответ. Попробуйте ещё раз.", 502);
-    }
+    const parsed = parseAiJson(content);
+    const parsedObject = isRecord(parsed) ? parsed : null;
+    const answerCandidate = parsedObject ? firstString(parsedObject, ["answer", "response", "message", "text"]) : stripAiWrappers(content);
+    const answerResult = aiAssistantResponseSchema.shape.answer.safeParse(answerCandidate);
+    if (!answerResult.success) return fail("ИИ вернул пустой ответ. Попробуйте ещё раз.", 502);
 
-    const result = aiAssistantResponseSchema.safeParse(parsed);
-    if (!result.success) return fail("ИИ вернул неполный ответ. Попробуйте уточнить вопрос.", 502);
+    const recommendationCandidates = parsedObject && Array.isArray(parsedObject.recommendations) ? parsedObject.recommendations : [];
+    const parsedRecommendations = recommendationCandidates.flatMap((candidate) => {
+      if (!isRecord(candidate)) return [];
+      const recommendation = aiAssistantRecommendationSchema.safeParse(candidate);
+      return recommendation.success ? [recommendation.data] : [];
+    });
     const taskById = new Map(board.columns.flatMap((column) => column.tasks).map((task) => [task.id, task]));
     const columnByTaskId = new Map(board.columns.flatMap((column) => column.tasks.map((task) => [task.id, column.name])));
-    const recommendations = result.data.recommendations.flatMap((recommendation) => {
+    const recommendations = parsedRecommendations.flatMap((recommendation) => {
       const task = taskById.get(recommendation.taskId);
       if (!task) return [];
       return [{
@@ -122,7 +127,7 @@ export async function POST(request: Request) {
         deadline: task.deadline?.toISOString() ?? null,
       }];
     });
-    return ok({ answer: result.data.answer, recommendations });
+    return ok({ answer: answerResult.data, recommendations });
   } catch (error) {
     if (error instanceof DOMException && (error.name === "TimeoutError" || error.name === "AbortError")) {
       return fail("ИИ не ответил вовремя. Попробуйте ещё раз.", 504);
@@ -133,4 +138,15 @@ export async function POST(request: Request) {
 
 function uniqueNames(names: string[]) {
   return [...new Set(names.map((name) => name.trim()).filter(Boolean))];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function firstString(value: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    if (typeof value[key] === "string" && value[key].trim()) return value[key];
+  }
+  return null;
 }

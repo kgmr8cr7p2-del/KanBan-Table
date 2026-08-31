@@ -2,6 +2,7 @@ import { Priority } from "@prisma/client";
 import { requireVerifiedUser } from "@/lib/auth";
 import { accessibleBoardWhere } from "@/lib/board-access";
 import { aiTaskDraftRequestSchema, aiTaskDraftSchema, deepSeekModel, isAiTaskDraftEnabled } from "@/lib/ai-task-draft";
+import { parseAiJson } from "@/lib/ai-json";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 
@@ -97,12 +98,8 @@ export async function POST(request: Request) {
     const content = payload?.choices?.[0]?.message?.content;
     if (typeof content !== "string") return fail("DeepSeek вернул пустой ответ", 502);
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      return fail("ИИ вернул некорректный черновик. Попробуйте ещё раз.", 502);
-    }
+    const parsed = parseAiJson(content);
+    if (parsed === null) return fail("ИИ вернул некорректный черновик. Попробуйте ещё раз.", 502);
 
     const parsedDraft = aiTaskDraftSchema.safeParse(parsed);
     if (!parsedDraft.success) return fail("ИИ вернул неполный черновик. Попробуйте уточнить описание.", 502);
