@@ -2526,7 +2526,7 @@ html {
   }
 }
 
-@container board-overview (max-width: 70rem) {
+@container board-workspace (max-width: 70rem) {
   :root[data-interface-mode="new"] .new-board-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-areas:
@@ -2537,7 +2537,7 @@ html {
   }
 }
 
-@container board-overview (max-width: 44rem) {
+@container board-workspace (max-width: 44rem) {
   :root[data-interface-mode="new"] .new-board-overview {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: "hero" "active" "done" "due" "progress";
@@ -2960,4 +2960,110 @@ html {
 
 :root[data-interface-mode="new"] .button:not(.secondary):not(.ghost):hover:not(:disabled) {
   background: var(--brand-strong);
+}
+
+/* New-mode cleanup: let the board lead with the work itself. The overview
+   card was useful as a landing hero, but it pushes the actual kanban below
+   the fold; stats and progress remain as the compact supporting context. */
+:root[data-interface-mode="new"] .new-board-hero-card {
+  display: none;
+}
+
+:root[data-interface-mode="new"] .new-board-overview {
+  grid-template-columns: repeat(3, minmax(10rem, 1fr));
+  grid-template-areas:
+    "active done due"
+    "progress progress progress";
+}
+
+/* Keep the board header on a strict baseline: identity and views belong to
+   the left group, actions stay on the right, and secondary filters line up
+   from the same content edge instead of floating in the middle. */
+:root[data-interface-mode="new"] .board-head {
+  grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
+  grid-template-areas:
+    "identity views . create"
+    "planned quick . sort";
+  align-items: center;
+  column-gap: clamp(.55rem, 1vw, 1rem);
+  row-gap: .7rem;
+}
+
+:root[data-interface-mode="new"] .board-head .board-copy {
+  align-items: center;
+  gap: clamp(.6rem, 1vw, .85rem);
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .board-head h1,
+:root[data-interface-mode="new"] .board-head .board-switcher,
+:root[data-interface-mode="new"] .board-view-tabs-inline,
+:root[data-interface-mode="new"] .board-create-actions {
+  align-self: center;
+}
+
+:root[data-interface-mode="new"] .board-view-tabs-inline {
+  justify-self: start;
+}
+
+:root[data-interface-mode="new"] .board-planned-toggle,
+:root[data-interface-mode="new"] .board-quick-filters {
+  justify-self: start;
+}
+
+:root[data-interface-mode="new"] .board-sort-control,
+:root[data-interface-mode="new"] .board-create-actions {
+  justify-self: end;
+}
+
+/* One-row mode is reserved for genuinely wide content containers, not for a
+   zoomed laptop where controls would become visually cramped. */
+@container board-workspace (min-width: 96rem) {
+  :root[data-interface-mode="new"] .board-head {
+    grid-template-columns: max-content max-content minmax(1rem, 1fr) max-content max-content max-content max-content;
+    grid-template-areas: "identity views . planned quick sort create";
+  }
+}
+
+@container board-workspace (max-width: 68rem) {
+  :root[data-interface-mode="new"] .board-head {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    grid-template-areas:
+      "identity create"
+      "views views"
+      "planned quick"
+      "sort sort";
+  }
+}
+
+@container board-workspace (max-width: 50rem) {
+  :root[data-interface-mode="new"] .board-head {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "identity" "create" "views" "planned" "quick" "sort";
+  }
+
+  :root[data-interface-mode="new"] .board-planned-toggle,
+  :root[data-interface-mode="new"] .board-quick-filters,
+  :root[data-interface-mode="new"] .board-sort-control,
+  :root[data-interface-mode="new"] .board-create-actions {
+    inline-size: 100%;
+    justify-self: stretch;
+  }
+}
+
+@container board-overview (max-width: 70rem) {
+  :root[data-interface-mode="new"] .new-board-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "active done"
+      "due due"
+      "progress progress";
+  }
+}
+
+@container board-overview (max-width: 44rem) {
+  :root[data-interface-mode="new"] .new-board-overview {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "active" "done" "due" "progress";
+  }
 }
