@@ -15,7 +15,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       <aside className="sidebar">
         <div className="brand">
           <span className="brand-mark">
-            <Image className="brand-icon-image" src="/taskora-icon.png" width={32} height={32} alt="" />
+            <Image className="brand-icon-image" src="/taskora-icon-v2.png" width={32} height={32} alt="" />
           </span>
           <span>Taskora</span>
         </div>

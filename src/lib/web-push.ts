@@ -34,8 +34,8 @@ export async function sendWebPushNotification(userId: string, notice: PushNotice
     body: notice.body,
     category: browserPushCategory(notice),
     href: notice.href || "/notifications",
-    icon: "/taskora-icon.png",
-    badge: "/taskora-icon.png",
+    icon: "/taskora-icon-v2.png",
+    badge: "/taskora-icon-v2.png",
     timestamp: Date.now(),
   });
   const expiredEndpoints: string[] = [];

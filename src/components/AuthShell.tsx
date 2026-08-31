@@ -9,7 +9,7 @@ export function AuthShell({ mode, nextPath }: { mode: "login" | "register"; next
     <main className={`auth-page auth-page-${mode}`}>
       <section className="auth-shell" aria-label={isLogin ? "Вход в Taskora" : "Регистрация в Taskora"}>
         <header className="auth-brand">
-          <Image className="auth-brand-mark" src="/taskora-icon.png" width={42} height={42} alt="" priority />
+          <Image className="auth-brand-mark" src="/taskora-icon-v2.png" width={42} height={42} alt="" priority />
           <span className="auth-brand-name">Taskora</span>
         </header>
 

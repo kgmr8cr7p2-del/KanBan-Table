@@ -23,7 +23,7 @@ export const aiTaskDraftSchema = z.object({
 export type AiTaskDraft = z.infer<typeof aiTaskDraftSchema>;
 
 export function isAiTaskDraftEnabled() {
-  return process.env.AI_PROVIDER === "deepseek" && Boolean(process.env.DEEPSEEK_API_KEY);
+  return process.env.AI_PROVIDER?.trim().toLowerCase() === "deepseek" && Boolean(process.env.DEEPSEEK_API_KEY?.trim());
 }
 
 export function deepSeekModel() {

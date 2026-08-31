@@ -8,7 +8,7 @@ import "./redesign.css";
 export const metadata: Metadata = {
   title: "Taskora — управление работой команды",
   description: "Задачи, чаты, статусы и отчёты команды в одном рабочем пространстве.",
-  icons: { icon: "/taskora-icon.png" },
+  icons: { icon: "/taskora-icon-v2.png" },
 };
 
 export const viewport: Viewport = {

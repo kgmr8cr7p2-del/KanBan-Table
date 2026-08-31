@@ -85,7 +85,10 @@ export async function POST(request: Request) {
         response_format: { type: "json_object" },
         thinking: { type: "disabled" },
         temperature: 0.2,
+        max_tokens: 1400,
       }),
+      signal: AbortSignal.timeout(30_000),
+      cache: "no-store",
     });
 
     const payload = await response.json().catch(() => null);
@@ -94,8 +97,17 @@ export async function POST(request: Request) {
     const content = payload?.choices?.[0]?.message?.content;
     if (typeof content !== "string") return fail("DeepSeek вернул пустой ответ", 502);
 
-    const parsed = JSON.parse(content);
-    const draft = sanitizeDraft(aiTaskDraftSchema.parse(parsed), {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      return fail("ИИ вернул некорректный черновик. Попробуйте ещё раз.", 502);
+    }
+
+    const parsedDraft = aiTaskDraftSchema.safeParse(parsed);
+    if (!parsedDraft.success) return fail("ИИ вернул неполный черновик. Попробуйте уточнить описание.", 502);
+
+    const draft = sanitizeDraft(parsedDraft.data, {
       userIds: new Set(users.map((item) => item.id)),
       oilDepotIds: new Set(oilDepots.map((item) => item.id)),
       existingTags: new Set(tags.map((item) => item.name.toLocaleLowerCase("ru-RU"))),
@@ -103,6 +115,9 @@ export async function POST(request: Request) {
 
     return ok({ draft });
   } catch (error) {
+    if (error instanceof DOMException && (error.name === "TimeoutError" || error.name === "AbortError")) {
+      return fail("ИИ не ответил вовремя. Попробуйте ещё раз.", 504);
+    }
     return handleRouteError(error);
   }
 }

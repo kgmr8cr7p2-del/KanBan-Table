@@ -8,8 +8,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "Taskora";
   const options = {
     body: payload.body || "Новое уведомление",
-    icon: payload.icon || "/taskora-icon.png",
-    badge: payload.badge || "/taskora-icon.png",
+    icon: payload.icon || "/taskora-icon-v2.png",
+    badge: payload.badge || "/taskora-icon-v2.png",
     tag: payload.id ? `taskora-${payload.id}` : undefined,
     timestamp: Number(payload.timestamp) || Date.now(),
     lang: "ru",

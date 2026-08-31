@@ -36,6 +36,7 @@ const emptyFilters = { q: "", priority: "", assignee: "", deadline: "", oilDepot
 type Filters = typeof emptyFilters;
 type ViewMode = "board" | "list" | "timeline" | "mine";
 type SortMode = "priority-deadline" | "deadline-priority" | "position";
+type AiAssistantMode = "draft" | "ask";
 
 const sortLabels: Record<SortMode, string> = {
   "priority-deadline": "Приоритет → дедлайн",
@@ -1304,27 +1305,45 @@ function TaskActivityTimeline({ logs }: { logs: any[] }) {
 }
 
 function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft: (draft: AiTaskDraft) => void }) {
+  const [mode, setMode] = useState<AiAssistantMode>("draft");
   const [prompt, setPrompt] = useState("");
   const [draft, setDraft] = useState<AiTaskDraft | null>(null);
+  const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  function selectMode(nextMode: AiAssistantMode) {
+    setMode(nextMode);
+    setPrompt("");
+    setDraft(null);
+    setAnswer("");
+    setError("");
+  }
 
   async function buildDraft(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
     setDraft(null);
+    setAnswer("");
     try {
-      const response = await fetch("/api/ai/task-draft", {
+      const isDraftMode = mode === "draft";
+      const response = await fetch(isDraftMode ? "/api/ai/task-draft" : "/api/ai/assistant", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ boardId: props.view.board.id, prompt }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error ?? "Не удалось собрать черновик");
-      setDraft(data.draft);
+      if (!response.ok) throw new Error(data.error ?? (isDraftMode ? "Не удалось собрать черновик" : "Не удалось получить ответ"));
+      if (isDraftMode) {
+        setDraft(data.draft);
+      } else if (typeof data.answer === "string" && data.answer.trim()) {
+        setAnswer(data.answer.trim());
+      } else {
+        throw new Error("ИИ вернул пустой ответ");
+      }
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Не удалось собрать черновик");
+      setError(requestError instanceof Error ? requestError.message : mode === "draft" ? "Не удалось собрать черновик" : "Не удалось получить ответ");
     } finally {
       setLoading(false);
     }
@@ -1342,8 +1361,8 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
         <div>
           <h2 id="create-task-title">ИИ-помощник</h2>
           <div className="modal-badges compact">
-            <span className="modal-badge badge-purple"><Sparkles size={15} />Черновик задачи</span>
-            <span className="modal-badge badge-purple-soft">DeepSeek</span>
+            <span className="modal-badge badge-purple"><Sparkles size={15} />{mode === "draft" ? "Черновик задачи" : "Вопрос по доске"}</span>
+            <span className="modal-badge badge-purple-soft">DeepSeek V4 Flash</span>
           </div>
         </div>
         <button className="button icon secondary modal-close" type="button" title="Закрыть" onClick={props.onClose}>
@@ -1351,38 +1370,58 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
         </button>
       </header>
 
+      <div className="ai-assistant-mode" role="tablist" aria-label="Режим ИИ-помощника">
+        <button type="button" role="tab" aria-selected={mode === "draft"} onClick={() => selectMode("draft")}>Создать задачу</button>
+        <button type="button" role="tab" aria-selected={mode === "ask"} onClick={() => selectMode("ask")}>Спросить о доске</button>
+      </div>
+
       <form className="ai-task-form" onSubmit={buildDraft}>
         <label className="field">
-          <span className="label">Опишите проблему или задачу</span>
+          <span className="label">{mode === "draft" ? "Опишите проблему или задачу" : "Задайте вопрос по текущей доске"}</span>
           <textarea
             className="textarea ai-task-prompt"
             value={prompt}
             onChange={(event) => setPrompt(event.currentTarget.value)}
-            placeholder="Например: нужно проверить герметичность трубопровода на Речном терминале, высокий приоритет, ответственный Илья"
-            maxLength={4000}
+            placeholder={mode === "draft" ? "Например: нужно проверить герметичность трубопровода на Речном терминале, высокий приоритет, ответственный Илья" : "Например: какие задачи просрочены и что взять в работу сегодня?"}
+            maxLength={mode === "draft" ? 4000 : 2400}
             required
             autoFocus
           />
         </label>
         <div className="ai-task-actions">
           <button className="button secondary" type="button" onClick={props.onClose}>Отмена</button>
-          <button className="button" disabled={loading || prompt.trim().length < 8}>
+          <button className="button" disabled={loading || prompt.trim().length < (mode === "draft" ? 8 : 3)}>
             <Sparkles size={17} />
-            {loading ? "Собираю..." : "Собрать черновик"}
+            {loading ? (mode === "draft" ? "Собираю..." : "Анализирую...") : (mode === "draft" ? "Собрать черновик" : "Спросить ИИ")}
           </button>
         </div>
       </form>
 
       {error ? <p className="task-modal-error ai-task-error" role="alert">{error}</p> : null}
 
-      {!draft ? (
+      {mode === "ask" && !answer && !loading ? (
+        <div className="ai-question-suggestions" aria-label="Примеры вопросов">
+          <button type="button" onClick={() => setPrompt("Какие задачи просрочены?")}>Просроченные</button>
+          <button type="button" onClick={() => setPrompt("Что взять в работу сегодня?")}>Что взять сегодня</button>
+          <button type="button" onClick={() => setPrompt("Где сейчас нет исполнителя?")}>Без исполнителя</button>
+        </div>
+      ) : null}
+
+      {mode === "ask" && answer ? (
+        <article className="ai-answer-card" aria-live="polite">
+          <header><span>Ответ помощника</span><span className="status-dot" aria-hidden="true" /></header>
+          <p className="ai-answer-copy">{answer}</p>
+        </article>
+      ) : null}
+
+      {mode === "draft" && !draft ? (
         <div className="ai-task-empty">
           <span><Flag size={15} />Приоритет</span>
           <span><Building2 size={15} />Нефтебаза</span>
           <span><UserRound size={15} />Исполнители</span>
           <span><CheckSquare size={15} />Чеклист</span>
         </div>
-      ) : (
+      ) : mode === "draft" && draft ? (
         <article className="ai-draft-card">
           <header>
             <span>Предложение</span>
@@ -1404,7 +1443,7 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
             Заполнить форму
           </button>
         </article>
-      )}
+      ) : null}
     </section>
   );
 }

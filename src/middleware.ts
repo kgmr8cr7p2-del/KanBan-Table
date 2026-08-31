@@ -16,6 +16,7 @@ const rateLimits: readonly RateLimitRule[] = [
   { pattern: /^\/api\/important-files$/, methods: ["POST"], windowMs: 10 * 60_000, max: 20 },
   { pattern: /^\/api\/tasks\/[^/]+\/files$/, methods: ["POST"], windowMs: 10 * 60_000, max: 20 },
   { pattern: /^\/api\/messages$/, methods: ["POST"], windowMs: 10 * 60_000, max: 60 },
+  { pattern: /^\/api\/ai\/(?:task-draft|assistant)$/, methods: ["POST"], windowMs: 10 * 60_000, max: 12 },
   { pattern: /^\/api\/profile\/avatar$/, methods: ["POST"], windowMs: 10 * 60_000, max: 20 },
 ];
 

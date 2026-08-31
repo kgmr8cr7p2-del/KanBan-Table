@@ -658,6 +658,64 @@ body {
   padding: .35rem 1.25rem 0;
 }
 
+.ai-assistant-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .35rem;
+  margin: .1rem 1.25rem 0;
+  padding: .25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+}
+
+.ai-assistant-mode button {
+  min-block-size: 2.25rem;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.ai-assistant-mode button[aria-selected="true"] {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 1px 2px color-mix(in oklch, var(--text) 10%, transparent);
+}
+
+.ai-assistant-mode button:focus-visible,
+.ai-question-suggestions button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.ai-question-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin: .05rem 1.25rem 0;
+}
+
+.ai-question-suggestions button {
+  min-block-size: 2.15rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 760;
+  padding: .45rem .7rem;
+}
+
+.ai-question-suggestions button:hover {
+  border-color: var(--brand);
+  background: var(--panel);
+}
+
 .ai-task-form .field {
   gap: .45rem;
 }
@@ -733,6 +791,37 @@ body {
   gap: .85rem;
   margin: .15rem 1.25rem 1.25rem;
   padding: .95rem;
+}
+
+.ai-answer-card {
+  display: grid;
+  gap: .7rem;
+  margin: .15rem 1.25rem 1.25rem;
+  padding: .95rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-2);
+}
+
+.ai-answer-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  color: var(--brand-strong);
+  font-size: .72rem;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.ai-answer-copy {
+  margin: 0;
+  color: var(--text);
+  font-size: .86rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  text-wrap: pretty;
 }
 
 .ai-draft-card header {
@@ -814,6 +903,12 @@ body {
 
   .board-create-actions .button {
     justify-content: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .ai-assistant-mode {
+    grid-template-columns: 1fr;
   }
 }
 
