@@ -3163,6 +3163,24 @@ html {
   }
 }
 
+/* Keep the AI answer mounted while a recommended task is open. The task
+   drawer takes focus and the assistant returns underneath it without losing
+   the question, answer, or remaining recommendations. */
+.ai-assistant-backdrop.is-suspended {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.task-modal-return-ai {
+  min-block-size: 2.35rem;
+  white-space: nowrap;
+}
+
+.task-modal-return-ai svg {
+  flex: 0 0 auto;
+}
+
 /* On a wide board, keep the two high-use filters in the same action row as
    the AI assistant. The sort control remains on its own edge-aligned row so
    the primary actions stay visually grouped without squeezing the tabs. */
@@ -3202,6 +3220,91 @@ html {
   letter-spacing: -.045em;
 }
 
+.files-head-copy {
+  min-inline-size: 0;
+}
+
+.files-head-copy p {
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.45;
+}
+
+.files-head-summary {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
+
+.files-head-summary > span {
+  display: grid;
+  gap: .08rem;
+}
+
+.files-head-summary strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.files-head-summary small {
+  color: var(--muted);
+  font-size: .68rem;
+}
+
+:root[data-interface-mode="new"] .files-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "copy summary"
+    "copy search";
+  align-items: end;
+}
+
+:root[data-interface-mode="new"] .files-head-copy {
+  display: grid;
+  min-inline-size: 0;
+  align-content: end;
+  gap: .35rem;
+  grid-area: copy;
+}
+
+:root[data-interface-mode="new"] .files-head-copy p {
+  max-inline-size: 42rem;
+  color: var(--muted);
+  font-size: .9rem;
+  line-height: 1.5;
+}
+
+:root[data-interface-mode="new"] .files-head-summary {
+  display: flex;
+  grid-area: summary;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .5rem;
+}
+
+:root[data-interface-mode="new"] .files-head-summary > span {
+  display: grid;
+  min-inline-size: 5.4rem;
+  gap: .08rem;
+  border-inline-start: 1px solid var(--border);
+  padding-inline-start: .7rem;
+}
+
+:root[data-interface-mode="new"] .files-head-summary strong {
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-interface-mode="new"] .files-head-summary small {
+  color: var(--muted);
+  font-size: .68rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
 :root[data-interface-mode="new"] .files-head .settings-page-kicker,
 :root[data-interface-mode="new"] .chats-page-head .settings-page-kicker {
   color: var(--brand-strong);
@@ -3209,8 +3312,10 @@ html {
 
 :root[data-interface-mode="new"] .files-search {
   display: grid;
+  grid-area: search;
   grid-template-columns: minmax(12rem, 1fr) minmax(10rem, .7fr) auto;
   inline-size: min(100%, 42rem);
+  justify-self: end;
   align-items: end;
   gap: .55rem;
 }
@@ -3243,6 +3348,85 @@ html {
   gap: .4rem;
   padding: .7rem;
   background: var(--panel-2);
+}
+
+:root[data-interface-mode="new"] .files-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  border-block-end: 1px solid var(--border);
+  padding: .25rem .35rem .75rem;
+}
+
+:root[data-interface-mode="new"] .files-list-head > div {
+  display: grid;
+  min-inline-size: 0;
+  gap: .18rem;
+}
+
+:root[data-interface-mode="new"] .files-list-head span {
+  color: var(--brand-strong);
+  font-size: .64rem;
+  font-weight: 850;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+:root[data-interface-mode="new"] .files-list-head strong {
+  color: var(--text);
+  font-size: .96rem;
+}
+
+:root[data-interface-mode="new"] .files-list-head > b {
+  display: grid;
+  min-inline-size: 1.8rem;
+  min-block-size: 1.8rem;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent-blue) 22%, var(--border));
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--brand-strong);
+  font-size: .72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-interface-mode="new"] .files-list-status {
+  margin: .4rem .35rem;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+:root[data-interface-mode="new"] .files-empty-state {
+  display: grid;
+  justify-items: start;
+  gap: .45rem;
+  margin: .35rem;
+  border: 1px dashed color-mix(in srgb, var(--accent-blue) 28%, var(--border));
+  border-radius: 14px;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--accent-blue) 4%, var(--panel));
+}
+
+:root[data-interface-mode="new"] .files-empty-state > span {
+  display: grid;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .files-empty-state strong {
+  color: var(--text);
+  font-size: .9rem;
+}
+
+:root[data-interface-mode="new"] .files-empty-state p {
+  color: var(--muted);
+  font-size: .78rem;
+  line-height: 1.45;
 }
 
 :root[data-interface-mode="new"] .important-file-row {
@@ -3291,6 +3475,46 @@ html {
   color: var(--text);
   font-size: clamp(1.15rem, 2vw, 1.45rem);
   letter-spacing: -.025em;
+}
+
+:root[data-interface-mode="new"] .files-preview-title {
+  display: grid;
+  min-inline-size: 0;
+  gap: .3rem;
+}
+
+:root[data-interface-mode="new"] .files-preview-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: .32rem;
+  color: var(--brand-strong);
+  font-size: .65rem;
+  font-weight: 850;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+:root[data-interface-mode="new"] .files-preview-empty-start {
+  display: grid;
+  min-block-size: 15rem;
+  place-content: center;
+  justify-items: center;
+  gap: .4rem;
+  text-align: center;
+}
+
+:root[data-interface-mode="new"] .files-preview-empty-start > svg {
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .files-preview-empty-start strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+:root[data-interface-mode="new"] .files-preview-empty-start span {
+  color: var(--muted);
+  font-size: .82rem;
 }
 
 :root[data-interface-mode="new"] .files-description,
@@ -3747,7 +3971,20 @@ html {
 
 @media (width <= 760px) {
   :root[data-interface-mode="new"] .files-head {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "copy"
+      "summary"
+      "search";
     align-items: stretch;
+  }
+
+  :root[data-interface-mode="new"] .files-head-summary {
+    justify-content: flex-start;
+  }
+
+  :root[data-interface-mode="new"] .files-search {
+    justify-self: stretch;
   }
 
   :root[data-interface-mode="new"] .files-search {

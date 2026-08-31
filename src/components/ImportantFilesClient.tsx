@@ -124,9 +124,14 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
   return (
     <div className="content important-files-page">
       <header className="files-head">
-        <div>
+        <div className="files-head-copy">
           <span className="settings-page-kicker"><ShieldCheck size={17} /> Документы команды</span>
           <h1>Документы</h1>
+          <p>Регламенты, инструкции и шаблоны — в одной библиотеке с быстрым предпросмотром.</p>
+        </div>
+        <div className="files-head-summary" aria-label="Сводка документов">
+          <span><strong>{files.length}</strong><small>найдено</small></span>
+          <span><strong>{categories.length}</strong><small>категорий</small></span>
         </div>
         <form className="files-search" onSubmit={submitSearch}>
           <label className="field search compact-field">
@@ -172,8 +177,21 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
 
       <section className="files-workspace">
         <aside className="files-list-panel panel" aria-label="Список файлов">
-          {loading ? <p className="muted">Загрузка...</p> : null}
-          {!loading && !files.length ? <p className="muted">Файлов пока нет.</p> : null}
+          <header className="files-list-head">
+            <div>
+              <span>Библиотека</span>
+              <strong>Все документы</strong>
+            </div>
+            <b>{loading ? "…" : files.length}</b>
+          </header>
+          {loading ? <p className="files-list-status" role="status">Загрузка библиотеки...</p> : null}
+          {!loading && !files.length ? (
+            <div className="files-empty-state">
+              <span><FileText size={20} aria-hidden="true" /></span>
+              <strong>{query || category ? "Ничего не найдено" : "Документов пока нет"}</strong>
+              <p>{query || category ? "Измените запрос или сбросьте фильтр." : "Загрузите первый файл, чтобы команда могла быстро его найти."}</p>
+            </div>
+          ) : null}
           {files.map((file) => (
             <button className={`important-file-row ${selected?.id === file.id ? "is-active" : ""}`} type="button" aria-pressed={selected?.id === file.id} key={file.id} onClick={() => setSelectedId(file.id)}>
               <span className="important-file-icon">{iconFor(file.originalName)}</span>
@@ -189,7 +207,8 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
           {selected ? (
             <>
               <div className="files-preview-head">
-                <div>
+                <div className="files-preview-title">
+                  <span className="files-preview-kicker"><FileText size={14} aria-hidden="true" /> Предпросмотр</span>
                   <h2>{selected.title}</h2>
                   <p className="muted">{selected.originalName} · {formatBytes(selected.size)} · загрузил {selected.uploadedBy.name}</p>
                 </div>
@@ -209,7 +228,11 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
               <PreviewPane preview={preview} loading={previewLoading} />
             </>
           ) : (
-            <p className="muted">Выберите файл слева.</p>
+            <div className="files-preview-empty files-preview-empty-start" role="status">
+              <FileText size={22} aria-hidden="true" />
+              <strong>Выберите документ</strong>
+              <span>Здесь появится его описание и содержимое.</span>
+            </div>
           )}
         </main>
       </section>

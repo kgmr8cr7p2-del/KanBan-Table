@@ -58,6 +58,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [filters, setFilters] = useState<Filters>(readFiltersFromUrl);
   const filtersRef = useRef(filters);
   const [selected, setSelected] = useState<Task | null>(null);
+  const [returnToAi, setReturnToAi] = useState(false);
   const [taskFullscreen, setTaskFullscreen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
@@ -120,22 +121,39 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   useEffect(() => {
     if (createOpen) setPresenceActivity("Создаёт новую задачу");
+    else if (activeTaskId) setPresenceActivity(`Работает с задачей #${activeTaskNumber}`);
     else if (aiAssistantOpen) setPresenceActivity("Собирает черновик задачи");
-    else if (activeTask) setPresenceActivity(`Работает с задачей #${activeTask.taskNumber}`);
     else setPresenceActivity(null);
     return () => setPresenceActivity(null);
-  }, [createOpen, aiAssistantOpen, activeTask?.id, activeTask?.taskNumber]);
+  }, [createOpen, aiAssistantOpen, activeTaskId, activeTaskNumber]);
+
+  useEffect(() => {
+    if (!activeTaskId) return;
+    const frame = window.requestAnimationFrame(() => document.getElementById("task-dialog-title")?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeTaskId]);
 
   function openTask(task: Task) {
     setError("");
     setCreateOpen(false);
+    setAiAssistantOpen(false);
+    setReturnToAi(false);
     setTaskFullscreen(false);
+    setSelected(task);
+  }
+
+  function openTaskFromAi(task: Task) {
+    setError("");
+    setCreateOpen(false);
+    setTaskFullscreen(false);
+    setReturnToAi(true);
     setSelected(task);
   }
 
   function openCreateTask() {
     setError("");
     setSelected(null);
+    setReturnToAi(false);
     setTaskFullscreen(false);
     setAiAssistantOpen(false);
     setCreateDraft(null);
@@ -145,6 +163,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   function openAiAssistant() {
     setError("");
     setSelected(null);
+    setReturnToAi(false);
     setTaskFullscreen(false);
     setCreateOpen(false);
     setCreateDraft(null);
@@ -154,6 +173,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   function applyAiDraft(draft: AiTaskDraft) {
     setError("");
     setSelected(null);
+    setReturnToAi(false);
     setTaskFullscreen(false);
     setCreateDraft(draft);
     setAiAssistantOpen(false);
@@ -161,15 +181,22 @@ export function BoardClient({ initialView }: { initialView: View }) {
   }
 
   function closeTask() {
+    const shouldReturnToAi = returnToAi;
     setError("");
     setTaskFullscreen(false);
+    setReturnToAi(false);
     setSelected(null);
+    if (shouldReturnToAi) {
+      setAiAssistantOpen(true);
+      window.requestAnimationFrame(() => document.getElementById("create-task-title")?.focus());
+    }
   }
 
   function closeCreateFlow() {
     setError("");
     setCreateOpen(false);
     setAiAssistantOpen(false);
+    setReturnToAi(false);
     setCreateDraft(null);
   }
 
@@ -208,6 +235,8 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   function switchBoard(boardId: string) {
     setSelected(null);
+    setAiAssistantOpen(false);
+    setReturnToAi(false);
     setTaskFullscreen(false);
     setCreateOpen(false);
     setError("");
@@ -235,16 +264,26 @@ export function BoardClient({ initialView }: { initialView: View }) {
     if (!createOpen && !aiAssistantOpen && !selected) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
+      if (selected && returnToAi) {
+        setError("");
+        setTaskFullscreen(false);
+        setReturnToAi(false);
+        setSelected(null);
+        setAiAssistantOpen(true);
+        window.requestAnimationFrame(() => document.getElementById("create-task-title")?.focus());
+        return;
+      }
       setError("");
       setCreateOpen(false);
       setAiAssistantOpen(false);
       setCreateDraft(null);
+      setReturnToAi(false);
       setTaskFullscreen(false);
       setSelected(null);
     };
     document.addEventListener("keydown", closeOnEscape);
     return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [createOpen, aiAssistantOpen, selected]);
+  }, [createOpen, aiAssistantOpen, selected, returnToAi]);
 
   useEffect(() => {
     document.documentElement.dataset.boardFocus = focusMode ? "true" : "false";
@@ -338,6 +377,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
       const response = await fetch(`/api/tasks/${activeTask.id}/archive`, { method: "POST" });
       if (response.ok) {
         setSelected(null);
+        setReturnToAi(false);
         setTaskFullscreen(false);
         await refresh();
       } else {
@@ -355,6 +395,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
       const response = await fetch(`/api/tasks/${activeTask.id}`, { method: "DELETE" });
       if (response.ok) {
         setSelected(null);
+        setReturnToAi(false);
         setTaskFullscreen(false);
         await refresh();
       } else {
@@ -780,6 +821,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
             fullscreen={taskFullscreen}
             onToggleFullscreen={() => setTaskFullscreen((current) => !current)}
             onClose={closeTask}
+            onReturnToAi={returnToAi ? closeTask : undefined}
             onSave={saveTask}
             onArchive={() => setConfirmation("archive")}
             onDelete={() => setConfirmation("delete")}
@@ -795,10 +837,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
         </aside>
       ) : null}
       {createOpen || aiAssistantOpen ? (
-        <aside className="task-drawer-backdrop" aria-label="Создание задачи">
+        <aside
+          className={`task-drawer-backdrop ${aiAssistantOpen && activeTask ? "ai-assistant-backdrop is-suspended" : ""}`}
+          aria-label={aiAssistantOpen ? "ИИ-помощник" : "Создание задачи"}
+          aria-hidden={aiAssistantOpen && activeTask ? true : undefined}
+        >
           <div className="task-drawer t-panel-slide" data-open="true" role="dialog" aria-modal="false" aria-labelledby="create-task-title">
             {aiAssistantOpen ? (
-              <AiTaskAssistant view={view} onClose={closeCreateFlow} onApplyDraft={applyAiDraft} onOpenTask={openTask} />
+              <AiTaskAssistant view={view} onClose={closeCreateFlow} onApplyDraft={applyAiDraft} onOpenTask={openTaskFromAi} />
             ) : (
               <CreateTaskDialogV2 key={createDraft ? `ai-${createDraft.title}` : "manual"} view={view} draft={createDraft} error={error} onClose={closeCreateFlow} onCreate={createTask} />
             )}
@@ -1373,7 +1419,6 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
     .filter((item): item is { recommendation: AiTaskRecommendation; task: Task } => Boolean(item.task));
 
   function openRecommendedTask(task: Task) {
-    props.onClose();
     props.onOpenTask(task);
   }
 
@@ -1381,7 +1426,7 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
     <section className="task-modal-v2 ai-task-assistant">
       <header className="task-modal-v2-head">
         <div>
-          <h2 id="create-task-title">ИИ-помощник</h2>
+          <h2 id="create-task-title" tabIndex={-1}>ИИ-помощник</h2>
           <div className="modal-badges compact">
             <span className="modal-badge badge-purple"><Sparkles size={15} />{mode === "draft" ? "Черновик задачи" : "Вопрос по доске"}</span>
             <span className="modal-badge badge-purple-soft">DeepSeek V4 Flash</span>
@@ -1688,6 +1733,7 @@ function TaskDialogV2(props: {
   fullscreen: boolean;
   onToggleFullscreen: () => void;
   onClose: () => void;
+  onReturnToAi?: () => void;
   onSave: (formData: FormData) => void;
   onArchive: () => void;
   onDelete: () => void;
@@ -1710,7 +1756,7 @@ function TaskDialogV2(props: {
     <section className="task-modal-v2">
       <header className="task-modal-v2-head">
         <div>
-          <h2 id="task-dialog-title">
+          <h2 id="task-dialog-title" tabIndex={-1}>
             #{props.task.taskNumber} {props.task.title}
           </h2>
           <div className="modal-badges">
@@ -1720,6 +1766,12 @@ function TaskDialogV2(props: {
           </div>
         </div>
         <div className="task-modal-head-actions">
+          {props.onReturnToAi ? (
+            <button className="button secondary compact-button task-modal-return-ai" type="button" onClick={props.onReturnToAi}>
+              <Sparkles size={16} aria-hidden="true" />
+              Вернуться к ИИ
+            </button>
+          ) : null}
           <button
             className="button icon secondary modal-expand"
             type="button"
