@@ -2270,3 +2270,319 @@ html {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Fluid workspace sizing: layout decisions follow the available main column,
+   not a single device width. This keeps the bento mode usable at zoom, on
+   tablets, and inside split-screen windows. */
+:root[data-interface-mode="new"] .main {
+  container: taskora-main / inline-size;
+  inline-size: 100%;
+  max-inline-size: none;
+}
+
+:root[data-interface-mode="new"] .main:has(> .board-topbar) {
+  grid-template-rows: max-content minmax(0, 1fr);
+}
+
+:root[data-interface-mode="new"] .topbar.board-topbar {
+  align-self: start;
+  block-size: auto;
+  min-block-size: 0;
+  max-block-size: none;
+}
+
+:root[data-interface-mode="new"] .board-topbar .filters-live {
+  margin: 0;
+}
+
+:root[data-interface-mode="new"] .content {
+  inline-size: 100%;
+  max-inline-size: none;
+  box-sizing: border-box;
+  padding-inline: clamp(.75rem, 2.1vw, 2.5rem);
+}
+
+:root[data-interface-mode="new"] .board-content {
+  container: board-workspace / inline-size;
+}
+
+:root[data-interface-mode="new"] .board-head {
+  container: board-head / inline-size;
+}
+
+:root[data-interface-mode="new"] .new-board-overview {
+  container: board-overview / inline-size;
+}
+
+:root[data-interface-mode="new"] .board {
+  container: kanban-board / inline-size;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+@supports (width: 1cqi) {
+  :root[data-interface-mode="new"] .board {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, clamp(13.5rem, 18cqi, 21rem)), 1fr));
+  }
+}
+
+@media (width >= 1025px) {
+  :root[data-interface-mode="new"] .app {
+    grid-template-columns: clamp(13.5rem, 16vw, 18rem) minmax(0, 1fr);
+    gap: clamp(.75rem, 1.35vw, 1.5rem);
+    padding: clamp(.75rem, 1.5vw, 1.5rem);
+  }
+
+  :root[data-interface-mode="new"] .topbar.board-topbar {
+    container: board-toolbar / inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+    grid-template-areas:
+      "filters filters filters filters filters"
+      "sync . notify focus tv";
+    align-items: center;
+    gap: clamp(.35rem, .7vw, .7rem);
+    padding: clamp(.5rem, 1vw, .85rem) clamp(.75rem, 1.4vw, 1.25rem);
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-live {
+    display: grid;
+    grid-area: filters;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+    inline-size: 100%;
+    margin: 0;
+    align-items: stretch;
+    gap: clamp(.35rem, .7cqi, .7rem);
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-legacy,
+  :root[data-interface-mode="new"] .board-topbar > .spacer {
+    display: none;
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-live > .field,
+  :root[data-interface-mode="new"] .board-topbar .filters-live > .compact-select,
+  :root[data-interface-mode="new"] .board-topbar .filters-live > .reset-filter-button,
+  :root[data-interface-mode="new"] .board-topbar .filters-live .search-shell {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: none;
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-live .search-shell {
+    min-block-size: clamp(2.25rem, 3.2cqi, 2.75rem);
+  }
+
+  :root[data-interface-mode="new"] .board-topbar > .sync-pill {
+    grid-area: sync;
+    justify-self: start;
+  }
+
+  :root[data-interface-mode="new"] .board-topbar > .board-notification-control {
+    grid-area: notify;
+    justify-self: end;
+  }
+
+  :root[data-interface-mode="new"] .board-topbar > button.mobile-optional {
+    grid-area: focus;
+    justify-self: end;
+  }
+
+  :root[data-interface-mode="new"] .board-topbar > a[href="/board/tv"] {
+    grid-area: tv;
+    justify-self: end;
+  }
+}
+
+@media (width <= 1024px) and (width > 960px) {
+  :root[data-interface-mode="new"] .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  :root[data-interface-mode="new"] .topbar.board-topbar {
+    container: board-toolbar / inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-areas:
+      "filters filters filters filters"
+      "sync notify focus tv";
+    align-items: center;
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-live {
+    display: grid;
+    grid-area: filters;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    inline-size: 100%;
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-live .search {
+    grid-column: span 2;
+    max-inline-size: none;
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-legacy,
+  :root[data-interface-mode="new"] .board-topbar > .spacer {
+    display: none;
+  }
+
+  :root[data-interface-mode="new"] .board-topbar > .sync-pill { grid-area: sync; }
+  :root[data-interface-mode="new"] .board-topbar > .board-notification-control { grid-area: notify; }
+  :root[data-interface-mode="new"] .board-topbar > button.mobile-optional { grid-area: focus; }
+  :root[data-interface-mode="new"] .board-topbar > a[href="/board/tv"] { grid-area: tv; }
+}
+
+@container board-toolbar (min-width: 60rem) {
+  :root[data-interface-mode="new"] .board-topbar .filters-live .search {
+    grid-column: span 2;
+  }
+}
+
+@container board-toolbar (max-width: 50rem) {
+  :root[data-interface-mode="new"] .board-topbar .filters-live {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-live .search,
+  :root[data-interface-mode="new"] .board-topbar .filters-live .reset-filter-button {
+    grid-column: 1 / -1;
+  }
+}
+
+@container board-toolbar (max-width: 30rem) {
+  :root[data-interface-mode="new"] .board-topbar .filters-live {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container board-workspace (max-width: 68rem) {
+  :root[data-interface-mode="new"] .board-head {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    grid-template-areas:
+      "identity create"
+      "views views"
+      "planned quick"
+      "sort sort";
+    align-items: center;
+  }
+
+  :root[data-interface-mode="new"] .board-head .board-create-actions {
+    min-inline-size: 0;
+  }
+
+  :root[data-interface-mode="new"] .board-quick-filters {
+    min-inline-size: 0;
+  }
+}
+
+@container board-workspace (max-width: 50rem) {
+  :root[data-interface-mode="new"] .board-head {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "identity" "create" "views" "planned" "quick" "sort";
+    align-items: stretch;
+  }
+
+  :root[data-interface-mode="new"] .board-head .board-copy,
+  :root[data-interface-mode="new"] .board-head .board-create-actions,
+  :root[data-interface-mode="new"] .board-head .board-view-tabs-inline,
+  :root[data-interface-mode="new"] .board-head .board-planned-toggle,
+  :root[data-interface-mode="new"] .board-head .board-quick-filters,
+  :root[data-interface-mode="new"] .board-head .board-sort-control {
+    inline-size: 100%;
+    justify-self: stretch;
+  }
+
+  :root[data-interface-mode="new"] .board-create-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  }
+
+  :root[data-interface-mode="new"] .board-quick-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  }
+
+  :root[data-interface-mode="new"] .board-quick-filters .button,
+  :root[data-interface-mode="new"] .board-create-actions .button,
+  :root[data-interface-mode="new"] .board-head .board-planned-toggle {
+    justify-content: center;
+  }
+}
+
+@container board-workspace (max-width: 25rem) {
+  :root[data-interface-mode="new"] .board-view-tabs-inline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  :root[data-interface-mode="new"] .board-copy {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :root[data-interface-mode="new"] .board-switcher,
+  :root[data-interface-mode="new"] .board-switcher .select {
+    inline-size: 100%;
+    max-inline-size: none;
+  }
+}
+
+@container board-overview (max-width: 70rem) {
+  :root[data-interface-mode="new"] .new-board-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "hero hero"
+      "active done"
+      "due due"
+      "progress progress";
+  }
+}
+
+@container board-overview (max-width: 44rem) {
+  :root[data-interface-mode="new"] .new-board-overview {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "hero" "active" "done" "due" "progress";
+  }
+
+  :root[data-interface-mode="new"] .new-board-column-progress {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (width <= 960px) {
+  :root[data-interface-mode="new"] .board-topbar .filters-live {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    inline-size: 100%;
+    gap: clamp(.35rem, 1.6vw, .6rem);
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-live .search,
+  :root[data-interface-mode="new"] .board-topbar .filters-live .reset-filter-button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (width <= 360px) {
+  :root[data-interface-mode="new"] .board-topbar .filters-live {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :root[data-interface-mode="new"] .board-topbar .filters-live .search,
+  :root[data-interface-mode="new"] .board-topbar .filters-live .reset-filter-button {
+    grid-column: 1;
+  }
+}
+
+@media (width <= 640px) {
+  :root[data-interface-mode="new"] .content {
+    padding-inline: clamp(.6rem, 3.5vw, 1rem);
+  }
+
+  :root[data-interface-mode="new"] .board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :root[data-interface-mode="new"] .column {
+    min-inline-size: 0;
+  }
+}
