@@ -27,3 +27,33 @@
 ## Final result
 
 passed
+
+## Colorful new interface mode — 31 Aug 2026
+
+### Source references
+
+- `C:\Users\LV\AppData\Local\Temp\codex-clipboard-cddae5b2-bd98-439b-9a72-d9ec6a3e75a6.png`
+- `C:\Users\LV\AppData\Local\Temp\codex-clipboard-910911b0-59d5-4eb4-8a0c-8379991711f4.png`
+- `C:\Users\LV\AppData\Local\Temp\codex-clipboard-dcbbe34a-4527-4d08-bdc6-9d4e2df0891d.png`
+- `C:\Users\LV\AppData\Local\Temp\codex-clipboard-cc52da90-c642-4667-a279-08fb79a85a2e.png`
+- `C:\Users\LV\AppData\Local\Temp\codex-clipboard-6f6b0b90-9cd5-4afc-a330-ec133748285e.png`
+
+### Implementation evidence
+
+- Desktop layout baseline: `C:\Users\LV\AppData\Local\Temp\taskora-fluid-1536-final.png`.
+- Mobile layout baseline: `C:\Users\LV\AppData\Local\Temp\taskora-fluid-390-final.png`.
+- Production visual smoke check: `https://kanban.region-free.online/login`.
+
+### Checks
+
+1. Kept the existing classic interface untouched; semantic colors are scoped to `html[data-interface-mode="new"]`.
+2. Replaced the sterile monochrome treatment with a light bento surface, navy anchor card, blue actions, and quiet per-column tints.
+3. Mapped task priority to both a pastel surface and a labeled chip/rail: green (low), violet (planned), amber (medium), coral (high), and rose (critical). Completed tasks keep a green completion treatment.
+4. Added separate visual signals for overdue, today/soon, and review deadlines; text labels remain present so color is not the only cue.
+5. Added matching dark-mode tokens instead of reusing light colors, preserving readable contrast.
+6. Re-checked CSS token contrast: primary text, muted text, semantic task text, and the blue action color meet the intended readable contrast thresholds.
+7. Confirmed the deployed stylesheet contains the color layer and the CI/CD run for commit `c46838c` completed successfully, including migration and readiness steps.
+
+### Final result
+
+passed
