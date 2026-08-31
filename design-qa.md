@@ -46,7 +46,7 @@ passed
 
 ### Checks
 
-1. Kept the existing classic interface untouched; semantic colors are scoped to `html[data-interface-mode="new"]`.
+1. Made the colorful workspace the only interface mode; all existing accounts are migrated to `new` and the old mode selector is removed.
 2. Replaced the sterile monochrome treatment with a light bento surface, navy anchor card, blue actions, and quiet per-column tints.
 3. Mapped task priority to both a pastel surface and a labeled chip/rail: green (low), violet (planned), amber (medium), coral (high), and rose (critical). Completed tasks keep a green completion treatment.
 4. Added separate visual signals for overdue, today/soon, and review deadlines; text labels remain present so color is not the only cue.

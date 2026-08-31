@@ -13,6 +13,7 @@ export default async function ChatsPage() {
         <header className="chats-page-head">
           <span className="settings-page-kicker"><MessageCircleMore size={17} /> Командное общение</span>
           <h1>Чаты</h1>
+          <p>Личные диалоги команды в одном спокойном рабочем пространстве.</p>
         </header>
         <ChatHub viewerId={user.id} />
       </div>

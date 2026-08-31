@@ -125,8 +125,8 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
     <div className="content important-files-page">
       <header className="files-head">
         <div>
-          <span className="settings-page-kicker"><ShieldCheck size={17} /> Защищённое хранилище</span>
-          <h1>Общие важные файлы</h1>
+          <span className="settings-page-kicker"><ShieldCheck size={17} /> Документы команды</span>
+          <h1>Документы</h1>
         </div>
         <form className="files-search" onSubmit={submitSearch}>
           <label className="field search compact-field">
@@ -175,7 +175,7 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
           {loading ? <p className="muted">Загрузка...</p> : null}
           {!loading && !files.length ? <p className="muted">Файлов пока нет.</p> : null}
           {files.map((file) => (
-            <button className={`important-file-row ${selected?.id === file.id ? "is-active" : ""}`} type="button" key={file.id} onClick={() => setSelectedId(file.id)}>
+            <button className={`important-file-row ${selected?.id === file.id ? "is-active" : ""}`} type="button" aria-pressed={selected?.id === file.id} key={file.id} onClick={() => setSelectedId(file.id)}>
               <span className="important-file-icon">{iconFor(file.originalName)}</span>
               <span className="important-file-copy">
                 <strong>{file.title}</strong>

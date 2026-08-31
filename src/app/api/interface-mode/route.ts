@@ -4,7 +4,7 @@ import { INTERFACE_MODE_COOKIE, normalizeInterfaceMode, type InterfaceMode } fro
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
-const interfaceModeSchema = z.object({ mode: z.enum(["classic", "new"]) });
+const interfaceModeSchema = z.object({ mode: z.literal("new") });
 
 export async function GET() {
   try {

@@ -32,6 +32,15 @@ type AiTaskDraft = {
   deadlineHint: string;
   notes: string;
 };
+type AiTaskRecommendation = {
+  taskId: string;
+  taskNumber: number;
+  title: string;
+  column: string;
+  priority: keyof typeof priorityLabels;
+  deadline: string | null;
+  reason: string;
+};
 const emptyFilters = { q: "", priority: "", assignee: "", deadline: "", oilDepot: "", withoutPlanned: "", sort: "priority-deadline" };
 type Filters = typeof emptyFilters;
 type ViewMode = "board" | "list" | "timeline" | "mine";
@@ -610,11 +619,11 @@ export function BoardClient({ initialView }: { initialView: View }) {
             </label>
           </div>
           <span className="spacer" />
-          <div className="board-view-tabs board-view-tabs-inline" role="tablist" aria-label="Режим отображения">
-            <button className={viewMode === "board" ? "active" : ""} type="button" onClick={() => setViewMode("board")}>Доска</button>
-            <button className={viewMode === "list" ? "active" : ""} type="button" onClick={() => setViewMode("list")}>Список</button>
-            <button className={viewMode === "timeline" ? "active" : ""} type="button" onClick={() => setViewMode("timeline")}>Таймлайн</button>
-            {!view.board.ownerId ? <button className={viewMode === "mine" ? "active" : ""} type="button" onClick={() => setViewMode("mine")}>Моя работа</button> : null}
+          <div className="board-view-tabs board-view-tabs-inline" role="group" aria-label="Режим отображения">
+            <button className={viewMode === "board" ? "active" : ""} type="button" aria-pressed={viewMode === "board"} onClick={() => setViewMode("board")}>Доска</button>
+            <button className={viewMode === "list" ? "active" : ""} type="button" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}>Список</button>
+            <button className={viewMode === "timeline" ? "active" : ""} type="button" aria-pressed={viewMode === "timeline"} onClick={() => setViewMode("timeline")}>Таймлайн</button>
+            {!view.board.ownerId ? <button className={viewMode === "mine" ? "active" : ""} type="button" aria-pressed={viewMode === "mine"} onClick={() => setViewMode("mine")}>Моя работа</button> : null}
           </div>
           <button
             className={`button secondary compact-button board-planned-toggle ${filters.withoutPlanned === "1" ? "is-active" : ""}`}
@@ -715,7 +724,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
         {error && !createOpen && !activeTask ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
         {viewMode === "list" ? <TaskTable tasks={visibleTasks} onOpen={openTask} personal={Boolean(view.board.ownerId)} /> : null}
         {viewMode === "timeline" ? <TaskTimeline tasks={visibleTasks} onOpen={openTask} /> : null}
-        <section className={`board ${viewMode === "list" || viewMode === "timeline" ? "is-hidden" : ""}`} aria-label="Канбан-доска">
+        {viewMode === "board" || viewMode === "mine" ? <section className="board" aria-label="Канбан-доска">
           {visibleColumns.map((column: any) => (
             <article
               className={`column ${dropColumn === column.id ? "drop-target" : ""} ${isCompletedColumn(column.name) ? "column-done" : ""}`}
@@ -757,7 +766,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
               </div>
             </article>
           ))}
-        </section>
+        </section> : null}
       </div>
 
       {activeTask ? (
@@ -789,7 +798,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
         <aside className="task-drawer-backdrop" aria-label="Создание задачи">
           <div className="task-drawer t-panel-slide" data-open="true" role="dialog" aria-modal="false" aria-labelledby="create-task-title">
             {aiAssistantOpen ? (
-              <AiTaskAssistant view={view} onClose={closeCreateFlow} onApplyDraft={applyAiDraft} />
+              <AiTaskAssistant view={view} onClose={closeCreateFlow} onApplyDraft={applyAiDraft} onOpenTask={openTask} />
             ) : (
               <CreateTaskDialogV2 key={createDraft ? `ai-${createDraft.title}` : "manual"} view={view} draft={createDraft} error={error} onClose={closeCreateFlow} onCreate={createTask} />
             )}
@@ -1304,11 +1313,12 @@ function TaskActivityTimeline({ logs }: { logs: any[] }) {
   );
 }
 
-function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft: (draft: AiTaskDraft) => void }) {
+function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft: (draft: AiTaskDraft) => void; onOpenTask: (task: Task) => void }) {
   const [mode, setMode] = useState<AiAssistantMode>("draft");
   const [prompt, setPrompt] = useState("");
   const [draft, setDraft] = useState<AiTaskDraft | null>(null);
   const [answer, setAnswer] = useState("");
+  const [recommendations, setRecommendations] = useState<AiTaskRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -1317,6 +1327,7 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
     setPrompt("");
     setDraft(null);
     setAnswer("");
+    setRecommendations([]);
     setError("");
   }
 
@@ -1326,6 +1337,7 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
     setError("");
     setDraft(null);
     setAnswer("");
+    setRecommendations([]);
     try {
       const isDraftMode = mode === "draft";
       const response = await fetch(isDraftMode ? "/api/ai/task-draft" : "/api/ai/assistant", {
@@ -1339,6 +1351,7 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
         setDraft(data.draft);
       } else if (typeof data.answer === "string" && data.answer.trim()) {
         setAnswer(data.answer.trim());
+        setRecommendations(Array.isArray(data.recommendations) ? data.recommendations : []);
       } else {
         throw new Error("ИИ вернул пустой ответ");
       }
@@ -1354,6 +1367,15 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
     ? props.view.users.filter((user: any) => draft.assigneeIds.includes(user.id)).map((user: any) => user.name)
     : [];
   const draftTags = draft ? [...draft.existingTags, ...draft.newTags] : [];
+  const taskById = new Map((props.view.board.columns ?? []).flatMap((column: any) => column.tasks ?? []).map((task: Task) => [task.id, task]));
+  const recommendedTasks = recommendations
+    .map((recommendation) => ({ recommendation, task: taskById.get(recommendation.taskId) }))
+    .filter((item): item is { recommendation: AiTaskRecommendation; task: Task } => Boolean(item.task));
+
+  function openRecommendedTask(task: Task) {
+    props.onClose();
+    props.onOpenTask(task);
+  }
 
   return (
     <section className="task-modal-v2 ai-task-assistant">
@@ -1414,6 +1436,29 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
         <article className="ai-answer-card" aria-live="polite">
           <header><span>Ответ помощника</span><span className="status-dot" aria-hidden="true" /></header>
           <p className="ai-answer-copy">{answer}</p>
+          {recommendedTasks.length ? (
+            <div className="ai-recommendations" aria-label="Рекомендуемые задачи">
+              <div className="ai-recommendations-heading"><span>Можно открыть</span><small>{recommendedTasks.length} {recommendationWord(recommendedTasks.length)}</small></div>
+              {recommendedTasks.map(({ recommendation, task }) => (
+                <button
+                  className="ai-recommendation-card"
+                  type="button"
+                  key={recommendation.taskId}
+                  onClick={() => openRecommendedTask(task)}
+                  aria-label={`Открыть предпросмотр задачи #${task.taskNumber}: ${task.title}`}
+                >
+                  <span className="ai-recommendation-top"><b>#{task.taskNumber}</b><span>{recommendation.column}</span></span>
+                  <strong>{task.title}</strong>
+                  <span className="ai-recommendation-meta">
+                    {priorityLabels[task.priority as keyof typeof priorityLabels] ?? recommendation.priority}
+                    {task.deadline ? ` · ${dateOnly(task.deadline)}` : " · без дедлайна"}
+                  </span>
+                  {recommendation.reason ? <small>{recommendation.reason}</small> : null}
+                  <span className="ai-recommendation-action">Открыть предпросмотр <ChevronDown size={14} aria-hidden="true" /></span>
+                </button>
+              ))}
+            </div>
+          ) : null}
         </article>
       ) : null}
 
@@ -2202,6 +2247,14 @@ function checklistProgress(task: Task) {
 
 function dateOnly(value: string) {
   return new Intl.DateTimeFormat("ru-RU").format(new Date(value));
+}
+
+function recommendationWord(count: number) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return "вариант";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "варианта";
+  return "вариантов";
 }
 
 function isImageFile(file: { mimeType?: string | null; fileName?: string | null }) {

@@ -3183,3 +3183,652 @@ html {
     justify-self: end;
   }
 }
+
+/* Shared product surfaces: the new interface is the single workspace style
+   across boards, documents, chats, and the TV dashboard. These rules keep
+   each screen responsive while preserving semantic accents for priorities. */
+:root[data-interface-mode="new"] .files-head,
+:root[data-interface-mode="new"] .chats-page-head {
+  align-items: end;
+  gap: 1rem;
+  border-block-end: 1px solid var(--border);
+  padding-block-end: 1rem;
+}
+
+:root[data-interface-mode="new"] .files-head h1,
+:root[data-interface-mode="new"] .chats-page-head h1 {
+  color: var(--text);
+  font-size: clamp(1.8rem, 3vw, 2.75rem);
+  letter-spacing: -.045em;
+}
+
+:root[data-interface-mode="new"] .files-head .settings-page-kicker,
+:root[data-interface-mode="new"] .chats-page-head .settings-page-kicker {
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .files-search {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(10rem, .7fr) auto;
+  inline-size: min(100%, 42rem);
+  align-items: end;
+  gap: .55rem;
+}
+
+:root[data-interface-mode="new"] .files-search .field {
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .files-upload-panel {
+  align-items: end;
+  border-color: color-mix(in srgb, var(--accent-blue) 18%, var(--border));
+  background: color-mix(in srgb, var(--accent-blue) 4%, var(--panel));
+  box-shadow: var(--shadow);
+}
+
+:root[data-interface-mode="new"] .files-workspace {
+  grid-template-columns: minmax(15rem, .32fr) minmax(0, 1fr);
+  gap: clamp(.75rem, 1.5vw, 1.25rem);
+  min-block-size: min(72dvh, 52rem);
+}
+
+:root[data-interface-mode="new"] .files-list-panel,
+:root[data-interface-mode="new"] .files-preview-panel {
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+:root[data-interface-mode="new"] .files-list-panel {
+  align-content: start;
+  gap: .4rem;
+  padding: .7rem;
+  background: var(--panel-2);
+}
+
+:root[data-interface-mode="new"] .important-file-row {
+  min-block-size: 3.9rem;
+  border-color: transparent;
+  border-radius: 14px;
+  background: transparent;
+  padding: .65rem .7rem;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+:root[data-interface-mode="new"] .important-file-row:hover {
+  border-color: color-mix(in srgb, var(--accent-blue) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent-blue) 6%, var(--panel));
+  transform: translateX(2px);
+}
+
+:root[data-interface-mode="new"] .important-file-row.is-active {
+  border-color: color-mix(in srgb, var(--accent-blue) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent-blue) 11%, var(--panel));
+  box-shadow: inset 3px 0 var(--accent-blue);
+}
+
+:root[data-interface-mode="new"] .important-file-icon {
+  inline-size: 2.45rem;
+  block-size: 2.45rem;
+  border-color: color-mix(in srgb, var(--accent-blue) 24%, var(--border));
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .files-preview-panel {
+  align-content: start;
+  gap: 1rem;
+  min-block-size: 34rem;
+  padding: clamp(1rem, 2vw, 1.4rem);
+}
+
+:root[data-interface-mode="new"] .files-preview-head {
+  border-block-end-color: var(--border);
+  padding-block-end: 1rem;
+}
+
+:root[data-interface-mode="new"] .files-preview-head h2 {
+  color: var(--text);
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  letter-spacing: -.025em;
+}
+
+:root[data-interface-mode="new"] .files-description,
+:root[data-interface-mode="new"] .files-preview-empty {
+  border-color: color-mix(in srgb, var(--accent-teal) 18%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-teal) 5%, var(--panel));
+  padding: .9rem 1rem;
+}
+
+:root[data-interface-mode="new"] .files-code-preview pre,
+:root[data-interface-mode="new"] .files-sheet-scroll {
+  border-color: var(--border);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%);
+}
+
+:root[data-interface-mode="new"] .files-code-preview pre {
+  background: var(--new-ink);
+  color: var(--new-paper);
+}
+
+:root[data-interface-mode="new"] .chats-page {
+  gap: clamp(.8rem, 1.6vw, 1.25rem);
+  min-block-size: calc(100dvh - 2rem);
+}
+
+:root[data-interface-mode="new"] .chats-page-head {
+  display: grid;
+  gap: .35rem;
+}
+
+:root[data-interface-mode="new"] .chats-page-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .88rem;
+}
+
+:root[data-interface-mode="new"] .chat-hub {
+  min-block-size: min(68dvh, 48rem);
+  max-block-size: none;
+  border-color: var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+
+:root[data-interface-mode="new"] .chat-directory {
+  border-inline-end-color: var(--border);
+  background: var(--panel-2);
+}
+
+:root[data-interface-mode="new"] .chat-directory-head {
+  gap: .8rem;
+  padding: 1rem;
+}
+
+:root[data-interface-mode="new"] .chat-directory-head h2 {
+  color: var(--text);
+  font-size: 1.05rem;
+  letter-spacing: -.02em;
+}
+
+:root[data-interface-mode="new"] .chat-search {
+  border-color: var(--border);
+  border-radius: 12px;
+  background: var(--control);
+}
+
+:root[data-interface-mode="new"] .chat-directory-item {
+  min-block-size: 4.6rem;
+  margin: .2rem .45rem;
+  inline-size: calc(100% - .9rem);
+  border-block-end: 0;
+  border-radius: 14px;
+  padding: .65rem .7rem;
+  transition: background .18s ease, box-shadow .18s ease;
+}
+
+:root[data-interface-mode="new"] .chat-directory-item:hover {
+  background: color-mix(in srgb, var(--accent-blue) 7%, var(--panel));
+}
+
+:root[data-interface-mode="new"] .chat-directory-item.is-active {
+  background: color-mix(in srgb, var(--accent-blue) 12%, var(--panel));
+  box-shadow: inset 3px 0 var(--accent-blue);
+}
+
+:root[data-interface-mode="new"] .chat-workspace,
+:root[data-interface-mode="new"] .direct-chat-panel {
+  background: var(--panel);
+}
+
+:root[data-interface-mode="new"] .direct-chat-head {
+  min-block-size: 4.5rem;
+  border-block-end-color: var(--border);
+  background: var(--panel);
+  padding: .85rem 1rem;
+}
+
+:root[data-interface-mode="new"] .direct-chat-avatar {
+  border-color: var(--panel);
+  background: color-mix(in srgb, var(--accent-blue) 18%, var(--panel-2));
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .direct-chat-messages {
+  background: color-mix(in srgb, var(--accent-blue) 2%, var(--panel));
+  padding: 1.1rem clamp(.8rem, 2vw, 1.35rem);
+}
+
+:root[data-interface-mode="new"] .direct-chat-message {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel-2);
+  box-shadow: 0 4px 12px rgb(16 24 40 / 4%);
+}
+
+:root[data-interface-mode="new"] .direct-chat-message.own {
+  border-color: color-mix(in srgb, var(--accent-blue) 24%, var(--border));
+  background: color-mix(in srgb, var(--accent-blue) 12%, var(--panel));
+}
+
+:root[data-interface-mode="new"] .direct-chat-compose {
+  gap: .6rem;
+  border-block-start-color: var(--border);
+  background: var(--panel);
+  padding: .8rem;
+}
+
+:root[data-interface-mode="new"] .direct-chat-compose .textarea {
+  border-radius: 14px;
+  background: var(--control);
+}
+
+:root[data-interface-mode="new"] .task-table-panel,
+:root[data-interface-mode="new"] .task-timeline {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+:root[data-interface-mode="new"] .task-table-panel {
+  overflow: auto;
+}
+
+:root[data-interface-mode="new"] .task-table-row {
+  border-block-end-color: var(--border);
+  transition: background .16s ease;
+}
+
+:root[data-interface-mode="new"] .task-table-row:hover {
+  background: color-mix(in srgb, var(--accent-blue) 5%, var(--panel));
+}
+
+:root[data-interface-mode="new"] .task-timeline-toolbar {
+  border-block-end-color: var(--border);
+  background: var(--panel-2);
+  padding: .9rem 1rem;
+}
+
+:root[data-interface-mode="new"] .task-timeline-icon {
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .task-timeline-scroll {
+  border-radius: 0 0 20px 20px;
+}
+
+:root[data-interface-mode="new"] .task-timeline-bar {
+  border-radius: 10px;
+  box-shadow: 0 5px 12px rgb(16 24 40 / 8%);
+}
+
+:root[data-interface-mode="new"] .ai-recommendations {
+  display: grid;
+  gap: .55rem;
+  margin-block-start: .35rem;
+  border-block-start: 1px solid var(--border);
+  padding-block-start: .8rem;
+}
+
+:root[data-interface-mode="new"] .ai-recommendations-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .6rem;
+  color: var(--text);
+  font-size: .74rem;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+:root[data-interface-mode="new"] .ai-recommendations-heading small {
+  color: var(--muted);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:root[data-interface-mode="new"] .ai-recommendation-card {
+  display: grid;
+  gap: .3rem;
+  inline-size: 100%;
+  border: 1px solid color-mix(in srgb, var(--accent-blue) 20%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-blue) 4%, var(--panel));
+  color: var(--text);
+  padding: .7rem .75rem;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+:root[data-interface-mode="new"] .ai-recommendation-card:hover {
+  border-color: var(--accent-blue);
+  background: color-mix(in srgb, var(--accent-blue) 10%, var(--panel));
+  transform: translateY(-1px);
+}
+
+:root[data-interface-mode="new"] .ai-recommendation-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent-blue) 32%, transparent);
+  outline-offset: 2px;
+}
+
+:root[data-interface-mode="new"] .ai-recommendation-top,
+:root[data-interface-mode="new"] .ai-recommendation-meta,
+:root[data-interface-mode="new"] .ai-recommendation-action {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+:root[data-interface-mode="new"] .ai-recommendation-top {
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: .68rem;
+}
+
+:root[data-interface-mode="new"] .ai-recommendation-top b {
+  color: var(--accent-blue);
+  font-size: .75rem;
+}
+
+:root[data-interface-mode="new"] .ai-recommendation-card strong {
+  overflow: hidden;
+  font-size: .86rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-interface-mode="new"] .ai-recommendation-meta,
+:root[data-interface-mode="new"] .ai-recommendation-card small {
+  color: var(--muted);
+  font-size: .7rem;
+  line-height: 1.35;
+}
+
+:root[data-interface-mode="new"] .ai-recommendation-action {
+  justify-content: flex-end;
+  color: var(--brand-strong);
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+/* TV is intentionally denser than the main app, but shares the same
+   surfaces, semantic colors, and responsive spacing scale. */
+:root[data-interface-mode="new"] .tv-page {
+  --tv-bg: var(--bg);
+  --tv-panel: var(--panel);
+  --tv-panel-soft: var(--panel-2);
+  --tv-panel-deep: var(--new-ink);
+  --tv-ink: var(--text);
+  --tv-muted: var(--muted);
+  --tv-line: var(--border);
+  --tv-command: var(--new-ink);
+  --tv-command-2: var(--new-ink);
+  --tv-blue: var(--accent-blue);
+  --tv-green: var(--accent-green);
+  --tv-amber: var(--accent-amber);
+  --tv-red: var(--accent-rose);
+  gap: clamp(.55rem, 1vw, .9rem);
+  overflow: auto;
+  background: var(--bg);
+  color: var(--text);
+  padding: clamp(.65rem, 1.25vw, 1.15rem);
+}
+
+:root[data-interface-mode="new"] .tv-title-block,
+:root[data-interface-mode="new"] .tv-clock-card,
+:root[data-interface-mode="new"] .tv-weather-card,
+:root[data-interface-mode="new"] .tv-joke-card,
+:root[data-interface-mode="new"] .tv-column,
+:root[data-interface-mode="new"] .tv-standby-clock,
+:root[data-interface-mode="new"] .tv-standby-side,
+:root[data-interface-mode="new"] .tv-standby-news,
+:root[data-interface-mode="new"] .tv-standby-footer-card,
+:root[data-interface-mode="new"] .tv-news-reader-card,
+:root[data-interface-mode="new"] .tv-joke-stage-card,
+:root[data-interface-mode="new"] .tv-joke-stage-side > div,
+:root[data-interface-mode="new"] .tv-dashboard-hero,
+:root[data-interface-mode="new"] .tv-task-spotlight-card,
+:root[data-interface-mode="new"] .tv-wall-panel,
+:root[data-interface-mode="new"] .tv-wall-clock,
+:root[data-interface-mode="new"] .tv-wall-news,
+:root[data-interface-mode="new"] .tv-wall-weather {
+  border-color: var(--border);
+  border-radius: 18px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+:root[data-interface-mode="new"] .tv-mode-bar {
+  border-color: var(--border);
+  border-radius: 16px;
+  background: var(--new-ink);
+  box-shadow: var(--shadow);
+  color: var(--new-paper);
+}
+
+:root[data-interface-mode="new"] .tv-mode-current {
+  border-inline-end-color: color-mix(in srgb, var(--new-paper) 18%, transparent);
+}
+
+:root[data-interface-mode="new"] .tv-mode-current span,
+:root[data-interface-mode="new"] .tv-footer {
+  color: color-mix(in srgb, var(--new-paper) 68%, transparent);
+}
+
+:root[data-interface-mode="new"] .tv-mode-current strong {
+  color: var(--new-paper);
+}
+
+:root[data-interface-mode="new"] .tv-mode-switcher button {
+  border-color: color-mix(in srgb, var(--new-paper) 18%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--new-paper) 7%, transparent);
+  color: color-mix(in srgb, var(--new-paper) 78%, transparent);
+}
+
+:root[data-interface-mode="new"] .tv-mode-switcher button.is-active {
+  border-color: var(--accent-blue);
+  background: var(--accent-blue);
+  color: #fff;
+  box-shadow: none;
+}
+
+:root[data-interface-mode="new"] .tv-mode-switcher button.is-active::after {
+  background: var(--accent-blue);
+}
+
+:root[data-interface-mode="new"] .tv-mode-meter span.is-active {
+  background: var(--accent-teal);
+}
+
+:root[data-interface-mode="new"] .tv-title-block h1,
+:root[data-interface-mode="new"] .tv-weather-card strong,
+:root[data-interface-mode="new"] .tv-joke-card strong,
+:root[data-interface-mode="new"] .tv-news-reader-card h2,
+:root[data-interface-mode="new"] .tv-joke-stage-card strong,
+:root[data-interface-mode="new"] .tv-task h2,
+:root[data-interface-mode="new"] .tv-task-spotlight-main h2,
+:root[data-interface-mode="new"] .tv-task-spotlight-status strong {
+  color: var(--text);
+}
+
+:root[data-interface-mode="new"] .tv-live-pill {
+  border-color: color-mix(in srgb, var(--accent-green) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent-green) 12%, var(--panel));
+  color: var(--accent-green);
+}
+
+:root[data-interface-mode="new"] .tv-compact-stats span,
+:root[data-interface-mode="new"] .tv-task-top b,
+:root[data-interface-mode="new"] .tv-task-meta time,
+:root[data-interface-mode="new"] .tv-task-bottom small {
+  border-color: color-mix(in srgb, var(--accent-blue) 20%, var(--border));
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .tv-column {
+  background: var(--column-bg);
+}
+
+:root[data-interface-mode="new"] .tv-column-done {
+  border-color: color-mix(in srgb, var(--accent-green) 32%, var(--border));
+  background: color-mix(in srgb, var(--accent-green) 6%, var(--panel));
+}
+
+:root[data-interface-mode="new"] .tv-column > header {
+  border-block-end-color: var(--border);
+  color: var(--text);
+}
+
+:root[data-interface-mode="new"] .tv-column > header b {
+  background: color-mix(in srgb, var(--accent-blue) 12%, var(--panel));
+  color: var(--brand-strong);
+}
+
+:root[data-interface-mode="new"] .tv-task {
+  border-color: color-mix(in srgb, var(--task-accent, var(--accent-blue)) 22%, var(--border));
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: 0 6px 16px rgb(16 24 40 / 7%);
+}
+
+:root[data-interface-mode="new"] .tv-task-done {
+  border-color: color-mix(in srgb, var(--accent-green) 28%, var(--border));
+  background: color-mix(in srgb, var(--accent-green) 7%, var(--panel));
+}
+
+:root[data-interface-mode="new"] .tv-more-card,
+:root[data-interface-mode="new"] .tv-empty-column {
+  border-color: var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel-2) 82%, transparent);
+  color: var(--muted);
+}
+
+:root[data-interface-mode="new"] .tv-wall-clock strong,
+:root[data-interface-mode="new"] .tv-standby-clock strong {
+  color: var(--text);
+}
+
+:root[data-interface-mode="new"] .tv-wall-clock-stats span,
+:root[data-interface-mode="new"] .tv-standby-stats span {
+  border-color: var(--border);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+:root[data-interface-mode="new"] .tv-wall-clock-stats b,
+:root[data-interface-mode="new"] .tv-standby-stats b {
+  color: var(--text);
+}
+
+:root[data-interface-mode="new"] .tv-footer {
+  border-block-start-color: var(--border);
+}
+
+@media (width <= 760px) {
+  :root[data-interface-mode="new"] .files-head {
+    align-items: stretch;
+  }
+
+  :root[data-interface-mode="new"] .files-search {
+    grid-template-columns: minmax(0, 1fr) auto;
+    inline-size: 100%;
+  }
+
+  :root[data-interface-mode="new"] .files-search .field {
+    grid-column: 1 / -1;
+  }
+
+  :root[data-interface-mode="new"] .files-search .select {
+    inline-size: 100%;
+  }
+
+  :root[data-interface-mode="new"] .files-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    min-block-size: auto;
+  }
+
+  :root[data-interface-mode="new"] .files-list-panel {
+    max-block-size: 18rem;
+  }
+
+  :root[data-interface-mode="new"] .files-preview-panel {
+    min-block-size: 24rem;
+  }
+
+  :root[data-interface-mode="new"] .chat-hub {
+    grid-template-columns: minmax(0, 1fr);
+    min-block-size: min(72dvh, 46rem);
+  }
+
+  :root[data-interface-mode="new"] .chat-directory {
+    max-block-size: 18rem;
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--border);
+  }
+
+  :root[data-interface-mode="new"] .chat-workspace {
+    min-block-size: 28rem;
+  }
+
+  :root[data-interface-mode="new"] .chat-hub.has-selection .chat-directory {
+    display: none;
+  }
+
+  :root[data-interface-mode="new"] .chat-hub.has-selection .chat-workspace {
+    min-block-size: min(72dvh, 46rem);
+  }
+
+  :root[data-interface-mode="new"] .tv-page {
+    overflow-y: auto;
+  }
+
+  :root[data-interface-mode="new"] .tv-mode-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  :root[data-interface-mode="new"] .tv-mode-switcher {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    overflow-x: auto;
+    padding-block-start: .25rem;
+  }
+
+  :root[data-interface-mode="new"] .tv-mode-meter {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  :root[data-interface-mode="new"] .tv-hero,
+  :root[data-interface-mode="new"] .tv-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :root[data-interface-mode="new"] .tv-column {
+    min-block-size: 15rem;
+  }
+
+  :root[data-interface-mode="new"] .ai-recommendation-card strong {
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-interface-mode="new"] .important-file-row,
+  :root[data-interface-mode="new"] .chat-directory-item,
+  :root[data-interface-mode="new"] .ai-recommendation-card {
+    transition: none;
+  }
+}

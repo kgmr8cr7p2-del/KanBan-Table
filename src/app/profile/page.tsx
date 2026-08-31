@@ -1,5 +1,4 @@
 import { AppShell } from "@/components/AppShell";
-import { InterfaceModeSettings } from "@/components/InterfaceModeSettings";
 import { ProfileForm } from "@/components/ProfileForm";
 import { requireAccountUser } from "@/lib/auth";
 
@@ -28,9 +27,6 @@ export default async function ProfilePage() {
           lastActiveAt: user.lastActiveAt,
           avatarUrl: user.avatarUrl,
         }} />
-        <section className="settings-block profile-interface-mode" aria-label="Настройка интерфейса">
-          <InterfaceModeSettings initialMode={user.interfaceMode === "new" ? "new" : "classic"} />
-        </section>
       </div>
     </AppShell>
   );

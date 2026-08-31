@@ -11,7 +11,7 @@ import { InterfaceModeSync } from "@/components/InterfaceModeSync";
 export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
   return (
     <div className="app">
-      <InterfaceModeSync mode={user.interfaceMode === "new" ? "new" : "classic"} />
+      <InterfaceModeSync mode="new" />
       <aside className="sidebar">
         <div className="brand">
           <span className="brand-mark">

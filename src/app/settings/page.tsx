@@ -4,7 +4,6 @@ import { AppShell } from "@/components/AppShell";
 import { BoardSettings } from "@/components/BoardSettings";
 import { BrowserPushSettings } from "@/components/BrowserPushSettings";
 import { GoidaTestButton } from "@/components/GoidaTestButton";
-import { InterfaceModeSettings } from "@/components/InterfaceModeSettings";
 import { NotificationPreferenceSettings } from "@/components/NotificationPreferenceSettings";
 import { NotificationSoundSettings } from "@/components/NotificationSoundSettings";
 import { OilDepotSettings } from "@/components/OilDepotSettings";
@@ -37,7 +36,6 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
           <p>Управляйте досками, справочниками и подключением личных Telegram-уведомлений.</p>
         </header>
         <SettingsHub panels={[
-          { id: "interface-mode", title: "Новый интерфейс", description: "Чёрно-белая bento-панель для рабочей доски", icon: "layout" as const, content: <InterfaceModeSettings initialMode={user.interfaceMode === "new" ? "new" : "classic"} /> },
           ...(hasPermission(user, PermissionKey.USE_TELEGRAM) ? [{ id: "telegram", title: "Telegram-уведомления", description: "Подключение личного чата с ботом", icon: "message" as const, content: <TelegramConnectPanel connected={Boolean(telegramConnection?.enabled)} botLink={botLink} /> }] : []),
           { id: "browser-push", title: "Push-уведомления", description: "Системные уведомления браузера в фоне", icon: "bell" as const, content: <><BrowserPushSettings /><NotificationPreferenceSettings /></>, wide: true },
           { id: "sounds", title: "Звуки уведомлений", description: "Громкость, включение и проверка звука", icon: "volume" as const, content: <NotificationSoundSettings /> },

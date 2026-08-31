@@ -13,10 +13,13 @@ const assistantSystemPrompt = [
   "Если в контексте нет ответа, прямо скажи, что данных недостаточно.",
   "Когда называешь задачу, указывай её номер в формате #123.",
   "Помогай расставить приоритеты, найти просроченные задачи и объяснить текущую загрузку.",
-  "Верни только JSON вида {\"answer\":\"...\"} без markdown-обёртки.",
+  "Если вопрос просит выбрать, что взять в работу, добавь 2–5 подходящих задач из контекста в recommendations; если выбор задач не нужен, верни пустой массив.",
+  "В recommendations используй только реальные taskId из контекста, максимум 6 элементов, и кратко объясни reason.",
+  "Верни только JSON вида {\"answer\":\"...\",\"recommendations\":[{\"taskId\":\"...\",\"taskNumber\":123,\"title\":\"...\",\"column\":\"...\",\"priority\":\"HIGH\",\"deadline\":null,\"reason\":\"...\"}]} без markdown-обёртки.",
 ].join("\n");
 
 const taskSelect = {
+  id: true,
   taskNumber: true,
   title: true,
   description: true,
@@ -53,6 +56,7 @@ export async function POST(request: Request) {
       columns: board.columns.map((column) => ({
         name: column.name,
         tasks: column.tasks.map((task) => ({
+          taskId: task.id,
           number: task.taskNumber,
           title: task.title,
           description: task.description.slice(0, 320),
@@ -104,7 +108,21 @@ export async function POST(request: Request) {
 
     const result = aiAssistantResponseSchema.safeParse(parsed);
     if (!result.success) return fail("ИИ вернул неполный ответ. Попробуйте уточнить вопрос.", 502);
-    return ok(result.data);
+    const taskById = new Map(board.columns.flatMap((column) => column.tasks).map((task) => [task.id, task]));
+    const columnByTaskId = new Map(board.columns.flatMap((column) => column.tasks.map((task) => [task.id, column.name])));
+    const recommendations = result.data.recommendations.flatMap((recommendation) => {
+      const task = taskById.get(recommendation.taskId);
+      if (!task) return [];
+      return [{
+        ...recommendation,
+        taskNumber: task.taskNumber,
+        title: task.title,
+        column: columnByTaskId.get(task.id) ?? recommendation.column,
+        priority: task.priority,
+        deadline: task.deadline?.toISOString() ?? null,
+      }];
+    });
+    return ok({ answer: result.data.answer, recommendations });
   } catch (error) {
     if (error instanceof DOMException && (error.name === "TimeoutError" || error.name === "AbortError")) {
       return fail("ИИ не ответил вовремя. Попробуйте ещё раз.", 504);
