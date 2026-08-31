@@ -4077,3 +4077,84 @@ html {
     transition: none;
   }
 }
+
+/* Compact board rhythm: keep every workspace distance on the 8px grid and
+   give all six default columns a chance to share the available desktop width. */
+:root[data-interface-mode="new"] .board-topbar {
+  gap: 8px;
+}
+
+:root[data-interface-mode="new"] .board-head {
+  column-gap: 8px;
+  row-gap: 8px;
+}
+
+:root[data-interface-mode="new"] .board-head .board-copy {
+  gap: 8px;
+}
+
+:root[data-interface-mode="new"] .new-board-overview {
+  gap: 8px;
+  margin-block-end: 16px;
+}
+
+:root[data-interface-mode="new"] .new-board-stat-card,
+:root[data-interface-mode="new"] .new-board-progress-card {
+  padding: 16px;
+}
+
+:root[data-interface-mode="new"] .new-board-progress-card,
+:root[data-interface-mode="new"] .new-board-card-heading {
+  gap: 8px;
+}
+
+:root[data-interface-mode="new"] .new-board-column-progress {
+  gap: 8px 16px;
+}
+
+:root[data-interface-mode="new"] .board {
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+}
+
+:root[data-interface-mode="new"] .column {
+  min-inline-size: 0;
+  padding: 8px;
+}
+
+:root[data-interface-mode="new"] .column-head {
+  gap: 8px;
+  min-inline-size: 0;
+  padding: 8px;
+}
+
+:root[data-interface-mode="new"] .column-head strong {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+:root[data-interface-mode="new"] .task-list {
+  gap: 8px;
+}
+
+:root[data-interface-mode="new"] .task-card {
+  min-inline-size: 0;
+  gap: 8px;
+  padding: 8px 8px 8px 16px;
+}
+
+:root[data-interface-mode="new"] .task-card-head {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:root[data-interface-mode="new"] .task-context-row,
+:root[data-interface-mode="new"] .task-secondary-row {
+  gap: 8px;
+}
+
+@container kanban-board (max-width: 56rem) {
+  :root[data-interface-mode="new"] .board {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  }
+}
