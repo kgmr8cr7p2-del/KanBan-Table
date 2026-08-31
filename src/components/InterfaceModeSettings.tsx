@@ -19,8 +19,8 @@ const options: Array<{
   {
     mode: "new",
     title: "Новый интерфейс",
-    description: "Чёрно-белая bento-панель с более ясной иерархией.",
-    meta: "Monochrome workspace",
+    description: "Светлая bento-панель с цветными акцентами задач и статусов.",
+    meta: "Colorful workspace",
   },
 ];
 
