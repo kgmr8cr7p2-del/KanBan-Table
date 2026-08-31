@@ -76,7 +76,7 @@ recover_important_files_migration() {
   # Keep the historical repair non-blocking, but run it in the same one-shot
   # migration container used for normal deploys so the app does not need to be
   # started before its database is ready.
-  compose run --rm --no-build migrate npx prisma migrate resolve --rolled-back 20260714220000_important_files || true
+  compose run --rm migrate npx prisma migrate resolve --rolled-back 20260714220000_important_files || true
 }
 
 restore_previous_release() {
@@ -140,7 +140,7 @@ ensure_notification_cron_secret
 ensure_web_push_secret
 recover_important_files_migration
 echo "Applying pending Prisma migrations..."
-compose run --rm --no-build migrate
+compose run --rm migrate
 compose up -d --no-deps --no-build --force-recreate app scheduler
 
 healthy=0
