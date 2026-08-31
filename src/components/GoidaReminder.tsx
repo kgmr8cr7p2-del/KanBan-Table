@@ -30,7 +30,7 @@ export function GoidaReminder() {
         for (const [eventKey, storageKey] of pendingRef.current) {
           const result = await playNotificationSoundFile("/goida.mp3");
           if (result === "blocked" || result === "failed") break;
-          window.sessionStorage.setItem(storageKey, "played");
+          writeSessionFlag(storageKey, "played");
           completedRef.current.add(eventKey);
           pendingRef.current.delete(eventKey);
         }
@@ -41,7 +41,7 @@ export function GoidaReminder() {
 
     const queueReminder = (eventKey: string) => {
       const storageKey = `${REMINDER_KEY_PREFIX}-${eventKey}`;
-      if (completedRef.current.has(eventKey) || window.sessionStorage.getItem(storageKey) || pendingRef.current.has(eventKey)) return;
+      if (completedRef.current.has(eventKey) || readSessionFlag(storageKey) || pendingRef.current.has(eventKey)) return;
       pendingRef.current.set(eventKey, storageKey);
       showReminder();
       void flushSounds();
@@ -105,6 +105,22 @@ export function GoidaReminder() {
       </div>
     </div>
   ) : null;
+}
+
+function readSessionFlag(key: string) {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionFlag(key: string, value: string) {
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch {
+    // The reminder remains best-effort when storage is blocked.
+  }
 }
 
 function getMoscowReminderEvent() {

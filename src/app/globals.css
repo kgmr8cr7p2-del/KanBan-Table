@@ -45,6 +45,7 @@
     --border: #dfe3ea;
     --brand: #2563eb;
     --brand-strong: #1d4ed8;
+    --brand-soft: #8db5ff;
     --success: #18794e;
     --warning: #8a5a0a;
     --danger: #b4233a;
@@ -61,6 +62,7 @@
     --panel-translate-y: 100px;
     --panel-blur: 2px;
     --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --font-unbounded: "Arial", "Segoe UI", sans-serif;
   }
 
   :root[data-theme="dark"] {
@@ -80,6 +82,7 @@
     --border: #38414a;
     --brand: #579dff;
     --brand-strong: #85b8ff;
+    --brand-soft: #9bc4ff;
     --success: #5fd3a0;
     --warning: #f5c25b;
     --danger: #ff8a9a;
@@ -3500,7 +3503,7 @@
   .goida-card {
     position: relative;
     overflow: hidden;
-    inline-size: min(24rem, calc(100vw - 2rem));
+    inline-size: min(24rem, calc(100dvw - 2rem));
     border: 1px solid rgb(255 255 255 / 38%);
     border-radius: 12px;
     background: var(--panel);
@@ -3566,7 +3569,7 @@
     inset-block: 0;
     inset-inline-end: 0;
     display: grid;
-    inline-size: min(520px, 100vw);
+    inline-size: min(520px, 100dvw);
     background: transparent;
     pointer-events: none;
   }
@@ -3583,12 +3586,12 @@
 
   .task-drawer-backdrop-fullscreen {
     inset: 0;
-    inline-size: 100vw;
+    inline-size: 100dvw;
     block-size: 100dvh;
   }
 
   .task-drawer-fullscreen {
-    inline-size: 100vw;
+    inline-size: 100dvw;
     border-inline-start: 0;
     box-shadow: none;
   }
@@ -3873,7 +3876,7 @@
   }
 
   dialog.task-dialog {
-    inline-size: min(1220px, calc(100vw - 2rem));
+    inline-size: min(1220px, calc(100dvw - 2rem));
     max-block-size: calc(100dvh - 2rem);
     border: 0;
     border-radius: 12px;
@@ -3888,7 +3891,7 @@
   }
 
   dialog.create-task-dialog {
-    inline-size: min(1220px, calc(100vw - 2rem));
+    inline-size: min(1220px, calc(100dvw - 2rem));
   }
 
   .create-task-form {
@@ -3923,7 +3926,7 @@
   }
 
   dialog.confirm-dialog {
-    inline-size: min(28rem, calc(100vw - 2rem));
+    inline-size: min(28rem, calc(100dvw - 2rem));
     border: 1px solid var(--border);
     border-radius: 12px;
     background: var(--panel);
@@ -5468,7 +5471,7 @@
     inset-inline-end: 1rem;
     display: grid;
     gap: .6rem;
-    inline-size: min(360px, calc(100vw - 2rem));
+    inline-size: min(360px, calc(100dvw - 2rem));
     pointer-events: none;
   }
 
@@ -7840,7 +7843,7 @@
 
     dialog.task-dialog,
     dialog.create-task-dialog {
-      inline-size: calc(100vw - 1rem);
+      inline-size: calc(100dvw - 1rem);
       max-block-size: calc(100dvh - 1rem);
     }
 
@@ -8270,7 +8273,7 @@
 
     .task-drawer-backdrop {
       inset: 0;
-      inline-size: 100vw;
+      inline-size: 100dvw;
       block-size: 100dvh;
     }
 
@@ -8283,8 +8286,8 @@
     dialog.task-dialog,
     dialog.create-task-dialog {
       inset: 0;
-      inline-size: 100vw;
-      max-inline-size: 100vw;
+      inline-size: 100dvw;
+      max-inline-size: 100dvw;
       block-size: 100dvh;
       max-block-size: 100dvh;
       margin: 0;
@@ -9176,7 +9179,7 @@
   }
 
   .archive-task-dialog {
-    inline-size: min(52rem, calc(100vw - 2rem));
+    inline-size: min(52rem, calc(100dvw - 2rem));
     max-block-size: calc(100dvh - 2rem);
     overflow: auto;
     border: 1px solid var(--border);

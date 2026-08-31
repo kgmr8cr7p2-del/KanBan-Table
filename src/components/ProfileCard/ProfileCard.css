@@ -193,7 +193,7 @@
 .profile-avatar-button:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
 
 .profile-card-dialog {
-  max-inline-size: calc(100vw - 1.5rem);
+  max-inline-size: calc(100dvw - 1.5rem);
   max-block-size: calc(100dvh - 1.5rem);
   overflow: visible;
   border: 0;
@@ -207,7 +207,7 @@
 .profile-card-close:focus-visible { outline: 3px solid white; outline-offset: 2px; }
 
 @media (width <= 480px) {
-  .pc-card { inline-size: min(19rem, calc(100vw - 2rem)); }
+  .pc-card { inline-size: min(19rem, calc(100dvw - 2rem)); }
   .pc-user-info { inset: auto .75rem .75rem; }
   .pc-contact-btn { padding-inline: .55rem; }
 }

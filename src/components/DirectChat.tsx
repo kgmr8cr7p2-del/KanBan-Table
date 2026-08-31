@@ -49,22 +49,27 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
   useEffect(() => {
     let active = true;
     async function refresh() {
-      const response = await fetch(`/api/messages?userId=${encodeURIComponent(user.id)}`, { cache: "no-store" });
-      const payload = await response.json().catch(() => ({}));
-      if (!active) return;
-      if (!response.ok) setRefreshError(payload.error || "Не удалось загрузить сообщения");
-      else {
-        setRefreshError("");
-        const nextMessages: ChatMessage[] = payload.messages ?? [];
-        if (messagesLoadedRef.current && nextMessages.some((message) => message.senderId === user.id && !knownMessageIdsRef.current.has(message.id))) {
-          void playChatNotification();
+      try {
+        const response = await fetch(`/api/messages?userId=${encodeURIComponent(user.id)}`, { cache: "no-store" });
+        const payload = await response.json().catch(() => ({}));
+        if (!active) return;
+        if (!response.ok) setRefreshError(payload.error || "Не удалось загрузить сообщения");
+        else {
+          setRefreshError("");
+          const nextMessages: ChatMessage[] = Array.isArray(payload.messages) ? payload.messages : [];
+          if (messagesLoadedRef.current && nextMessages.some((message) => message.senderId === user.id && !knownMessageIdsRef.current.has(message.id))) {
+            void playChatNotification();
+          }
+          knownMessageIdsRef.current = new Set(nextMessages.map((message) => message.id));
+          messagesLoadedRef.current = true;
+          setMessages(nextMessages);
+          onMessagesRead?.();
         }
-        knownMessageIdsRef.current = new Set(nextMessages.map((message) => message.id));
-        messagesLoadedRef.current = true;
-        setMessages(nextMessages);
-        onMessagesRead?.();
+      } catch {
+        if (active) setRefreshError("Не удалось загрузить сообщения. Проверьте соединение и повторите попытку.");
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
     }
     setLoading(true);
     setMessages([]);
@@ -112,16 +117,25 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
     if (!String(body.get("text") ?? "").trim() && !(body.get("file") instanceof File && (body.get("file") as File).size)) return;
     setSending(true);
     setError("");
-    const response = await fetch("/api/messages", { method: "POST", body });
-    const payload = await response.json().catch(() => ({}));
-    setSending(false);
-    if (!response.ok) {
-      setError(payload.error || "Не удалось отправить сообщение");
-      return;
+    try {
+      const response = await fetch("/api/messages", { method: "POST", body });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(payload.error || "Не удалось отправить сообщение");
+        return;
+      }
+      if (!payload.message) {
+        setError("Сервер не вернул отправленное сообщение");
+        return;
+      }
+      setMessages((current) => [...current, payload.message]);
+      form.reset();
+      setSelectedFile(null);
+    } catch {
+      setError("Не удалось отправить сообщение. Проверьте соединение и повторите попытку.");
+    } finally {
+      setSending(false);
     }
-    setMessages((current) => [...current, payload.message]);
-    form.reset();
-    setSelectedFile(null);
   }
 
   function sendOnEnter(event: ReactKeyboardEvent<HTMLTextAreaElement>) {

@@ -29,10 +29,12 @@ export function BoardSettings({ columns, canManage, boardId, boardName, boards }
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name, boardId }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) return setError(data.error ?? "Не удалось создать колонку");
       setItems((current) => [...current, { ...data.column, tasks: [], _count: { tasks: 0 } }]);
       form.reset();
+    } catch {
+      setError("Не удалось создать колонку. Проверьте соединение и повторите попытку.");
     } finally {
       setIsAdding(false);
     }
@@ -44,44 +46,60 @@ export function BoardSettings({ columns, canManage, boardId, boardName, boards }
 
     setError("");
     setPendingId(column.id);
-    const response = await fetch(`/api/columns/${column.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: nextName }),
-    });
-    const data = await response.json();
-    setPendingId(null);
-    if (!response.ok) return setError(data.error ?? "Не удалось переименовать колонку");
-    setItems((current) => current.map((item) => (item.id === column.id ? { ...item, name: nextName } : item)));
-    showSaved(column.id);
+    try {
+      const response = await fetch(`/api/columns/${column.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: nextName }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return setError(data.error ?? "Не удалось переименовать колонку");
+      setItems((current) => current.map((item) => (item.id === column.id ? { ...item, name: nextName } : item)));
+      showSaved(column.id);
+    } catch {
+      setError("Не удалось переименовать колонку. Проверьте соединение и повторите попытку.");
+    } finally {
+      setPendingId(null);
+    }
   }
 
   async function remove(id: string) {
     setError("");
     setPendingId(id);
-    const response = await fetch(`/api/columns/${id}`, { method: "DELETE" });
-    const data = await response.json();
-    setPendingId(null);
-    if (!response.ok) return setError(data.error ?? "Не удалось удалить колонку");
-    setItems((current) => current.filter((item) => item.id !== id));
+    try {
+      const response = await fetch(`/api/columns/${id}`, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return setError(data.error ?? "Не удалось удалить колонку");
+      setItems((current) => current.filter((item) => item.id !== id));
+    } catch {
+      setError("Не удалось удалить колонку. Проверьте соединение и повторите попытку.");
+    } finally {
+      setPendingId(null);
+    }
   }
 
   async function reorder(nextItems: ColumnItem[], previousItems: ColumnItem[]) {
     setItems(nextItems);
     setPendingId("order");
-    const response = await fetch("/api/columns/reorder", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ boardId, orderedIds: nextItems.map((item) => item.id) }),
-    });
-    const data = await response.json();
-    setPendingId(null);
-    if (!response.ok) {
+    try {
+      const response = await fetch("/api/columns/reorder", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ boardId, orderedIds: nextItems.map((item) => item.id) }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setItems(previousItems);
+        setError(data.error ?? "Не удалось сохранить порядок колонок");
+        return;
+      }
+      showSaved("order");
+    } catch {
       setItems(previousItems);
-      setError(data.error ?? "Не удалось сохранить порядок колонок");
-      return;
+      setError("Не удалось сохранить порядок колонок. Проверьте соединение и повторите попытку.");
+    } finally {
+      setPendingId(null);
     }
-    showSaved("order");
   }
 
   function move(index: number, direction: -1 | 1) {
@@ -111,7 +129,7 @@ export function BoardSettings({ columns, canManage, boardId, boardName, boards }
     <section className="settings-block settings-manager" aria-labelledby="board-columns-title">
       <header className="settings-manager-head">
         <span className="settings-manager-icon"><Columns3 size={20} /></span>
-        <div><h2 id="board-columns-title">Колонки доски</h2><p>Выберите доску, которую хотите настроить.</p></div>
+          <div><h2 id="board-columns-title">Колонки доски</h2><p>Выберите доску «{boardName}», которую хотите настроить.</p></div>
       </header>
       {boardPicker}
       <div className="empty">Для общей доски настройка колонок доступна администратору. Своими личными досками вы можете управлять полностью.</div>
@@ -124,7 +142,7 @@ export function BoardSettings({ columns, canManage, boardId, boardName, boards }
         <span className="settings-manager-icon"><Columns3 size={20} /></span>
         <div>
           <h2 id="board-columns-title">Колонки доски</h2>
-          <p>Выберите доску и настройте этапы работы слева направо.</p>
+          <p>Доска «{boardName}»: настройте этапы работы слева направо.</p>
         </div>
         <span className="settings-summary-badge">{items.length} колонок</span>
       </header>

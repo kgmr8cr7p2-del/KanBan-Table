@@ -29,10 +29,12 @@ export function OilDepotSettings({ oilDepots, canManage }: { oilDepots: OilDepot
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) return setError(data.error ?? "Не удалось создать нефтебазу");
       setItems((current) => [...current, { ...data.oilDepot, tasks: [], _count: { tasks: 0 } }]);
       form.reset();
+    } catch {
+      setError("Не удалось создать нефтебазу. Проверьте соединение и повторите попытку.");
     } finally {
       setIsAdding(false);
     }
@@ -41,26 +43,36 @@ export function OilDepotSettings({ oilDepots, canManage }: { oilDepots: OilDepot
   async function update(item: OilDepotItem, payload: Partial<Pick<OilDepotItem, "name" | "active">>) {
     setError("");
     setPendingId(item.id);
-    const response = await fetch(`/api/oil-depots/${item.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json();
-    setPendingId(null);
-    if (!response.ok) return setError(data.error ?? "Не удалось сохранить нефтебазу");
-    setItems((current) => current.map((currentItem) => (currentItem.id === item.id ? { ...currentItem, ...data.oilDepot } : currentItem)));
-    showSaved(item.id);
+    try {
+      const response = await fetch(`/api/oil-depots/${item.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return setError(data.error ?? "Не удалось сохранить нефтебазу");
+      setItems((current) => current.map((currentItem) => (currentItem.id === item.id ? { ...currentItem, ...data.oilDepot } : currentItem)));
+      showSaved(item.id);
+    } catch {
+      setError("Не удалось сохранить нефтебазу. Проверьте соединение и повторите попытку.");
+    } finally {
+      setPendingId(null);
+    }
   }
 
   async function remove(id: string) {
     setError("");
     setPendingId(id);
-    const response = await fetch(`/api/oil-depots/${id}`, { method: "DELETE" });
-    const data = await response.json();
-    setPendingId(null);
-    if (!response.ok) return setError(data.error ?? "Не удалось удалить нефтебазу");
-    setItems((current) => current.filter((item) => item.id !== id));
+    try {
+      const response = await fetch(`/api/oil-depots/${id}`, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return setError(data.error ?? "Не удалось удалить нефтебазу");
+      setItems((current) => current.filter((item) => item.id !== id));
+    } catch {
+      setError("Не удалось удалить нефтебазу. Проверьте соединение и повторите попытку.");
+    } finally {
+      setPendingId(null);
+    }
   }
 
   function showSaved(id: string) {

@@ -8,7 +8,17 @@ import { WeeklyReportReminder } from "@/components/WeeklyReportReminder";
 
 type View = any;
 type Task = any;
-type Weather = any;
+type Weather = {
+  unavailable?: boolean;
+  office: { name: string; address: string; latitude?: number; longitude?: number };
+  temperature?: number;
+  apparentTemperature?: number;
+  precipitation?: number;
+  windSpeed?: number;
+  windGusts?: number;
+  summary?: string;
+  nextPrecipitation?: { time: string; probability?: number; precipitation?: number; summary: string } | null;
+};
 
 const priorityLabels = {
   LOW: "Низкий",
@@ -261,15 +271,23 @@ export function BoardTvClient({ initialView, initialNews = null, initialNow }: {
   }
 
   async function refreshWeather() {
-    const response = await fetch("/api/weather/office");
-    const data = await response.json().catch(() => null);
-    if (data && !data.unavailable) {
-      setWeather(data);
-      return;
-    }
+    try {
+      const response = await fetch("/api/weather/office", { cache: "no-store" });
+      const data = await response.json().catch(() => null);
+      if (response.ok && data && !data.unavailable) {
+        setWeather(data);
+        return;
+      }
 
-    const direct = await fetchOfficeWeatherDirect().catch(() => data);
-    if (direct) setWeather(direct);
+      const direct = await fetchOfficeWeatherDirect().catch(() => data);
+      if (direct) {
+        setWeather(direct);
+      } else {
+        setWeather((current) => current ?? { unavailable: true, office: officeWeatherLocation });
+      }
+    } catch {
+      setWeather((current) => current ?? { unavailable: true, office: officeWeatherLocation });
+    }
   }
 
   async function refreshNews() {
@@ -542,13 +560,13 @@ function WeatherPanel({ weather }: { weather: Weather | null }) {
     <section className="tv-weather-card" aria-label="Погода в офисе">
       <CloudSun size={28} />
       <div>
-        <strong>{weather.unavailable ? "Погода недоступна" : `${signed(weather.temperature)}°C · ${weather.summary}`}</strong>
+        <strong>{weather.unavailable ? "Погода недоступна" : `${signed(weather.temperature ?? 0)}°C · ${weather.summary ?? "Погода"}`}</strong>
         <span>
           {weather.office.name} · {weather.office.address}
         </span>
         {!weather.unavailable ? (
           <small>
-            ощущается {signed(weather.apparentTemperature)}° · <Wind size={13} /> {weather.windSpeed} м/с
+            ощущается {signed(weather.apparentTemperature ?? 0)}° · <Wind size={13} /> {weather.windSpeed ?? 0} м/с
             {weather.nextPrecipitation ? ` · ${weather.nextPrecipitation.summary.toLowerCase()} ${hourOnly(weather.nextPrecipitation.time)}` : " · осадки не ожидаются"}
           </small>
         ) : null}
@@ -1440,7 +1458,6 @@ function deadlineDay(task: Task) {
   value.setHours(0, 0, 0, 0);
   return value;
 }
-
 function isCompletedColumn(name: string) {
   const normalized = name.toLowerCase();
   return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete") || normalized.includes("РіРѕС‚РѕРІ".toLowerCase());
@@ -1513,13 +1530,15 @@ async function fetchOfficeWeatherDirect() {
   url.searchParams.set("hourly", "precipitation_probability,precipitation,weather_code,temperature_2m");
   url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max");
 
-  const response = await fetch(url);
+  const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
   if (!response.ok) throw new Error("Direct weather request failed");
   const data = await response.json();
-  const precipitationProbability = data.hourly?.precipitation_probability ?? [];
-  const precipitation = data.hourly?.precipitation ?? [];
+  const hourly = data.hourly ?? {};
+  const precipitationProbability = Array.isArray(hourly.precipitation_probability) ? hourly.precipitation_probability : [];
+  const precipitation = Array.isArray(hourly.precipitation) ? hourly.precipitation : [];
   const nextPrecipitationIndex = precipitationProbability.findIndex((value: number, index: number) => value >= 45 || Number(precipitation[index] ?? 0) > 0);
   const tomorrowWeatherCode = Number(data.daily?.weather_code?.[1] ?? data.current?.weather_code ?? 0);
+  const nextPrecipitationTime = nextPrecipitationIndex >= 0 ? hourly.time?.[nextPrecipitationIndex] : null;
 
   return {
     office: officeWeatherLocation,
@@ -1543,12 +1562,12 @@ async function fetchOfficeWeatherDirect() {
         }
       : null,
     nextPrecipitation:
-      nextPrecipitationIndex >= 0
+      nextPrecipitationIndex >= 0 && typeof nextPrecipitationTime === "string"
         ? {
-            time: data.hourly.time[nextPrecipitationIndex],
+            time: nextPrecipitationTime,
             probability: precipitationProbability[nextPrecipitationIndex],
             precipitation: precipitation[nextPrecipitationIndex],
-            summary: weatherLabels[Number(data.hourly.weather_code[nextPrecipitationIndex] ?? 0)] ?? "Осадки",
+            summary: weatherLabels[Number(hourly.weather_code?.[nextPrecipitationIndex] ?? 0)] ?? "Осадки",
           }
         : null,
   };

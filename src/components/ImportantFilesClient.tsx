@@ -36,6 +36,8 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
 
   useEffect(() => {
     void loadFiles();
+    // The first request uses the initial URL state; subsequent searches are explicit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
     }
     setSelectedId(selected.id);
     void loadPreview(selected.id);
-  }, [selected?.id]);
+  }, [selected]);
 
   async function loadFiles(nextQuery = query, nextCategory = category) {
     setLoading(true);
@@ -53,47 +55,65 @@ export function ImportantFilesClient({ canManage }: { canManage: boolean }) {
     const params = new URLSearchParams();
     if (nextQuery.trim()) params.set("q", nextQuery.trim());
     if (nextCategory) params.set("category", nextCategory);
-    const response = await fetch(`/api/important-files?${params.toString()}`, { cache: "no-store" });
-    const payload = await response.json().catch(() => ({}));
-    setLoading(false);
-    if (!response.ok) {
-      setError(payload.error ?? "Не удалось загрузить файлы");
-      return;
+    try {
+      const response = await fetch(`/api/important-files?${params.toString()}`, { cache: "no-store" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(payload.error ?? "Не удалось загрузить файлы");
+        return;
+      }
+      setFiles(Array.isArray(payload.files) ? payload.files : []);
+      setCategories(Array.isArray(payload.categories) ? payload.categories : []);
+    } catch {
+      setError("Не удалось загрузить файлы. Проверьте соединение и повторите попытку.");
+    } finally {
+      setLoading(false);
     }
-    setFiles(payload.files ?? []);
-    setCategories(payload.categories ?? []);
   }
 
   async function loadPreview(id: string) {
     setPreviewLoading(true);
-    const response = await fetch(`/api/important-files/${id}/preview`, { cache: "no-store" });
-    const payload = await response.json().catch(() => ({}));
-    setPreviewLoading(false);
-    setPreview(response.ok ? payload.preview : { type: "unsupported", message: payload.error ?? "Предпросмотр недоступен" });
+    try {
+      const response = await fetch(`/api/important-files/${id}/preview`, { cache: "no-store" });
+      const payload = await response.json().catch(() => ({}));
+      setPreview(response.ok ? payload.preview : { type: "unsupported", message: payload.error ?? "Предпросмотр недоступен" });
+    } catch {
+      setPreview({ type: "unsupported", message: "Предпросмотр недоступен без соединения с сервером" });
+    } finally {
+      setPreviewLoading(false);
+    }
   }
 
   async function uploadFile(formData: FormData) {
     setError("");
-    const response = await fetch("/api/important-files", { method: "POST", body: formData });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      setError(payload.error ?? "Не удалось загрузить файл");
-      return;
+    try {
+      const response = await fetch("/api/important-files", { method: "POST", body: formData });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(payload.error ?? "Не удалось загрузить файл");
+        return;
+      }
+      setSelectedId(payload.file?.id ?? null);
+      await loadFiles();
+    } catch {
+      setError("Не удалось загрузить файл. Проверьте соединение и повторите попытку.");
     }
-    setSelectedId(payload.file?.id ?? null);
-    await loadFiles();
   }
 
   async function deleteFile(id: string) {
     if (!window.confirm("Удалить файл из общего хранилища?")) return;
-    const response = await fetch(`/api/important-files/${id}`, { method: "DELETE" });
-    if (!response.ok) {
-      const payload = await response.json().catch(() => ({}));
-      setError(payload.error ?? "Не удалось удалить файл");
-      return;
+    try {
+      const response = await fetch(`/api/important-files/${id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        setError(payload.error ?? "Не удалось удалить файл");
+        return;
+      }
+      setSelectedId(null);
+      await loadFiles();
+    } catch {
+      setError("Не удалось удалить файл. Проверьте соединение и повторите попытку.");
     }
-    setSelectedId(null);
-    await loadFiles();
   }
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {

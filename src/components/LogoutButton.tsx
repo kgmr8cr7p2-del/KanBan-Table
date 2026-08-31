@@ -7,7 +7,11 @@ export function LogoutButton() {
   const router = useRouter();
 
   async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Always leave the protected page, even if the network request failed.
+    }
     router.push("/login");
     router.refresh();
   }

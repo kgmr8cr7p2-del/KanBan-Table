@@ -120,10 +120,14 @@ function isAtOrBeforeCursor(event: TaskSoundEvent, cursor: TaskSoundCursor | nul
 }
 
 function saveCursor(event: TaskSoundEvent) {
-  window.localStorage.setItem(LAST_TASK_SOUND_EVENT_KEY, JSON.stringify({
-    id: event.id,
-    createdAt: new Date(event.createdAt).getTime(),
-  }));
+  try {
+    window.localStorage.setItem(LAST_TASK_SOUND_EVENT_KEY, JSON.stringify({
+      id: event.id,
+      createdAt: new Date(event.createdAt).getTime(),
+    }));
+  } catch {
+    // Storage may be disabled in private browsing; playback can continue anyway.
+  }
 }
 
 function readCursor(): TaskSoundCursor | null {

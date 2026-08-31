@@ -61,6 +61,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [toasts, setToasts] = useState<Array<{ id: string; text: string }>>([]);
   const [confirmation, setConfirmation] = useState<"archive" | "delete" | null>(null);
+  const refreshControllerRef = useRef<AbortController | null>(null);
   const activityFingerprintRef = useRef(initialView?.activityLogs?.[0]?.id ?? "");
   const boardIdRef = useRef(initialView?.board?.id ?? "");
 
@@ -79,6 +80,9 @@ export function BoardClient({ initialView }: { initialView: View }) {
   );
   const visibleTasks = useMemo(() => visibleColumns.flatMap((column: any) => column.tasks), [visibleColumns]);
   const activeTask = selected ? tasks.find((task: Task) => task.id === selected.id) ?? selected : null;
+  const activeTaskId = activeTask?.id ?? null;
+  const activeTaskNumber = activeTask?.taskNumber ?? null;
+  const refreshRef = useRef<((nextFilters?: Filters, options?: { syncUrl?: boolean; boardId?: string }) => Promise<void>) | null>(null);
 
   useEffect(() => {
     filtersRef.current = filters;
@@ -86,6 +90,10 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   useEffect(() => {
     setLastUpdatedAt(new Date());
+  }, []);
+
+  useEffect(() => () => {
+    refreshControllerRef.current?.abort();
   }, []);
 
   useEffect(() => {
@@ -146,9 +154,16 @@ export function BoardClient({ initialView }: { initialView: View }) {
   async function refresh(nextFilters = filtersRef.current, options: { syncUrl?: boolean; boardId?: string } = {}) {
     const params = new URLSearchParams(Object.entries(nextFilters).filter(([, value]) => value));
     params.set("board", options.boardId ?? boardIdRef.current);
-    const response = await fetch(`/api/board?${params.toString()}`);
-    const data = await response.json();
-    if (response.ok) {
+    refreshControllerRef.current?.abort();
+    const controller = new AbortController();
+    refreshControllerRef.current = controller;
+    try {
+      const response = await fetch(`/api/board?${params.toString()}`, { cache: "no-store", signal: controller.signal });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.board?.id) {
+        setError(data?.error ?? "Не удалось обновить доску");
+        return;
+      }
       const latestActivity = data.activityLogs?.[0];
       if (latestActivity?.id && activityFingerprintRef.current && latestActivity.id !== activityFingerprintRef.current) {
         pushToast(`${activityLabel(latestActivity.action)}: ${latestActivity.task?.title ?? "доска"}`);
@@ -156,12 +171,18 @@ export function BoardClient({ initialView }: { initialView: View }) {
       if (latestActivity?.id) activityFingerprintRef.current = latestActivity.id;
       boardIdRef.current = data.board.id;
       setView(data);
+      setError("");
       setLastUpdatedAt(new Date());
       if (options.syncUrl) window.history.replaceState(null, "", params.toString() ? `/board?${params.toString()}` : "/board");
-    } else {
-      setError(data.error ?? "Не удалось обновить доску");
+    } catch (caught) {
+      if (caught instanceof DOMException && caught.name === "AbortError") return;
+      setError("Не удалось обновить доску. Проверьте соединение и повторите попытку.");
+    } finally {
+      if (refreshControllerRef.current === controller) refreshControllerRef.current = null;
     }
   }
+
+  refreshRef.current = refresh;
 
   function switchBoard(boardId: string) {
     setSelected(null);
@@ -182,7 +203,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible" && !createOpen && !aiAssistantOpen && !selected) {
-        void refresh(filtersRef.current);
+        void refreshRef.current?.(filtersRef.current);
       }
     }, 10000);
     return () => window.clearInterval(timer);
@@ -249,61 +270,77 @@ export function BoardClient({ initialView }: { initialView: View }) {
   async function createTask(formData: FormData) {
     setError("");
     const payload = taskPayload(formData);
-    const response = await fetch("/api/tasks", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      setError(data.error ?? "Не удалось создать задачу");
-      return;
+    try {
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error ?? "Не удалось создать задачу");
+        return;
+      }
+      setCreateOpen(false);
+      setCreateDraft(null);
+      await refresh();
+    } catch {
+      setError("Не удалось создать задачу. Проверьте соединение и повторите попытку.");
     }
-    setCreateOpen(false);
-    setCreateDraft(null);
-    await refresh();
   }
 
   async function saveTask(formData: FormData) {
     if (!activeTask) return;
     const payload = taskPayload(formData);
-    const response = await fetch(`/api/tasks/${activeTask.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      setError(data.error ?? "Не удалось сохранить задачу");
-      return;
+    try {
+      const response = await fetch(`/api/tasks/${activeTask.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error ?? "Не удалось сохранить задачу");
+        return;
+      }
+      setSelected(data.task);
+      await refresh();
+    } catch {
+      setError("Не удалось сохранить задачу. Проверьте соединение и повторите попытку.");
     }
-    setSelected(data.task);
-    await refresh();
   }
 
   async function archiveTask() {
     if (!activeTask) return;
-    const response = await fetch(`/api/tasks/${activeTask.id}/archive`, { method: "POST" });
-    if (response.ok) {
-      setSelected(null);
-      setTaskFullscreen(false);
-      await refresh();
-    } else {
-      const data = await response.json().catch(() => ({}));
-      setError(data.error ?? "Не удалось перенести задачу в архив");
+    try {
+      const response = await fetch(`/api/tasks/${activeTask.id}/archive`, { method: "POST" });
+      if (response.ok) {
+        setSelected(null);
+        setTaskFullscreen(false);
+        await refresh();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "Не удалось перенести задачу в архив");
+      }
+    } catch {
+      setError("Не удалось перенести задачу в архив. Проверьте соединение и повторите попытку.");
     }
   }
 
   async function deleteTask() {
     if (!activeTask) return;
-    const response = await fetch(`/api/tasks/${activeTask.id}`, { method: "DELETE" });
-    if (response.ok) {
-      setSelected(null);
-      setTaskFullscreen(false);
-      await refresh();
-    } else {
-      const data = await response.json().catch(() => ({}));
-      setError(data.error ?? "Не удалось удалить задачу");
+    try {
+      const response = await fetch(`/api/tasks/${activeTask.id}`, { method: "DELETE" });
+      if (response.ok) {
+        setSelected(null);
+        setTaskFullscreen(false);
+        await refresh();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "Не удалось удалить задачу");
+      }
+    } catch {
+      setError("Не удалось удалить задачу. Проверьте соединение и повторите попытку.");
     }
   }
 
@@ -316,13 +353,22 @@ export function BoardClient({ initialView }: { initialView: View }) {
   async function moveTask(columnId: string, taskId = draggingId) {
     if (!taskId) return;
     setDropColumn(null);
-    const response = await fetch(`/api/tasks/${taskId}/move`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ columnId, position: 0 }),
-    });
-    setDraggingId(null);
-    if (response.ok) await refresh();
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/move`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ columnId, position: 0 }),
+      });
+      setDraggingId(null);
+      if (response.ok) await refresh();
+      else {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "Не удалось переместить задачу");
+      }
+    } catch {
+      setDraggingId(null);
+      setError("Не удалось переместить задачу. Проверьте соединение и повторите попытку.");
+    }
   }
 
   async function addComment(formData: FormData) {
@@ -330,18 +376,23 @@ export function BoardClient({ initialView }: { initialView: View }) {
     setError("");
     const text = String(formData.get("text") ?? "").trim();
     if (!text) return;
-    const response = await fetch(`/api/tasks/${activeTask.id}/comments`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    if (response.ok) {
-      setCommentComposerResetKey((current) => current + 1);
-      await refresh();
-      return;
+    try {
+      const response = await fetch(`/api/tasks/${activeTask.id}/comments`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (response.ok) {
+        setCommentComposerResetKey((current) => current + 1);
+        await refresh();
+      }
+      else {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "Не удалось отправить комментарий");
+      }
+    } catch {
+      setError("Не удалось добавить комментарий. Проверьте соединение и повторите попытку.");
     }
-    const data = await response.json().catch(() => ({}));
-    setError(data.error ?? "Не удалось отправить комментарий");
   }
 
   async function addChecklistItem(formData: FormData) {
@@ -350,58 +401,84 @@ export function BoardClient({ initialView }: { initialView: View }) {
     const text = String(formData.get("text") ?? "").trim();
     if (!text) return;
 
-    let checklist = activeTask.checklists[0];
-    if (!checklist) {
-      const createdResponse = await fetch(`/api/tasks/${activeTask.id}/checklists`, {
+    try {
+      let checklist = activeTask.checklists[0];
+      if (!checklist) {
+        const createdResponse = await fetch(`/api/tasks/${activeTask.id}/checklists`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ title: "Чек-лист" }),
+        });
+        const created = await createdResponse.json().catch(() => ({}));
+        if (!createdResponse.ok || !created.checklist?.id) {
+          setError(created.error ?? "Не удалось создать чеклист");
+          return;
+        }
+        checklist = created.checklist;
+      }
+
+      const response = await fetch(`/api/checklists/${checklist.id}/items`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ title: "Чек-лист" }),
+        body: JSON.stringify({ text }),
       });
-      const created = await createdResponse.json().catch(() => ({}));
-      if (!createdResponse.ok || !created.checklist?.id) {
-        setError(created.error ?? "Не удалось создать чеклист");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "Не удалось добавить пункт чеклиста");
         return;
       }
-      checklist = created.checklist;
+      await refresh();
+    } catch {
+      setError("Не удалось обновить чеклист. Проверьте соединение и повторите попытку.");
     }
-
-    const response = await fetch(`/api/checklists/${checklist.id}/items`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text }),
-    });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setError(data.error ?? "Не удалось добавить пункт чеклиста");
-      return;
-    }
-    await refresh();
   }
 
   async function toggleChecklistItem(id: string, completed: boolean) {
-    await fetch(`/api/checklist-items/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ completed }),
-    });
-    await refresh();
+    try {
+      const response = await fetch(`/api/checklist-items/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ completed }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "Не удалось обновить пункт чеклиста");
+        return;
+      }
+      await refresh();
+    } catch {
+      setError("Не удалось обновить пункт чеклиста. Проверьте соединение и повторите попытку.");
+    }
   }
 
   async function deleteChecklistItem(id: string) {
     setError("");
-    const response = await fetch(`/api/checklist-items/${id}`, { method: "DELETE" });
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      setError(data.error ?? "Не удалось удалить пункт чек-листа");
-      return;
+    try {
+      const response = await fetch(`/api/checklist-items/${id}`, { method: "DELETE" });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "Не удалось удалить пункт чек-листа");
+        return;
+      }
+      await refresh();
+    } catch {
+      setError("Не удалось удалить пункт чек-листа. Проверьте соединение и повторите попытку.");
     }
-    await refresh();
   }
 
   async function uploadFile(formData: FormData) {
     if (!activeTask) return;
-    await fetch(`/api/tasks/${activeTask.id}/files`, { method: "POST", body: formData });
-    await refresh();
+    try {
+      const response = await fetch(`/api/tasks/${activeTask.id}/files`, { method: "POST", body: formData });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(data.error ?? "Не удалось загрузить файл");
+        return;
+      }
+      await refresh();
+    } catch {
+      setError("Не удалось загрузить файл. Проверьте соединение и повторите попытку.");
+    }
   }
 
   return (
@@ -1924,7 +2001,7 @@ function MentionTextarea({ users, resetKey }: { users: any[]; resetKey?: string 
   return <div className="mention-input-wrap">
     <textarea className="textarea modal-comment-input" name="text" value={value} onChange={(event) => setValue(event.currentTarget.value)} placeholder="Напишите комментарий… Используйте @имя" required />
     {suggestions.length ? <div className="mention-suggestions" role="listbox" aria-label="Пользователи для упоминания">
-      {suggestions.map((user) => <button type="button" role="option" key={user.id} onClick={() => choose(user)}>{user.name}{user.handle ? ` · @${user.handle}` : ""}</button>)}
+      {suggestions.map((user) => <button type="button" role="option" aria-selected="false" key={user.id} onClick={() => choose(user)}>{user.name}{user.handle ? ` · @${user.handle}` : ""}</button>)}
     </div> : null}
   </div>;
 }
@@ -1975,11 +2052,6 @@ function isCompletedColumn(name: string) {
 function isReviewColumn(name: string) {
   const normalized = name.toLowerCase();
   return normalized.includes("провер") || normalized.includes("review") || normalized.includes("verify") || normalized.includes("approval") || normalized.includes("РїСЂРѕРІРµСЂ".toLowerCase());
-}
-
-function isWorkColumn(name: string) {
-  const normalized = name.toLowerCase();
-  return normalized.includes("работ") || normalized.includes("progress") || normalized.includes("doing");
 }
 
 function isOverdue(task: Task) {

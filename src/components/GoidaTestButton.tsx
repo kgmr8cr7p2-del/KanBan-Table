@@ -9,7 +9,10 @@ export function GoidaTestButton() {
   async function triggerGoida() {
     setBusy(true);
     try {
-      await fetch("/api/goida", { method: "POST" });
+      const response = await fetch("/api/goida", { method: "POST" });
+      if (!response.ok) throw new Error("Сервер не смог запустить уведомление");
+    } catch {
+      // This is a best-effort diagnostic action; the busy state must still reset.
     } finally {
       setBusy(false);
     }

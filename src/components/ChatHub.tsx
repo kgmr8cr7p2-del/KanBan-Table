@@ -28,15 +28,20 @@ export function ChatHub({ viewerId }: { viewerId: string }) {
   const [error, setError] = useState("");
 
   const refresh = useCallback(async () => {
-    const response = await fetch("/api/messages/conversations", { cache: "no-store" });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) setError(payload.error || "Не удалось загрузить чаты");
-    else {
-      const nextConversations: Conversation[] = payload.conversations ?? [];
-      setConversations(nextConversations);
-      setError("");
+    try {
+      const response = await fetch("/api/messages/conversations", { cache: "no-store" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) setError(payload.error || "Не удалось загрузить чаты");
+      else {
+        const nextConversations: Conversation[] = Array.isArray(payload.conversations) ? payload.conversations : [];
+        setConversations(nextConversations);
+        setError("");
+      }
+    } catch {
+      setError("Не удалось загрузить чаты. Проверьте соединение и повторите попытку.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {

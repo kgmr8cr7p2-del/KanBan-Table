@@ -31,25 +31,41 @@ export function SettingsHub({
   const persistedKey = `taskora-open-panel:${storageKey}`;
 
   function openPanel(id: string) {
-    window.sessionStorage.setItem(persistedKey, id);
+    try {
+      window.sessionStorage.setItem(persistedKey, id);
+    } catch {
+      // Session storage is an enhancement; the dialog still works for this visit.
+    }
     setActiveId(id);
   }
 
   function closePanel() {
-    window.sessionStorage.removeItem(persistedKey);
+    try {
+      window.sessionStorage.removeItem(persistedKey);
+    } catch {
+      // Ignore storage restrictions.
+    }
     setActiveId(null);
   }
 
   useEffect(() => {
-    const savedId = window.sessionStorage.getItem(persistedKey);
-    if (savedId && panels.some((panel) => panel.id === savedId)) setActiveId(savedId);
+    try {
+      const savedId = window.sessionStorage.getItem(persistedKey);
+      if (savedId && panelIds.split("|").includes(savedId)) setActiveId(savedId);
+    } catch {
+      // Ignore storage restrictions.
+    }
   }, [panelIds, persistedKey]);
 
   useEffect(() => {
     if (!active) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        window.sessionStorage.removeItem(persistedKey);
+        try {
+          window.sessionStorage.removeItem(persistedKey);
+        } catch {
+          // Ignore storage restrictions.
+        }
         setActiveId(null);
       }
     };

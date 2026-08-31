@@ -24,9 +24,9 @@ export function WeeklyReportReminder() {
       if (!event) return;
 
       const storageKey = `${REPORT_KEY_PREFIX}-${event.key}`;
-      if (window.sessionStorage.getItem(storageKey)) return;
+      if (readSessionFlag(storageKey)) return;
 
-      window.sessionStorage.setItem(storageKey, "sent");
+      writeSessionFlag(storageKey, "sent");
       void sendReport();
     };
 
@@ -42,9 +42,9 @@ export function WeeklyReportReminder() {
       if (currentSeconds < targetSeconds) return;
 
       const storageKey = `${REPORT_KEY_PREFIX}-${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}-16-40`;
-      if (window.sessionStorage.getItem(storageKey)) return;
+      if (readSessionFlag(storageKey)) return;
 
-      window.sessionStorage.setItem(storageKey, "sent");
+      writeSessionFlag(storageKey, "sent");
       void sendReport();
     };
 
@@ -67,6 +67,22 @@ export function WeeklyReportReminder() {
   }, []);
 
   return null;
+}
+
+function readSessionFlag(key: string) {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionFlag(key: string, value: string) {
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch {
+    // The report is best-effort when storage is blocked.
+  }
 }
 
 function getFridayReportEvent() {

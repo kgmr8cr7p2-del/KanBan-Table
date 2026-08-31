@@ -25,11 +25,14 @@ export function PersonalBoardSettings({ initialBoards }: { initialBoards: Person
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name }),
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) return setError(data.error ?? "Не удалось создать личную доску");
+      if (!data.board?.id) return setError("Сервер не вернул созданную доску");
       setBoards((current) => [...current, data.board]);
       form.reset();
       window.location.assign(`/settings?board=${encodeURIComponent(data.board.id)}`);
+    } catch {
+      setError("Не удалось создать личную доску. Проверьте соединение и повторите попытку.");
     } finally {
       setAdding(false);
     }
@@ -38,10 +41,14 @@ export function PersonalBoardSettings({ initialBoards }: { initialBoards: Person
   async function removeBoard(board: PersonalBoard) {
     setDeleting(null);
     setError("");
-    const response = await fetch(`/api/personal-boards/${board.id}`, { method: "DELETE" });
-    const data = await response.json();
-    if (!response.ok) return setError(data.error ?? "Не удалось удалить личную доску");
-    setBoards((current) => current.filter((item) => item.id !== board.id));
+    try {
+      const response = await fetch(`/api/personal-boards/${board.id}`, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return setError(data.error ?? "Не удалось удалить личную доску");
+      setBoards((current) => current.filter((item) => item.id !== board.id));
+    } catch {
+      setError("Не удалось удалить личную доску. Проверьте соединение и повторите попытку.");
+    }
   }
 
   return (

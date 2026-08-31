@@ -45,9 +45,13 @@ export function AppNav({ user }: { user: CurrentUser }) {
     if (!hasAccess || !canUseChats) return;
     let active = true;
     async function refreshUnread() {
-      const response = await fetch("/api/messages/conversations", { cache: "no-store" });
-      const payload = await response.json().catch(() => ({}));
-      if (active && response.ok) setUnreadChats(Number(payload.unreadTotal) || 0);
+      try {
+        const response = await fetch("/api/messages/conversations", { cache: "no-store" });
+        const payload = await response.json().catch(() => ({}));
+        if (active && response.ok) setUnreadChats(Number(payload.unreadTotal) || 0);
+      } catch {
+        // A temporary network failure must not create an unhandled rejection in the polling loop.
+      }
     }
     void refreshUnread();
     const timer = window.setInterval(() => void refreshUnread(), 5_000);

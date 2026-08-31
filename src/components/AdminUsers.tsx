@@ -48,50 +48,64 @@ export function AdminUsers({
 
   async function changeRole(id: string, roleId: string) {
     setMessage("");
-    const response = await fetch(`/api/admin/users/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ roleId }),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) return setMessage(data.error ?? "Не удалось изменить роль");
-    setItems((current) => current.map((user) => user.id === id ? data.user : user));
-    setMessage(`Пользователю назначена роль «${data.user.role.name}».`);
+    try {
+      const response = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ roleId }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return setMessage(data.error ?? "Не удалось изменить роль");
+      if (!data.user?.id) return setMessage("Сервер не вернул обновлённого пользователя");
+      setItems((current) => current.map((user) => user.id === id ? data.user : user));
+      setMessage(`Пользователю назначена роль «${data.user.role.name}».`);
+    } catch {
+      setMessage("Не удалось изменить роль. Проверьте соединение и повторите попытку.");
+    }
   }
 
   async function changeAccess(id: string, approved: boolean) {
     setMessage("");
-    const response = await fetch(`/api/admin/users/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ approved }),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) return setMessage(data.error ?? "Не удалось изменить доступ");
-    setItems((current) => current.map((user) => user.id === id ? data.user : user));
-    setMessage(approved ? "Доступ пользователю разрешён." : "Доступ пользователя отозван.");
+    try {
+      const response = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ approved }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return setMessage(data.error ?? "Не удалось изменить доступ");
+      if (!data.user?.id) return setMessage("Сервер не вернул обновлённого пользователя");
+      setItems((current) => current.map((user) => user.id === id ? data.user : user));
+      setMessage(approved ? "Доступ пользователю разрешён." : "Доступ пользователя отозван.");
+    } catch {
+      setMessage("Не удалось изменить доступ. Проверьте соединение и повторите попытку.");
+    }
   }
 
   async function inviteUser(formData: FormData) {
     setMessage("");
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const roleId = String(formData.get("roleId") ?? "");
-    const response = await fetch("/api/admin/users", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, roleId }),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) return setMessage(data.error ?? "Не удалось добавить пользователя");
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, roleId }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) return setMessage(data.error ?? "Не удалось добавить пользователя");
 
-    if (data.user) {
-      setItems((current) => current.map((user) => user.id === data.user.id ? data.user : user));
-      setMessage(`Пользователю назначена роль «${data.user.role.name}».`);
-      return;
-    }
-    if (data.invite) {
-      setPendingInvites((current) => [data.invite, ...current.filter((invite) => invite.id !== data.invite.id)]);
-      setMessage("Приглашение сохранено.");
+      if (data.user) {
+        setItems((current) => current.map((user) => user.id === data.user.id ? data.user : user));
+        setMessage(`Пользователю назначена роль «${data.user.role.name}».`);
+        return;
+      }
+      if (data.invite) {
+        setPendingInvites((current) => [data.invite, ...current.filter((invite) => invite.id !== data.invite.id)]);
+        setMessage("Приглашение сохранено.");
+      }
+    } catch {
+      setMessage("Не удалось добавить пользователя. Проверьте соединение и повторите попытку.");
     }
   }
 

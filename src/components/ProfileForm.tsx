@@ -16,6 +16,7 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
   const cropCanvasRef = useRef<HTMLCanvasElement>(null);
   const sourceImageRef = useRef<HTMLImageElement | null>(null);
   const dragRef = useRef<{ pointerId: number; clientX: number; clientY: number; crop: Crop } | null>(null);
+  const cropRef = useRef<Crop>({ zoom: 1, x: 50, y: 50 });
   const [draft, setDraft] = useState({
     lastName: user.lastName ?? "",
     firstName: user.firstName || user.name,
@@ -26,7 +27,6 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
   const displayName = formatUserName(draft) || user.name;
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? "");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [sourceUrl, setSourceUrl] = useState("");
   const [previewUrl, setPreviewUrl] = useState(user.avatarUrl ?? "");
   const [crop, setCrop] = useState<Crop>({ zoom: 1, x: 50, y: 50 });
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -41,23 +41,22 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
 
   useEffect(() => {
     if (!avatarFile) {
-      setSourceUrl("");
       sourceImageRef.current = null;
       setPreviewUrl(avatarUrl);
       return;
     }
     const objectUrl = URL.createObjectURL(avatarFile);
-    setSourceUrl(objectUrl);
     const image = new Image();
     image.onload = () => {
       sourceImageRef.current = image;
-      renderCropPreview(image, cropCanvasRef.current, crop, setPreviewUrl);
+      renderCropPreview(image, cropCanvasRef.current, cropRef.current, setPreviewUrl);
     };
     image.src = objectUrl;
     return () => URL.revokeObjectURL(objectUrl);
   }, [avatarFile, avatarUrl]);
 
   useEffect(() => {
+    cropRef.current = crop;
     if (sourceImageRef.current) renderCropPreview(sourceImageRef.current, cropCanvasRef.current, crop, setPreviewUrl);
   }, [crop]);
 
@@ -183,20 +182,25 @@ export function ProfileForm({ user }: { user: ProfileUser }) {
       if (avatarUrl) return;
     }
     setStatus("saving");
-    const response = await fetch("/api/profile/avatar", { method: "DELETE" });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
+    try {
+      const response = await fetch("/api/profile/avatar", { method: "DELETE" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setStatus("error");
+        setMessage(payload.error || "Не удалось удалить аватар.");
+        return;
+      }
+      setAvatarFile(null);
+      setAvatarUrl("");
+      setPreviewUrl("");
+      setStatus("saved");
+      setMessage("Аватар удалён");
+      window.dispatchEvent(new CustomEvent("profileupdated", { detail: { ...draft, name: displayName, avatarUrl: "" } }));
+      router.refresh();
+    } catch {
       setStatus("error");
-      setMessage(payload.error || "Не удалось удалить аватар.");
-      return;
+      setMessage("Не удалось удалить аватар. Проверьте соединение и повторите попытку.");
     }
-    setAvatarFile(null);
-    setAvatarUrl("");
-    setPreviewUrl("");
-    setStatus("saved");
-    setMessage("Аватар удалён");
-    window.dispatchEvent(new CustomEvent("profileupdated", { detail: { ...draft, name: displayName, avatarUrl: "" } }));
-    router.refresh();
   }
 
   return (

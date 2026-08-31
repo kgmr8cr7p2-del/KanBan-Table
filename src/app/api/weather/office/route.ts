@@ -52,14 +52,18 @@ export async function GET() {
   url.searchParams.set("hourly", "precipitation_probability,precipitation,weather_code,temperature_2m");
   url.searchParams.set("daily", "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max");
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
   try {
-    const response = await fetch(url, { next: { revalidate: 600 } });
+    const response = await fetch(url, { next: { revalidate: 600 }, signal: controller.signal });
     if (!response.ok) throw new Error(`Weather request failed: ${response.status}`);
     const data = await response.json();
-    const precipitationProbability = data.hourly?.precipitation_probability ?? [];
-    const precipitation = data.hourly?.precipitation ?? [];
+    const hourly = data.hourly ?? {};
+    const precipitationProbability = Array.isArray(hourly.precipitation_probability) ? hourly.precipitation_probability : [];
+    const precipitation = Array.isArray(hourly.precipitation) ? hourly.precipitation : [];
     const nextPrecipitationIndex = precipitationProbability.findIndex((value: number, index: number) => value >= 45 || Number(precipitation[index] ?? 0) > 0);
     const tomorrowWeatherCode = Number(data.daily?.weather_code?.[1] ?? data.current?.weather_code ?? 0);
+    const nextPrecipitationTime = nextPrecipitationIndex >= 0 ? hourly.time?.[nextPrecipitationIndex] : null;
 
     return NextResponse.json(
       {
@@ -84,12 +88,12 @@ export async function GET() {
             }
           : null,
         nextPrecipitation:
-          nextPrecipitationIndex >= 0
+          nextPrecipitationIndex >= 0 && typeof nextPrecipitationTime === "string"
             ? {
-                time: data.hourly.time[nextPrecipitationIndex],
+                time: nextPrecipitationTime,
                 probability: precipitationProbability[nextPrecipitationIndex],
                 precipitation: precipitation[nextPrecipitationIndex],
-                summary: weatherLabels[Number(data.hourly.weather_code[nextPrecipitationIndex] ?? 0)] ?? "Осадки",
+                summary: weatherLabels[Number(hourly.weather_code?.[nextPrecipitationIndex] ?? 0)] ?? "Осадки",
               }
             : null,
       },
@@ -106,6 +110,8 @@ export async function GET() {
       unavailable: true,
       summary: "Погода временно недоступна",
     });
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

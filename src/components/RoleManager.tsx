@@ -126,56 +126,73 @@ export function RoleManager({ initialRoles }: { initialRoles: RoleItem[] }) {
     if (name.length < 2) return;
     setSaving(true);
     setMessage("");
-    const response = await fetch("/api/admin/roles", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, permissions: [] }),
-    });
-    const data = await response.json().catch(() => ({}));
-    setSaving(false);
-    if (!response.ok) {
+    try {
+      const response = await fetch("/api/admin/roles", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, permissions: [] }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessageKind("error");
+        setMessage(data.error ?? "Не удалось создать роль");
+        return;
+      }
+      if (!data.role?.id) {
+        setMessageKind("error");
+        setMessage("Сервер не вернул созданную роль");
+        return;
+      }
+      const created: RoleItem = { ...data.role, _count: data.role._count ?? { users: 0, userInvites: 0 } };
+      setRoles((current) => [...current, created]);
+      setSavedRoles((current) => [...current, created]);
+      setSelectedId(created.id);
+      setNewRoleName("");
+      setCreating(false);
+      setMessageKind("success");
+      setMessage(`Роль «${created.name}» создана. Теперь настройте её права.`);
+      router.refresh();
+    } catch {
       setMessageKind("error");
-      setMessage(data.error ?? "Не удалось создать роль");
-      return;
+      setMessage("Не удалось создать роль. Проверьте соединение и повторите попытку.");
+    } finally {
+      setSaving(false);
     }
-    const created: RoleItem = { ...data.role, _count: data.role._count ?? { users: 0, userInvites: 0 } };
-    setRoles((current) => [...current, created]);
-    setSavedRoles((current) => [...current, created]);
-    setSelectedId(created.id);
-    setNewRoleName("");
-    setCreating(false);
-    setMessageKind("success");
-    setMessage(`Роль «${created.name}» создана. Теперь настройте её права.`);
-    router.refresh();
   }
 
   async function saveRole() {
     if (!selected || selected.systemKey === "ADMIN" || !selectedIsDirty) return;
     setSaving(true);
     setMessage("");
-    const response = await fetch(`/api/admin/roles/${selected.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: selected.name.trim(), permissions: selected.permissions }),
-    });
-    const data = await response.json().catch(() => ({}));
-    setSaving(false);
-    if (!response.ok) {
+    try {
+      const response = await fetch(`/api/admin/roles/${selected.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: selected.name.trim(), permissions: selected.permissions }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessageKind("error");
+        setMessage(data.error ?? "Не удалось сохранить роль");
+        return;
+      }
+      const updated: RoleItem = { ...selected, ...data.role, _count: selected._count };
+      setRoles((current) => current.map((role) => role.id === selected.id ? updated : role));
+      setSavedRoles((current) => current.map((role) => role.id === selected.id ? updated : role));
+      setDirtyRoleIds((current) => {
+        const next = new Set(current);
+        next.delete(selected.id);
+        return next;
+      });
+      setMessageKind("success");
+      setMessage(`Изменения роли «${updated.name}» сохранены.`);
+      router.refresh();
+    } catch {
       setMessageKind("error");
-      setMessage(data.error ?? "Не удалось сохранить роль");
-      return;
+      setMessage("Не удалось сохранить роль. Проверьте соединение и повторите попытку.");
+    } finally {
+      setSaving(false);
     }
-    const updated: RoleItem = { ...selected, ...data.role, _count: selected._count };
-    setRoles((current) => current.map((role) => role.id === selected.id ? updated : role));
-    setSavedRoles((current) => current.map((role) => role.id === selected.id ? updated : role));
-    setDirtyRoleIds((current) => {
-      const next = new Set(current);
-      next.delete(selected.id);
-      return next;
-    });
-    setMessageKind("success");
-    setMessage(`Изменения роли «${updated.name}» сохранены.`);
-    router.refresh();
   }
 
   async function deleteRole() {
@@ -188,30 +205,36 @@ export function RoleManager({ initialRoles }: { initialRoles: RoleItem[] }) {
     }
     setSaving(true);
     setMessage("");
-    const response = await fetch(`/api/admin/roles/${selected.id}`, {
-      method: "DELETE",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ replacementRoleId: assignedCount ? replacementRole?.id : undefined }),
-    });
-    const data = await response.json().catch(() => ({}));
-    setSaving(false);
-    if (!response.ok) {
+    try {
+      const response = await fetch(`/api/admin/roles/${selected.id}`, {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ replacementRoleId: assignedCount ? replacementRole?.id : undefined }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessageKind("error");
+        setMessage(data.error ?? "Не удалось удалить роль");
+        return;
+      }
+      const next = roles.filter((role) => role.id !== selected.id);
+      setRoles(next);
+      setSavedRoles((current) => current.filter((role) => role.id !== selected.id));
+      setDirtyRoleIds((current) => {
+        const updated = new Set(current);
+        updated.delete(selected.id);
+        return updated;
+      });
+      setSelectedId(next[0]?.id ?? "");
+      setMessageKind("success");
+      setMessage(`Роль «${selected.name}» удалена.`);
+      router.refresh();
+    } catch {
       setMessageKind("error");
-      setMessage(data.error ?? "Не удалось удалить роль");
-      return;
+      setMessage("Не удалось удалить роль. Проверьте соединение и повторите попытку.");
+    } finally {
+      setSaving(false);
     }
-    const next = roles.filter((role) => role.id !== selected.id);
-    setRoles(next);
-    setSavedRoles((current) => current.filter((role) => role.id !== selected.id));
-    setDirtyRoleIds((current) => {
-      const updated = new Set(current);
-      updated.delete(selected.id);
-      return updated;
-    });
-    setSelectedId(next[0]?.id ?? "");
-    setMessageKind("success");
-    setMessage(`Роль «${selected.name}» удалена.`);
-    router.refresh();
   }
 
   return (

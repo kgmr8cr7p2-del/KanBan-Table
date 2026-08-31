@@ -7,12 +7,21 @@ export type NotificationSoundResult = "played" | "disabled" | "blocked" | "faile
 
 export function isNotificationSoundEnabled() {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(SOUND_KEY) !== "off";
+  try {
+    return window.localStorage.getItem(SOUND_KEY) !== "off";
+  } catch {
+    return true;
+  }
 }
 
 export function getNotificationSoundVolume() {
   if (typeof window === "undefined") return 1;
-  const storedValue = window.localStorage.getItem(VOLUME_KEY);
+  let storedValue: string | null = null;
+  try {
+    storedValue = window.localStorage.getItem(VOLUME_KEY);
+  } catch {
+    return 1;
+  }
   if (storedValue === null) return 1;
   const value = Number(storedValue);
   return Number.isFinite(value) && value >= 0 && value <= 1 ? value : 1;
@@ -20,8 +29,12 @@ export function getNotificationSoundVolume() {
 
 export function setNotificationSoundPreferences(enabled: boolean, volume: number) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(SOUND_KEY, enabled ? "on" : "off");
-  window.localStorage.setItem(VOLUME_KEY, String(Math.min(1, Math.max(0, volume))));
+  try {
+    window.localStorage.setItem(SOUND_KEY, enabled ? "on" : "off");
+    window.localStorage.setItem(VOLUME_KEY, String(Math.min(1, Math.max(0, volume))));
+  } catch {
+    // Audio preferences are optional and should not break the settings page.
+  }
 }
 
 export async function primeNotificationSound() {
