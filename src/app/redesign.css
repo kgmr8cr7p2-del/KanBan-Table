@@ -6051,3 +6051,450 @@ html {
     animation: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Minimal chat pass
+   Keep the conversation, search, presence, attachments, and send action;
+   remove repeated labels and decorative containers around them.
+---------------------------------------------------------------------------- */
+:root[data-interface-mode="new"] .chats-page {
+  gap: 16px;
+}
+
+:root[data-interface-mode="new"] .chats-page-head {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  padding-block-end: 16px;
+}
+
+:root[data-interface-mode="new"] .chats-page-intro {
+  gap: 8px;
+}
+
+:root[data-interface-mode="new"] .chats-page-intro h1 {
+  max-inline-size: none;
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  letter-spacing: -.045em;
+}
+
+:root[data-interface-mode="new"] .chats-page-intro p {
+  max-inline-size: 32rem;
+  font-size: .88rem;
+}
+
+:root[data-interface-mode="new"] .chats-page-presence {
+  display: none;
+}
+
+:root[data-interface-mode="new"] .chat-hub {
+  grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
+  min-block-size: min(68dvh, 48rem);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgb(30 41 59 / 6%);
+}
+
+:root[data-interface-mode="new"] .chat-directory {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--panel);
+}
+
+:root[data-interface-mode="new"] .chat-directory-head {
+  gap: 12px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+:root[data-interface-mode="new"] .chat-directory-title-row {
+  align-items: center;
+  gap: 8px;
+}
+
+:root[data-interface-mode="new"] .chat-directory-title-copy {
+  gap: 0;
+}
+
+:root[data-interface-mode="new"] .chat-directory-title-copy h2 {
+  font-size: 1rem;
+  letter-spacing: -.02em;
+}
+
+:root[data-interface-mode="new"] .chat-directory-count {
+  min-block-size: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  font-size: .72rem;
+}
+
+:root[data-interface-mode="new"] .chat-search {
+  min-block-size: 44px;
+  border-radius: 10px;
+  padding-inline: 12px;
+}
+
+:root[data-interface-mode="new"] .chat-search input {
+  min-block-size: 42px;
+  font-size: .84rem;
+}
+
+:root[data-interface-mode="new"] .chat-directory-list {
+  gap: 0;
+  padding: 8px;
+}
+
+:root[data-interface-mode="new"] .chat-directory-item {
+  min-block-size: 72px;
+  gap: 12px;
+  border: 0;
+  border-block-end: 1px solid var(--border);
+  border-radius: 0;
+  padding: 12px 8px;
+  box-shadow: none;
+  transform: none;
+  transition: background .16s ease, box-shadow .16s ease;
+}
+
+:root[data-interface-mode="new"] .chat-directory-list > li:last-child .chat-directory-item {
+  border-block-end: 0;
+}
+
+:root[data-interface-mode="new"] .chat-directory-item:hover {
+  border-color: var(--border);
+  background: var(--panel-2);
+  box-shadow: none;
+  transform: none;
+}
+
+:root[data-interface-mode="new"] .chat-directory-item.is-active {
+  border-color: var(--border);
+  background: var(--brand-soft);
+  box-shadow: inset 3px 0 var(--accent-blue);
+}
+
+:root[data-interface-mode="new"] .chat-directory-item .chat-directory-avatar {
+  inline-size: 40px;
+  block-size: 40px;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: none;
+  font-size: .76rem;
+}
+
+:root[data-interface-mode="new"] .chat-directory-item .chat-avatar-presence {
+  inline-size: 10px;
+  block-size: 10px;
+  inset-inline-end: -2px;
+  inset-block-end: -2px;
+  border-width: 2px;
+}
+
+:root[data-interface-mode="new"] .chat-directory-copy {
+  gap: 4px;
+}
+
+:root[data-interface-mode="new"] .chat-directory-name {
+  gap: 8px;
+}
+
+:root[data-interface-mode="new"] .chat-directory-name strong {
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+:root[data-interface-mode="new"] .chat-directory-name time {
+  font-size: .65rem;
+}
+
+:root[data-interface-mode="new"] .chat-directory-status {
+  gap: 6px;
+  font-size: .66rem;
+}
+
+:root[data-interface-mode="new"] .chat-directory-status i {
+  inline-size: 5px;
+  block-size: 5px;
+}
+
+:root[data-interface-mode="new"] .chat-directory-preview {
+  gap: 6px;
+  font-size: .7rem;
+}
+
+:root[data-interface-mode="new"] .chat-unread-count {
+  min-inline-size: 24px;
+  min-block-size: 24px;
+  border: 0;
+  box-shadow: none;
+  font-size: .62rem;
+}
+
+:root[data-interface-mode="new"] .chat-directory-empty {
+  display: block;
+  margin: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 24px 8px;
+  font-size: .78rem;
+}
+
+:root[data-interface-mode="new"] .chat-directory-error {
+  margin: 8px 16px 16px;
+}
+
+:root[data-interface-mode="new"] .chat-directory-filters,
+:root[data-interface-mode="new"] .chat-directory-footer,
+:root[data-interface-mode="new"] .chat-section-label,
+:root[data-interface-mode="new"] .chat-directory-status small,
+:root[data-interface-mode="new"] .chat-welcome-points,
+:root[data-interface-mode="new"] .direct-chat-private,
+:root[data-interface-mode="new"] .direct-chat-head-actions {
+  display: none !important;
+}
+
+:root[data-interface-mode="new"] .chat-welcome {
+  gap: 12px;
+  min-block-size: 100%;
+  background: var(--panel);
+  padding: 32px;
+}
+
+:root[data-interface-mode="new"] .chat-welcome-mark {
+  inline-size: 48px;
+  block-size: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--brand-soft);
+  box-shadow: none;
+}
+
+:root[data-interface-mode="new"] .chat-welcome h2 {
+  font-size: 1.1rem;
+}
+
+:root[data-interface-mode="new"] .chat-welcome p {
+  font-size: .8rem;
+}
+
+:root[data-interface-mode="new"] .direct-chat-head {
+  min-block-size: 72px;
+  gap: 12px;
+  padding: 12px 20px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-panel.is-embedded .direct-chat-head {
+  grid-template-columns: auto auto minmax(0, 1fr);
+}
+
+:root[data-interface-mode="new"] .direct-chat-head .direct-chat-avatar {
+  inline-size: 40px;
+  block-size: 40px;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+:root[data-interface-mode="new"] .direct-chat-person {
+  gap: 4px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-person h2 {
+  font-size: .94rem;
+}
+
+:root[data-interface-mode="new"] .direct-chat-presence {
+  gap: 6px;
+  font-size: .68rem;
+}
+
+:root[data-interface-mode="new"] .direct-chat-presence i {
+  inline-size: 6px;
+  block-size: 6px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-close,
+:root[data-interface-mode="new"] .direct-chat-head .chat-back-button {
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  border-radius: 10px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-messages {
+  gap: 8px;
+  background: var(--panel);
+  padding: 20px clamp(16px, 3vw, 32px);
+}
+
+:root[data-interface-mode="new"] .direct-chat-day-divider {
+  margin: 8px 0;
+}
+
+:root[data-interface-mode="new"] .direct-chat-message {
+  max-inline-size: min(72%, 40rem);
+  gap: 8px;
+  border-radius: 14px 14px 14px 5px;
+  padding: 10px 12px;
+  box-shadow: none;
+}
+
+:root[data-interface-mode="new"] .direct-chat-message.own {
+  border-radius: 14px 14px 5px 14px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-message-author {
+  display: none;
+}
+
+:root[data-interface-mode="new"] .direct-chat-message p {
+  font-size: .84rem;
+  line-height: 1.5;
+}
+
+:root[data-interface-mode="new"] .direct-chat-file {
+  min-block-size: 44px;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-empty-state {
+  gap: 8px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-messages > .direct-chat-empty {
+  justify-self: center;
+  margin: auto;
+}
+
+:root[data-interface-mode="new"] .direct-chat-empty-state > span {
+  inline-size: 48px;
+  block-size: 48px;
+  border: 0;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+:root[data-interface-mode="new"] .direct-chat-empty-state p {
+  font-size: .8rem;
+}
+
+:root[data-interface-mode="new"] .direct-chat-selected-file {
+  gap: 8px;
+  margin-inline: 20px;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-selected-file > img {
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: 10px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-compose {
+  gap: 8px;
+  padding: 12px 20px 16px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-compose .textarea {
+  min-block-size: 48px;
+  max-block-size: 128px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: .88rem;
+  resize: vertical;
+}
+
+:root[data-interface-mode="new"] .direct-chat-compose .chat-compose-button {
+  min-inline-size: 48px;
+  min-block-size: 48px;
+  border-radius: 12px;
+  gap: 8px;
+  padding-inline: 12px;
+}
+
+:root[data-interface-mode="new"] .direct-chat-notice.is-error {
+  margin-inline: 20px;
+}
+
+@container chat-page (max-width: 48rem) {
+  :root[data-interface-mode="new"] .chat-hub {
+    grid-template-columns: minmax(0, 1fr);
+    min-block-size: min(78dvh, 52rem);
+  }
+
+  :root[data-interface-mode="new"] .chat-directory {
+    max-block-size: none;
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--border);
+  }
+
+  :root[data-interface-mode="new"] .chat-hub.has-selection .chat-directory {
+    display: none;
+  }
+
+  :root[data-interface-mode="new"] .chat-hub.has-selection .chat-workspace {
+    min-block-size: min(78dvh, 52rem);
+  }
+}
+
+@media (max-width: 640px) {
+  :root[data-interface-mode="new"] .chats-page {
+    gap: 12px;
+  }
+
+  :root[data-interface-mode="new"] .chats-page-head {
+    padding-block-end: 12px;
+  }
+
+  :root[data-interface-mode="new"] .chats-page-intro p {
+    font-size: .82rem;
+  }
+
+  :root[data-interface-mode="new"] .chat-hub {
+    min-block-size: calc(100dvh - 9rem);
+    border-radius: 14px;
+  }
+
+  :root[data-interface-mode="new"] .chat-directory-head {
+    padding: 12px;
+  }
+
+  :root[data-interface-mode="new"] .chat-directory-list {
+    padding: 4px;
+  }
+
+  :root[data-interface-mode="new"] .chat-search input,
+  :root[data-interface-mode="new"] .direct-chat-compose .textarea {
+    font-size: 1rem;
+  }
+
+  :root[data-interface-mode="new"] .chat-directory-item {
+    min-block-size: 64px;
+    padding-inline: 8px;
+  }
+
+  :root[data-interface-mode="new"] .direct-chat-head {
+    padding: 10px 12px;
+  }
+
+  :root[data-interface-mode="new"] .direct-chat-messages {
+    padding: 12px 10px;
+  }
+
+  :root[data-interface-mode="new"] .direct-chat-message {
+    max-inline-size: 88%;
+  }
+
+  :root[data-interface-mode="new"] .direct-chat-selected-file {
+    margin-inline: 10px;
+  }
+
+  :root[data-interface-mode="new"] .direct-chat-compose {
+    padding: 10px;
+  }
+
+  :root[data-interface-mode="new"] .direct-chat-notice.is-error {
+    margin-inline: 10px;
+  }
+}

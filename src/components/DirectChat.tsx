@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CheckCheck, CircleCheck, FileText, Image as ImageIcon, MessageCircle, Paperclip, Send, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, CheckCheck, FileText, Image as ImageIcon, MessageCircle, Paperclip, Send, X } from "lucide-react";
 import { Fragment, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ProfileUser } from "@/components/ProfileCard/ProfileCard";
@@ -156,17 +156,14 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
         </span>
         <div className="direct-chat-person">
           <h2 id={embedded ? "chat-thread-title" : "direct-chat-title"}>{user.name}</h2>
-          <span className={`direct-chat-presence ${presenceTone(user)}`}><i aria-hidden="true" />{status}{user.jobTitle ? <small>{user.jobTitle}</small> : null}</span>
+          <span className={`direct-chat-presence ${presenceTone(user)}`}><i aria-hidden="true" />{status}</span>
         </div>
-        <div className="direct-chat-head-actions">
-          <span className="direct-chat-private"><ShieldCheck size={14} aria-hidden="true" /> Личный чат</span>
-          {onClose ? <button className="button icon secondary" type="button" aria-label="Закрыть чат" onClick={onClose}><X size={18} /></button> : null}
-        </div>
+        {onClose ? <button className="button icon secondary direct-chat-close" type="button" aria-label="Закрыть чат" onClick={onClose}><X size={18} /></button> : null}
       </header>
 
       <div className="direct-chat-messages" ref={listRef} aria-live="polite" aria-busy={loading}>
-        {loading ? <div className="direct-chat-empty-state is-loading"><span><CircleCheck size={18} aria-hidden="true" /></span><p>Загружаем переписку…</p></div> : null}
-        {!loading && !messages.length ? <div className="direct-chat-empty-state"><span><MessageCircle size={22} aria-hidden="true" /></span><strong>Начните разговор</strong><p>Напишите сообщение, чтобы обсудить задачу с коллегой.</p></div> : null}
+        {loading ? <p className="direct-chat-empty">Загружаем переписку…</p> : null}
+        {!loading && !messages.length ? <div className="direct-chat-empty-state"><span><MessageCircle size={22} aria-hidden="true" /></span><p>Пока нет сообщений.</p></div> : null}
         {messages.map((message, index) => {
           const own = message.senderId === viewerId;
           const showDayDivider = index === 0 || !isSameDay(messages[index - 1]?.createdAt, message.createdAt);
@@ -174,7 +171,6 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
             <Fragment key={message.id}>
               {showDayDivider ? <div className="direct-chat-day-divider"><span>{formatDayLabel(message.createdAt)}</span></div> : null}
               <article className={`direct-chat-message ${own ? "own" : ""}`}>
-                <span className="direct-chat-message-author">{own ? "Вы" : user.name}</span>
                 {message.text ? <p>{message.text}</p> : null}
                 {message.fileName ? (
                   isPreviewableImageMime(message.mimeType) ? (
@@ -214,10 +210,7 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
           <span className="visually-hidden">Прикрепить файл до 15 МБ</span>
           <input ref={fileInputRef} type="file" name="file" onChange={(event) => setSelectedFile(event.currentTarget.files?.[0] ?? null)} />
         </label>
-        <div className="direct-chat-compose-editor">
-          <textarea className="textarea" name="text" aria-label="Сообщение" placeholder="Напишите сообщение…" maxLength={4000} rows={1} enterKeyHint="send" onKeyDown={sendOnEnter} />
-          <span className="direct-chat-compose-hint">Enter — отправить · Shift+Enter — новая строка</span>
-        </div>
+        <textarea className="textarea" name="text" aria-label="Сообщение" placeholder="Напишите сообщение…" maxLength={4000} rows={1} enterKeyHint="send" onKeyDown={sendOnEnter} />
         <button className="button chat-compose-button" disabled={sending} aria-busy={sending} aria-label="Отправить сообщение"><Send size={18} aria-hidden="true" /><span className="direct-chat-action-text">{sending ? "Отправляем…" : "Отправить"}</span></button>
       </form>
       {error || refreshError ? <p className="direct-chat-notice is-error" role="alert">{error || refreshError}</p> : null}
