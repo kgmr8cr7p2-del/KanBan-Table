@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowLeft, CheckCheck, FileText, Image as ImageIcon, Paperclip, Send, X } from "lucide-react";
-import { type FormEvent, type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from "react";
+import { ArrowLeft, CheckCheck, CircleCheck, FileText, Image as ImageIcon, MessageCircle, Paperclip, Send, ShieldCheck, X } from "lucide-react";
+import { Fragment, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ProfileUser } from "@/components/ProfileCard/ProfileCard";
 import { presenceLabel, presenceTone, setPresenceActivity } from "@/lib/presence";
@@ -156,37 +156,45 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
         </span>
         <div className="direct-chat-person">
           <h2 id={embedded ? "chat-thread-title" : "direct-chat-title"}>{user.name}</h2>
-          <span className={`direct-chat-presence ${presenceTone(user)}`}><i aria-hidden="true" />{status}</span>
+          <span className={`direct-chat-presence ${presenceTone(user)}`}><i aria-hidden="true" />{status}{user.jobTitle ? <small>{user.jobTitle}</small> : null}</span>
         </div>
-        {onClose ? <button className="button icon secondary" type="button" aria-label="Закрыть чат" onClick={onClose}><X size={18} /></button> : null}
+        <div className="direct-chat-head-actions">
+          <span className="direct-chat-private"><ShieldCheck size={14} aria-hidden="true" /> Личный чат</span>
+          {onClose ? <button className="button icon secondary" type="button" aria-label="Закрыть чат" onClick={onClose}><X size={18} /></button> : null}
+        </div>
       </header>
 
       <div className="direct-chat-messages" ref={listRef} aria-live="polite" aria-busy={loading}>
-        {loading ? <p className="direct-chat-empty">Загружаем переписку…</p> : null}
-        {!loading && !messages.length ? <p className="direct-chat-empty">Сообщений пока нет.</p> : null}
-        {messages.map((message) => {
+        {loading ? <div className="direct-chat-empty-state is-loading"><span><CircleCheck size={18} aria-hidden="true" /></span><p>Загружаем переписку…</p></div> : null}
+        {!loading && !messages.length ? <div className="direct-chat-empty-state"><span><MessageCircle size={22} aria-hidden="true" /></span><strong>Начните разговор</strong><p>Напишите сообщение, чтобы обсудить задачу с коллегой.</p></div> : null}
+        {messages.map((message, index) => {
           const own = message.senderId === viewerId;
+          const showDayDivider = index === 0 || !isSameDay(messages[index - 1]?.createdAt, message.createdAt);
           return (
-            <article className={`direct-chat-message ${own ? "own" : ""}`} key={message.id}>
-              {message.text ? <p>{message.text}</p> : null}
-              {message.fileName ? (
-                isPreviewableImageMime(message.mimeType) ? (
-                  <a className="direct-chat-media" href={`/api/message-files/${message.id}?inline=1`} target="_blank" rel="noreferrer">
-                    <img src={`/api/message-files/${message.id}?inline=1`} alt={message.fileName} loading="lazy" />
-                    <span><ImageIcon size={14} aria-hidden="true" />{message.fileName}</span>
-                  </a>
-                ) : (
-                  <a className="direct-chat-file" href={`/api/message-files/${message.id}`}>
-                    <FileText size={17} aria-hidden="true" />
-                    <span><strong>{message.fileName}</strong><small>{formatFileSize(message.fileSize)}</small></span>
-                  </a>
-                )
-              ) : null}
-              <footer>
-                <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
-                {own ? <span className={message.readAt ? "read" : ""}><CheckCheck size={14} />{message.readAt ? "Прочитано" : "Доставлено"}</span> : null}
-              </footer>
-            </article>
+            <Fragment key={message.id}>
+              {showDayDivider ? <div className="direct-chat-day-divider"><span>{formatDayLabel(message.createdAt)}</span></div> : null}
+              <article className={`direct-chat-message ${own ? "own" : ""}`}>
+                <span className="direct-chat-message-author">{own ? "Вы" : user.name}</span>
+                {message.text ? <p>{message.text}</p> : null}
+                {message.fileName ? (
+                  isPreviewableImageMime(message.mimeType) ? (
+                    <a className="direct-chat-media" href={`/api/message-files/${message.id}?inline=1`} target="_blank" rel="noreferrer">
+                      <img src={`/api/message-files/${message.id}?inline=1`} alt={message.fileName} loading="lazy" />
+                      <span><ImageIcon size={14} aria-hidden="true" />{message.fileName}</span>
+                    </a>
+                  ) : (
+                    <a className="direct-chat-file" href={`/api/message-files/${message.id}`}>
+                      <FileText size={17} aria-hidden="true" />
+                      <span><strong>{message.fileName}</strong><small>{formatFileSize(message.fileSize)}</small></span>
+                    </a>
+                  )
+                ) : null}
+                <footer>
+                  <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
+                  {own ? <span className={message.readAt ? "read" : ""}><CheckCheck size={14} />{message.readAt ? "Прочитано" : "Доставлено"}</span> : null}
+                </footer>
+              </article>
+            </Fragment>
           );
         })}
       </div>
@@ -206,8 +214,11 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
           <span className="visually-hidden">Прикрепить файл до 15 МБ</span>
           <input ref={fileInputRef} type="file" name="file" onChange={(event) => setSelectedFile(event.currentTarget.files?.[0] ?? null)} />
         </label>
-        <textarea className="textarea" name="text" aria-label="Сообщение" placeholder="Напишите сообщение…" maxLength={4000} rows={1} enterKeyHint="send" onKeyDown={sendOnEnter} />
-        <button className="button chat-compose-button" disabled={sending} aria-label="Отправить сообщение"><Send size={18} aria-hidden="true" /><span className="direct-chat-action-text">Отправить</span></button>
+        <div className="direct-chat-compose-editor">
+          <textarea className="textarea" name="text" aria-label="Сообщение" placeholder="Напишите сообщение…" maxLength={4000} rows={1} enterKeyHint="send" onKeyDown={sendOnEnter} />
+          <span className="direct-chat-compose-hint">Enter — отправить · Shift+Enter — новая строка</span>
+        </div>
+        <button className="button chat-compose-button" disabled={sending} aria-busy={sending} aria-label="Отправить сообщение"><Send size={18} aria-hidden="true" /><span className="direct-chat-action-text">{sending ? "Отправляем…" : "Отправить"}</span></button>
       </form>
       {error || refreshError ? <p className="direct-chat-notice is-error" role="alert">{error || refreshError}</p> : null}
     </section>
@@ -225,6 +236,23 @@ export function DirectChat({ user, viewerId, onClose }: { user: ProfileUser; vie
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+}
+
+function isSameDay(first?: string, second?: string) {
+  if (!first || !second) return false;
+  const firstDate = new Date(first);
+  const secondDate = new Date(second);
+  return firstDate.toDateString() === secondDate.toDateString();
+}
+
+function formatDayLabel(value: string) {
+  const date = new Date(value);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === now.toDateString()) return "Сегодня";
+  if (date.toDateString() === yesterday.toDateString()) return "Вчера";
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" }).format(date);
 }
 
 function formatFileSize(size?: number | null) {

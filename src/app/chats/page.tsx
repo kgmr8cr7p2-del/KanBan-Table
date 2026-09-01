@@ -1,4 +1,4 @@
-import { MessageCircleMore } from "lucide-react";
+import { MessageCircleMore, Radio } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ChatHub } from "@/components/ChatHub";
 import { PermissionKey } from "@prisma/client";
@@ -11,9 +11,12 @@ export default async function ChatsPage() {
     <AppShell user={user}>
       <div className="content chats-page">
         <header className="chats-page-head">
-          <span className="settings-page-kicker"><MessageCircleMore size={17} /> Командное общение</span>
-          <h1>Чаты</h1>
-          <p>Личные диалоги команды в одном спокойном рабочем пространстве.</p>
+          <div className="chats-page-intro">
+            <span className="settings-page-kicker"><MessageCircleMore size={17} /> Командное общение</span>
+            <h1>Связь без лишнего шума</h1>
+            <p>Личные диалоги команды, файлы и быстрые решения — в одном рабочем пространстве.</p>
+          </div>
+          <div className="chats-page-presence"><span><Radio size={14} aria-hidden="true" /> Live</span><small>Автосинхронизация включена</small></div>
         </header>
         <ChatHub viewerId={user.id} />
       </div>
