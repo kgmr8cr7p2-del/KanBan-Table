@@ -6406,11 +6406,18 @@ html {
 }
 
 :root[data-interface-mode="new"] .direct-chat-compose .chat-compose-button {
+  inline-size: 48px;
   min-inline-size: 48px;
   min-block-size: 48px;
+  justify-content: center;
   border-radius: 12px;
   gap: 8px;
-  padding-inline: 12px;
+  padding-inline: 0;
+}
+
+:root[data-interface-mode="new"] .direct-chat-attach:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--accent-blue) 42%, transparent);
+  outline-offset: 2px;
 }
 
 :root[data-interface-mode="new"] .direct-chat-notice.is-error {

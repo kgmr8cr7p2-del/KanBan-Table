@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CheckCheck, FileText, Image as ImageIcon, MessageCircle, Paperclip, Send, X } from "lucide-react";
+import { ArrowLeft, ArrowUp, CheckCheck, FileText, Image as ImageIcon, MessageCircle, Plus, X } from "lucide-react";
 import { Fragment, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ProfileUser } from "@/components/ProfileCard/ProfileCard";
@@ -205,13 +205,12 @@ export function ChatThread({ user, viewerId, onClose, onBack, onMessagesRead, em
 
       <form className="direct-chat-compose" onSubmit={sendMessage}>
         <label className="button secondary direct-chat-attach chat-compose-button" title="Прикрепить файл">
-          <Paperclip size={18} aria-hidden="true" />
-          <span className="direct-chat-action-text">Прикрепить</span>
+          <Plus size={20} strokeWidth={2.4} aria-hidden="true" />
           <span className="visually-hidden">Прикрепить файл до 15 МБ</span>
           <input ref={fileInputRef} type="file" name="file" onChange={(event) => setSelectedFile(event.currentTarget.files?.[0] ?? null)} />
         </label>
         <textarea className="textarea" name="text" aria-label="Сообщение" placeholder="Напишите сообщение…" maxLength={4000} rows={1} enterKeyHint="send" onKeyDown={sendOnEnter} />
-        <button className="button chat-compose-button" disabled={sending} aria-busy={sending} aria-label="Отправить сообщение"><Send size={18} aria-hidden="true" /><span className="direct-chat-action-text">{sending ? "Отправляем…" : "Отправить"}</span></button>
+        <button className="button chat-compose-button" disabled={sending} aria-busy={sending} aria-label={sending ? "Отправляем сообщение" : "Отправить сообщение"} title={sending ? "Отправляем…" : "Отправить сообщение"}><ArrowUp size={20} strokeWidth={2.4} aria-hidden="true" /></button>
       </form>
       {error || refreshError ? <p className="direct-chat-notice is-error" role="alert">{error || refreshError}</p> : null}
     </section>
