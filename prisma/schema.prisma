@@ -96,6 +96,7 @@ model User {
   notifications       Notification[]
   pushSubscriptions   PushSubscription[]
   taskSoundEvents     TaskSoundEvent[]
+  oilDepotChecks      OilDepotCheck[]
   interfaceMode       String                   @default("new")
 }
 
@@ -201,6 +202,14 @@ model DirectMessage {
 
   @@index([senderId, recipientId, createdAt])
   @@index([recipientId, senderId, createdAt])
+}
+
+// Last explicit inspection; opening the directory does not update this record.
+model OilDepotCheck {
+  depotKey  String   @id
+  checkedAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model OilDepot {
