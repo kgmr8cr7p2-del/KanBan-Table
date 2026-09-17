@@ -38,6 +38,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Check oil depot task mapping
+        run: node --test tests/oil-depot-dashboard.test.cjs
+
   deploy:
     name: Deploy to production
     if: github.event_name != 'pull_request'

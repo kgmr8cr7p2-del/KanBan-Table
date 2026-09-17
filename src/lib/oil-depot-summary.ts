@@ -4,7 +4,14 @@ export const DEPOT_OWNERS = ["Немых Д.Д.", "Москаленко Н.Т.",
 export function depotKey(name: string) {
   const key = name.toLocaleLowerCase("ru").replaceAll("ё", "е")
     .replace(/нефтебаза/gu, "").replace(/^\s*нб[\s.-]+/u, "").replace(/[^а-яa-z0-9]/gu, "");
-  return ["нтагил", "нижнийтагил", "тагил"].includes(key) ? "нижнийтагил" : key;
+  // Keep directory keys stable: inspection records are stored under these keys.
+  // Use explicit aliases, not fuzzy matching that could merge different depots.
+  const aliases: Record<string, string> = {
+    нтагил: "нижнийтагил", тагил: "нижнийтагил",
+    омская: "омск", челябинская: "челябинск",
+    ивановская: "иваново", сокурская: "сокур",
+  };
+  return aliases[key] ?? key;
 }
 
 export type DepotSource = { name: string; owner: string; os: string; timezone: string; equipment: string };

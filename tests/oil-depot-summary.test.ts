@@ -20,6 +20,12 @@ test("17 depots assigned to the three confirmed people; Tagil belongs to Nemykh"
 test("depot aliases join the existing database without changing records", () => {
   for (const name of ["Н.Тагил", "Нижний Тагил", "Тагил", "НБ Н.Тагил", "Нефтебаза Нижний Тагил"]) assert.equal(depotKey(name), "нижнийтагил");
   assert.equal(depotKey("Нефтебаза Кемерово"), depotKey("Кемерово"));
+  for (const [directory, board] of [["Омск", "Омская"], ["Челябинск", "Челябинская"], ["Иваново", "Ивановская"], ["Сокур", "Сокурская"]]) {
+    assert.equal(depotKey(board), depotKey(directory));
+    assert.equal(depotKey(` НБ ${board.toUpperCase()} `), depotKey(directory));
+  }
+  assert.equal(depotKey("Омск"), "омск"); // Preserve existing inspection keys.
+  assert.notEqual(depotKey("Омская-2"), depotKey("Омск"));
 });
 test("unknown history requests a first check and never invents an idle date", () => {
   const result = summarizeDepot(source, [], null, false, now);
