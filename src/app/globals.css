@@ -12881,7 +12881,8 @@
 
 /* Board panel visibility controls */
 :root[data-board-sidebar-hidden="true"] .app {
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
 }
 
 :root[data-board-sidebar-hidden="true"] .sidebar {
@@ -12889,7 +12890,7 @@
 }
 
 :root[data-board-topbar-hidden="true"] .main {
-  grid-template-rows: 1fr;
+  grid-template-rows: 1fr !important;
 }
 
 :root[data-board-topbar-hidden="true"] .board-topbar {
