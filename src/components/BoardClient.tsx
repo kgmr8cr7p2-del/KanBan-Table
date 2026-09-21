@@ -662,41 +662,42 @@ export function BoardClient({ initialView }: { initialView: View }) {
             <Search size={17} />
           </button>
         </form>
-        <span className="spacer" />
-        <span className="sync-pill mobile-optional" title="Доска обновляется автоматически каждые 10 секунд">
-          {lastUpdatedAt ? `Обновлено ${timeOnly(lastUpdatedAt)}` : "Обновляется"}
-        </span>
-        <div className="board-notification-control">
-          <NotificationCenter />
+        <div className="board-topbar-actions">
+          <span className="sync-pill mobile-optional" title="Доска обновляется автоматически каждые 10 секунд">
+            {lastUpdatedAt ? `Обновлено ${timeOnly(lastUpdatedAt)}` : "Обновляется"}
+          </span>
+          <div className="board-notification-control">
+            <NotificationCenter />
+          </div>
+          <button
+            className="button secondary compact-button board-panel-toggle"
+            type="button"
+            aria-pressed={panelVisibility.sidebar}
+            onClick={() => togglePanelVisibility("sidebar")}
+            title={panelVisibility.sidebar ? "Показать левую панель" : "Скрыть левую панель"}
+          >
+            {panelVisibility.sidebar ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
+            <span className="panel-toggle-label">{panelVisibility.sidebar ? "Боковая" : "Скрыть боковую"}</span>
+          </button>
+          <button
+            className="button secondary compact-button board-panel-toggle"
+            type="button"
+            aria-pressed={panelVisibility.topbar}
+            onClick={() => togglePanelVisibility("topbar")}
+            title={panelVisibility.topbar ? "Показать верхнюю панель" : "Скрыть верхнюю панель"}
+          >
+            {panelVisibility.topbar ? <PanelTopOpen size={17} aria-hidden="true" /> : <PanelTopClose size={17} aria-hidden="true" />}
+            <span className="panel-toggle-label">{panelVisibility.topbar ? "Верхняя" : "Скрыть верхнюю"}</span>
+          </button>
+          <button className="button secondary compact-button mobile-optional" type="button" onClick={() => void toggleFocusMode()} title="Открыть режим просмотра доски">
+            <Expand size={17} />
+            Доска
+          </button>
+          <a className="button secondary compact-button mobile-optional" href="/board/tv" title="TV-режим для офисного экрана">
+            <Monitor size={17} />
+            TV
+          </a>
         </div>
-        <button
-          className="button secondary compact-button board-panel-toggle"
-          type="button"
-          aria-pressed={panelVisibility.sidebar}
-          onClick={() => togglePanelVisibility("sidebar")}
-          title={panelVisibility.sidebar ? "Показать левую панель" : "Скрыть левую панель"}
-        >
-          {panelVisibility.sidebar ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
-          <span className="panel-toggle-label">{panelVisibility.sidebar ? "Боковая" : "Скрыть боковую"}</span>
-        </button>
-        <button
-          className="button secondary compact-button board-panel-toggle"
-          type="button"
-          aria-pressed={panelVisibility.topbar}
-          onClick={() => togglePanelVisibility("topbar")}
-          title={panelVisibility.topbar ? "Показать верхнюю панель" : "Скрыть верхнюю панель"}
-        >
-          {panelVisibility.topbar ? <PanelTopOpen size={17} aria-hidden="true" /> : <PanelTopClose size={17} aria-hidden="true" />}
-          <span className="panel-toggle-label">{panelVisibility.topbar ? "Верхняя" : "Скрыть верхнюю"}</span>
-        </button>
-        <button className="button secondary compact-button mobile-optional" type="button" onClick={() => void toggleFocusMode()} title="Открыть режим просмотра доски">
-          <Expand size={17} />
-          Доска
-        </button>
-        <a className="button secondary compact-button mobile-optional" href="/board/tv" title="TV-режим для офисного экрана">
-          <Monitor size={17} />
-          TV
-        </a>
       </div>
 
       {panelVisibility.sidebar || panelVisibility.topbar ? (

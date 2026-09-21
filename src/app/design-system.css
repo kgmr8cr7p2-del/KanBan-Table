@@ -879,3 +879,127 @@
   :root[data-interface-mode="new"] *::before,
   :root[data-interface-mode="new"] *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Responsive correction layer ---------------------------------------
+   Keep the board and document header structural at every container size.
+   These rules intentionally live last so older compatibility layers cannot
+   reintroduce wrapped columns or flex/grid conflicts. */
+
+:root[data-interface-mode="new"] .topbar.board-topbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "filters actions";
+  align-items: start;
+}
+
+:root[data-interface-mode="new"] .topbar.board-topbar .filters-live {
+  grid-area: filters;
+  grid-template-columns: minmax(14rem, 1.5fr) repeat(4, minmax(7rem, 1fr)) auto;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .topbar.board-topbar .filters-live .search {
+  grid-column: auto;
+  max-inline-size: none;
+}
+
+:root[data-interface-mode="new"] .board-topbar-actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ds-space-1);
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .board-topbar-actions > * { min-inline-size: 0; }
+:root[data-interface-mode="new"] .board-topbar-actions .board-notification-control { display: flex; }
+:root[data-interface-mode="new"] .board-topbar-actions .sync-pill { flex: 0 0 auto; }
+
+:root[data-interface-mode="new"] .board {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(240px, 1fr);
+  inline-size: 100%;
+  max-inline-size: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+:root[data-interface-mode="new"] .board > .column {
+  min-inline-size: 0;
+  inline-size: auto;
+}
+
+:root[data-interface-mode="new"] .files-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(22rem, 34rem);
+  grid-template-areas:
+    "copy summary"
+    "copy search";
+  align-items: end;
+  column-gap: var(--ds-space-4, 32px);
+  row-gap: var(--ds-space-2, 16px);
+}
+
+:root[data-interface-mode="new"] .files-head-copy { grid-area: copy; min-inline-size: 0; }
+:root[data-interface-mode="new"] .files-head-summary {
+  display: flex;
+  grid-area: summary;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  min-inline-size: 0;
+}
+
+:root[data-interface-mode="new"] .files-head-summary > span {
+  flex: 1 1 0;
+  min-inline-size: 7rem;
+}
+
+:root[data-interface-mode="new"] .files-search {
+  display: grid;
+  grid-area: search;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, .58fr) auto;
+  min-inline-size: 0;
+  max-inline-size: none;
+}
+
+@media (max-width: 1200px) and (min-width: 961px) {
+  :root[data-interface-mode="new"] .topbar.board-topbar { grid-template-columns: minmax(0, 1fr); grid-template-areas: "filters" "actions"; }
+  :root[data-interface-mode="new"] .board-topbar-actions { justify-content: flex-start; }
+  :root[data-interface-mode="new"] .topbar.board-topbar .filters-live { grid-template-columns: minmax(12rem, 1.4fr) repeat(4, minmax(6.5rem, 1fr)) auto; }
+}
+
+@media (max-width: 960px) {
+  :root[data-interface-mode="new"] .topbar.board-topbar { grid-template-columns: minmax(0, 1fr); grid-template-areas: "filters" "actions"; }
+  :root[data-interface-mode="new"] .board-topbar-actions { justify-content: flex-start; }
+  :root[data-interface-mode="new"] .board-topbar-actions .sync-pill { display: none; }
+  :root[data-interface-mode="new"] .topbar.board-topbar .filters-live { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :root[data-interface-mode="new"] .topbar.board-topbar .filters-live .search,
+  :root[data-interface-mode="new"] .topbar.board-topbar .filters-live .reset-filter-button { grid-column: 1 / -1; }
+  :root[data-interface-mode="new"] .files-head {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "copy" "summary" "search";
+  }
+  :root[data-interface-mode="new"] .files-head-summary { justify-content: flex-start; }
+}
+
+@media (max-width: 720px) {
+  :root[data-interface-mode="new"] .board {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    overflow-x: visible;
+  }
+  :root[data-interface-mode="new"] .board > .column { min-inline-size: 0; max-block-size: none; }
+  :root[data-interface-mode="new"] .files-head-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :root[data-interface-mode="new"] .files-head-summary > span { min-inline-size: 0; }
+  :root[data-interface-mode="new"] .files-search { grid-template-columns: minmax(0, 1fr); }
+  :root[data-interface-mode="new"] .files-search > * { inline-size: 100%; }
+}
+
+@media (max-width: 430px) {
+  :root[data-interface-mode="new"] .files-head-summary { grid-template-columns: minmax(0, 1fr); }
+}

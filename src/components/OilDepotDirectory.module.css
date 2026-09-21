@@ -74,3 +74,11 @@
 @media (max-width: 1200px) { .people { grid-template-columns: 1fr; } .depots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 720px) { .overview { grid-template-columns: repeat(2, minmax(0, 1fr)); } .depots { grid-template-columns: minmax(0, 1fr); } .search { flex-basis: 100%; } .personHeading { padding-block-end: var(--ds-space-1); } }
 @media (max-width: 430px) { .overview { grid-template-columns: minmax(0, 1fr); } .overview > div { padding: var(--ds-space-1); } .depot { padding: var(--ds-space-1); } }
+
+/* Keep owner groups fluid instead of collapsing the whole directory to one
+   narrow column as soon as the viewport leaves the wide-desktop range. */
+.people { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+
+@media (max-width: 720px) {
+  .people { grid-template-columns: minmax(0, 1fr); }
+}
