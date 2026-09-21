@@ -26,6 +26,15 @@ const config = [
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
+  {
+    // The optional Electron companion and its node:test smoke check are
+    // deliberately CommonJS entrypoints. They run outside the Next runtime,
+    // so require() is the portable module boundary for those files.
+    files: ["desktop/**/*.cjs", "tests/**/*.cjs"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ];
 
 export default config;

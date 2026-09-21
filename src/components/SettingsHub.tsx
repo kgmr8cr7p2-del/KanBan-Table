@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, Building2, Database, LayoutDashboard, MessageCircle, ShieldCheck, UsersRound, Volume2, X } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 export type SettingsPanel = {
   id: string;
@@ -29,8 +29,10 @@ export function SettingsHub({
   const active = panels.find((panel) => panel.id === activeId) ?? null;
   const panelIds = panels.map((panel) => panel.id).join("|");
   const persistedKey = `taskora-open-panel:${storageKey}`;
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   function openPanel(id: string) {
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     try {
       window.sessionStorage.setItem(persistedKey, id);
     } catch {
@@ -39,14 +41,15 @@ export function SettingsHub({
     setActiveId(id);
   }
 
-  function closePanel() {
+  const closePanel = useCallback(() => {
     try {
       window.sessionStorage.removeItem(persistedKey);
     } catch {
       // Ignore storage restrictions.
     }
     setActiveId(null);
-  }
+    window.requestAnimationFrame(() => returnFocusRef.current?.focus());
+  }, [persistedKey]);
 
   useEffect(() => {
     try {
@@ -59,19 +62,15 @@ export function SettingsHub({
 
   useEffect(() => {
     if (!active) return;
+    window.requestAnimationFrame(() => document.getElementById(`settings-dialog-${active.id}`)?.focus());
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        try {
-          window.sessionStorage.removeItem(persistedKey);
-        } catch {
-          // Ignore storage restrictions.
-        }
-        setActiveId(null);
+        closePanel();
       }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [active, persistedKey]);
+  }, [active, closePanel]);
 
   return (
     <section className="settings-hub" aria-label={ariaLabel}>
@@ -86,10 +85,10 @@ export function SettingsHub({
         })}
       </div>
 
-      {active ? <div className="settings-dialog-backdrop" role="presentation">
-        <section className={`settings-dialog ${active.wide ? "settings-dialog-wide" : ""}`} role="dialog" aria-modal="true" aria-labelledby={`settings-dialog-${active.id}`}>
+      {active ? <div className="settings-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePanel(); }}>
+        <section className={`settings-dialog ${active.wide ? "settings-dialog-wide" : ""}`} role="dialog" aria-modal="true" aria-labelledby={`settings-dialog-${active.id}`} aria-describedby={`settings-dialog-description-${active.id}`}>
           <header className="settings-dialog-head">
-            <div><span className="settings-page-kicker">{dialogKicker}</span><h2 id={`settings-dialog-${active.id}`}>{active.title}</h2><p className="muted">{active.description}</p></div>
+            <div><span className="settings-page-kicker">{dialogKicker}</span><h2 id={`settings-dialog-${active.id}`} tabIndex={-1}>{active.title}</h2><p id={`settings-dialog-description-${active.id}`} className="muted">{active.description}</p></div>
             <button className="button icon ghost" type="button" aria-label="Закрыть окно" onClick={closePanel}><X size={18} /></button>
           </header>
           <div className="settings-dialog-body">{active.content}</div>

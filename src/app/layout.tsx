@@ -4,6 +4,7 @@ import { ButtonBorderGlow } from "@/components/ButtonBorderGlow";
 import { INTERFACE_MODE_COOKIE, normalizeInterfaceMode } from "@/lib/interface-mode";
 import "./globals.css";
 import "./redesign.css";
+import "./design-system.css";
 
 export const metadata: Metadata = {
   title: "Taskora — управление работой команды",
