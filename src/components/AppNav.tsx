@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Archive, BarChart3, Building2, Files, History, LayoutDashboard, MessageCircle, Moon, MoreHorizontal, ScrollText, Settings, Shield, UserRound } from "lucide-react";
+import { Archive, BarChart3, Building2, Files, History, LayoutDashboard, MessageCircle, Monitor, Moon, MoreHorizontal, ScrollText, Settings, Shield, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -12,6 +12,7 @@ import type { CurrentUser } from "@/lib/auth";
 
 const links = [
   { href: "/board", label: "Доска", icon: LayoutDashboard, permission: "VIEW_BOARD" },
+  { href: "/desktop", label: "Рабочий экран", icon: Monitor, permission: "VIEW_BOARD" },
   { href: "/chats", label: "Чаты", icon: MessageCircle, permission: "USE_CHATS" },
   { href: "/oil-depots", label: "Нефтебазы", icon: Building2, permission: "VIEW_BOARD" },
   { href: "/files", label: "Документы", icon: Files },
