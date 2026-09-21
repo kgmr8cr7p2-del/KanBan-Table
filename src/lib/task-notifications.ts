@@ -15,11 +15,11 @@ type SharedTaskEvent =
 const taskEventTitles: Record<SharedTaskEvent, string> = {
   task_created: "Новая задача",
   assignee_changed: "Исполнители обновлены",
-  status_changed: "Статус задачи изменен",
-  priority_changed: "Приоритет задачи изменен",
-  deadline_changed: "Срок задачи изменен",
+  status_changed: "Статус изменен",
+  priority_changed: "Приоритет изменен",
+  deadline_changed: "Срок изменен",
   comment_added: "Новый комментарий",
-  file_uploaded: "Файл добавлен к задаче",
+  file_uploaded: "Файл добавлен",
 };
 
 export async function notifySharedTaskEvent(input: {
@@ -49,14 +49,14 @@ export async function notifySharedTaskEvent(input: {
   });
   if (!recipients.length) return;
 
-  const taskLabel = input.taskNumber ? `#${input.taskNumber} ${input.taskTitle}` : input.taskTitle;
+  const taskNumber = input.taskNumber ? `#${input.taskNumber}` : "Задача";
   try {
     await createNotifications(recipients.map((recipient) => ({
       userId: recipient.id,
       type: "SYSTEM" as const,
       category: "task" as const,
-      title: taskEventTitles[input.event],
-      body: `${taskLabel}: ${compactNotificationBody(input.body)}`,
+      title: `Taskora · ${taskEventTitles[input.event]} · ${taskNumber}`,
+      body: `${input.taskTitle} · ${compactNotificationBody(input.body)}`,
       href: `/board?task=${encodeURIComponent(input.taskId)}`,
     })));
   } catch (error) {
@@ -66,8 +66,11 @@ export async function notifySharedTaskEvent(input: {
 }
 
 function compactNotificationBody(value: string) {
-  const compacted = value.replace(/\s*\n\s*/g, " · ").trim();
-  return compacted.length > 240 ? `${compacted.slice(0, 239)}…` : compacted;
+  const compacted = value.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !/^(Задача(?: #|:)|Создал:|Изменил:)/iu.test(line))
+    .join(" · ");
+  return compacted.length > 150 ? `${compacted.slice(0, 149)}…` : compacted;
 }
 
 function taskDispatchKey(input: { event: SharedTaskEvent; actorId: string; taskId: string; body: string }) {
