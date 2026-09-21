@@ -12877,3 +12877,67 @@
     display: none;
   }
 }
+
+
+/* Board panel visibility controls */
+:root[data-board-sidebar-hidden="true"] .app {
+  grid-template-columns: 1fr;
+}
+
+:root[data-board-sidebar-hidden="true"] .sidebar {
+  display: none;
+}
+
+:root[data-board-topbar-hidden="true"] .main {
+  grid-template-rows: 1fr;
+}
+
+:root[data-board-topbar-hidden="true"] .board-topbar {
+  display: none;
+}
+
+.board-panel-toggle {
+  gap: .35rem;
+}
+
+.board-panel-controls {
+  position: fixed;
+  z-index: 35;
+  inset-block-start: .75rem;
+  inset-inline-end: .75rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .35rem;
+  max-inline-size: calc(100vw - 1.5rem);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--panel), transparent 4%);
+  box-shadow: 0 14px 34px rgb(17 24 39 / 16%);
+  padding: .3rem .4rem;
+  backdrop-filter: blur(12px);
+}
+
+.board-panel-controls-label {
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 800;
+  padding-inline: .35rem;
+}
+
+.board-panel-controls .button {
+  min-block-size: 1.9rem;
+  padding-block: .25rem;
+}
+
+@media (max-width: 900px) {
+  .panel-toggle-label {
+    display: none;
+  }
+
+  .board-panel-controls {
+    inset-block-start: .5rem;
+    inset-inline-end: .5rem;
+    border-radius: .75rem;
+  }
+}
