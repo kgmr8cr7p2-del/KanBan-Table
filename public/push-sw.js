@@ -6,14 +6,19 @@ self.addEventListener("push", (event) => {
     payload = { title: "Taskora", body: event.data ? event.data.text() : "Новое уведомление" };
   }
   const title = payload.title || "Taskora";
+  const category = payload.category || "system";
   const options = {
     body: payload.body || "Новое уведомление",
     icon: payload.icon || "/taskora-icon-v2.png",
     badge: payload.badge || "/taskora-icon-v2.png",
-    tag: payload.id ? `taskora-${payload.id}` : undefined,
+    image: payload.image || undefined,
+    tag: payload.tag || (payload.id ? `taskora-${payload.id}` : undefined),
     timestamp: Number(payload.timestamp) || Date.now(),
     lang: "ru",
+    dir: "ltr",
     renotify: Boolean(payload.id),
+    requireInteraction: category === "deadline",
+    vibrate: category === "deadline" ? [200, 100, 200] : [100],
     silent: false,
     actions: [{ action: "open", title: "Открыть Taskora" }],
     data: { href: payload.href || "/notifications" },
