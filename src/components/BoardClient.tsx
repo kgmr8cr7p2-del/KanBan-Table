@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, Monitor, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, Monitor, PanelLeftClose, PanelLeftOpen, PanelTopClose, PanelTopOpen, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskButton } from "@/components/CreateTaskButton";
@@ -19,6 +19,7 @@ const priorityLabels = {
 
 type View = any;
 type Task = any;
+type PanelVisibility = { sidebar: boolean; topbar: boolean };
 type AiTaskDraft = {
   title: string;
   description: string;
@@ -68,6 +69,8 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [dropColumn, setDropColumn] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [focusMode, setFocusMode] = useState(false);
+  const [panelVisibility, setPanelVisibility] = useState<PanelVisibility>({ sidebar: false, topbar: false });
+  const [panelPreferencesReady, setPanelPreferencesReady] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [toasts, setToasts] = useState<Array<{ id: string; text: string }>>([]);
@@ -293,6 +296,41 @@ export function BoardClient({ initialView }: { initialView: View }) {
   }, [focusMode]);
 
   useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("taskora-board-panels");
+      if (stored) {
+        const parsed = JSON.parse(stored) as Partial<PanelVisibility>;
+        setPanelVisibility({
+          sidebar: parsed.sidebar === true,
+          topbar: parsed.topbar === true,
+        });
+      }
+    } catch {
+      // Ignore unavailable or malformed local storage.
+    } finally {
+      setPanelPreferencesReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.boardSidebarHidden = panelVisibility.sidebar ? "true" : "false";
+    document.documentElement.dataset.boardTopbarHidden = panelVisibility.topbar ? "true" : "false";
+    return () => {
+      delete document.documentElement.dataset.boardSidebarHidden;
+      delete document.documentElement.dataset.boardTopbarHidden;
+    };
+  }, [panelVisibility.sidebar, panelVisibility.topbar]);
+
+  useEffect(() => {
+    if (!panelPreferencesReady) return;
+    try {
+      window.localStorage.setItem("taskora-board-panels", JSON.stringify(panelVisibility));
+    } catch {
+      // Ignore unavailable local storage.
+    }
+  }, [panelPreferencesReady, panelVisibility]);
+
+  useEffect(() => {
     const syncFullscreenState = () => {
       if (!document.fullscreenElement) setFocusMode(false);
     };
@@ -308,6 +346,10 @@ export function BoardClient({ initialView }: { initialView: View }) {
     } else if (!next && document.fullscreenElement) {
       await document.exitFullscreen().catch(() => undefined);
     }
+  }
+
+  function togglePanelVisibility(panel: keyof PanelVisibility) {
+    setPanelVisibility((current) => ({ ...current, [panel]: !current[panel] }));
   }
 
   function updateFilter(name: keyof Filters, value: string) {
@@ -627,6 +669,26 @@ export function BoardClient({ initialView }: { initialView: View }) {
         <div className="board-notification-control">
           <NotificationCenter />
         </div>
+        <button
+          className="button secondary compact-button board-panel-toggle"
+          type="button"
+          aria-pressed={panelVisibility.sidebar}
+          onClick={() => togglePanelVisibility("sidebar")}
+          title={panelVisibility.sidebar ? "Показать левую панель" : "Скрыть левую панель"}
+        >
+          {panelVisibility.sidebar ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
+          <span className="panel-toggle-label">{panelVisibility.sidebar ? "Боковая" : "Скрыть боковую"}</span>
+        </button>
+        <button
+          className="button secondary compact-button board-panel-toggle"
+          type="button"
+          aria-pressed={panelVisibility.topbar}
+          onClick={() => togglePanelVisibility("topbar")}
+          title={panelVisibility.topbar ? "Показать верхнюю панель" : "Скрыть верхнюю панель"}
+        >
+          {panelVisibility.topbar ? <PanelTopOpen size={17} aria-hidden="true" /> : <PanelTopClose size={17} aria-hidden="true" />}
+          <span className="panel-toggle-label">{panelVisibility.topbar ? "Верхняя" : "Скрыть верхнюю"}</span>
+        </button>
         <button className="button secondary compact-button mobile-optional" type="button" onClick={() => void toggleFocusMode()} title="Открыть режим просмотра доски">
           <Expand size={17} />
           Доска
@@ -636,6 +698,24 @@ export function BoardClient({ initialView }: { initialView: View }) {
           TV
         </a>
       </div>
+
+      {panelVisibility.sidebar || panelVisibility.topbar ? (
+        <div className="board-panel-controls" aria-label="Управление панелями">
+          <span className="board-panel-controls-label">Панели</span>
+          {panelVisibility.sidebar ? (
+            <button className="button secondary compact-button" type="button" onClick={() => togglePanelVisibility("sidebar")} title="Показать левую панель">
+              <PanelLeftOpen size={16} aria-hidden="true" />
+              Боковая
+            </button>
+          ) : null}
+          {panelVisibility.topbar ? (
+            <button className="button secondary compact-button" type="button" onClick={() => togglePanelVisibility("topbar")} title="Показать верхнюю панель">
+              <PanelTopOpen size={16} aria-hidden="true" />
+              Верхняя
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       {focusMode ? (
         <button className="button focus-exit" type="button" onClick={() => void toggleFocusMode()}>
