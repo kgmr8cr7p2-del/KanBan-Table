@@ -8,13 +8,22 @@ import "./redesign.css";
 export const metadata: Metadata = {
   title: "Taskora — управление работой команды",
   description: "Задачи, чаты, статусы и отчёты команды в одном рабочем пространстве.",
-  icons: { icon: "/taskora-icon-v2.png" },
+  icons: {
+    icon: "/taskora-icon-v2.png",
+    apple: "/taskora-icon-v2.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Taskora",
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#101827",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
