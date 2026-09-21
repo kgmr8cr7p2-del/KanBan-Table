@@ -20,6 +20,8 @@ const priorityLabels = {
 type View = any;
 type Task = any;
 type PanelVisibility = { sidebar: boolean; topbar: boolean };
+const PANEL_STORAGE_KEY = "taskora-board-panels";
+const PANEL_STORAGE_VERSION = 2;
 type AiTaskDraft = {
   title: string;
   description: string;
@@ -69,7 +71,10 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [dropColumn, setDropColumn] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [focusMode, setFocusMode] = useState(false);
-  const [panelVisibility, setPanelVisibility] = useState<PanelVisibility>({ sidebar: false, topbar: false });
+  // These flags describe what is currently visible. Keeping the semantic
+  // direction explicit prevents the DOM `data-*-hidden` flags from drifting
+  // away from the buttons' labels and aria state.
+  const [panelVisibility, setPanelVisibility] = useState<PanelVisibility>({ sidebar: true, topbar: true });
   const [panelPreferencesReady, setPanelPreferencesReady] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
@@ -297,12 +302,15 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   useEffect(() => {
     try {
-      const stored = window.localStorage.getItem("taskora-board-panels");
+      const stored = window.localStorage.getItem(PANEL_STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored) as Partial<PanelVisibility>;
+        const parsed = JSON.parse(stored) as Partial<PanelVisibility> & { version?: number };
+        const isCurrentFormat = parsed.version === PANEL_STORAGE_VERSION;
         setPanelVisibility({
-          sidebar: parsed.sidebar === true,
-          topbar: parsed.topbar === true,
+          // The first implementation persisted the inverse meaning: `true`
+          // meant hidden. Migrate that shape once while preserving preferences.
+          sidebar: isCurrentFormat ? parsed.sidebar !== false : parsed.sidebar !== true,
+          topbar: isCurrentFormat ? parsed.topbar !== false : parsed.topbar !== true,
         });
       }
     } catch {
@@ -313,8 +321,8 @@ export function BoardClient({ initialView }: { initialView: View }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.dataset.boardSidebarHidden = panelVisibility.sidebar ? "true" : "false";
-    document.documentElement.dataset.boardTopbarHidden = panelVisibility.topbar ? "true" : "false";
+    document.documentElement.dataset.boardSidebarHidden = panelVisibility.sidebar ? "false" : "true";
+    document.documentElement.dataset.boardTopbarHidden = panelVisibility.topbar ? "false" : "true";
     return () => {
       delete document.documentElement.dataset.boardSidebarHidden;
       delete document.documentElement.dataset.boardTopbarHidden;
@@ -324,7 +332,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   useEffect(() => {
     if (!panelPreferencesReady) return;
     try {
-      window.localStorage.setItem("taskora-board-panels", JSON.stringify(panelVisibility));
+      window.localStorage.setItem(PANEL_STORAGE_KEY, JSON.stringify({ version: PANEL_STORAGE_VERSION, ...panelVisibility }));
     } catch {
       // Ignore unavailable local storage.
     }
@@ -674,20 +682,20 @@ export function BoardClient({ initialView }: { initialView: View }) {
             type="button"
             aria-pressed={panelVisibility.sidebar}
             onClick={() => togglePanelVisibility("sidebar")}
-            title={panelVisibility.sidebar ? "Показать левую панель" : "Скрыть левую панель"}
+            title={panelVisibility.sidebar ? "Скрыть левую панель" : "Показать левую панель"}
           >
-            {panelVisibility.sidebar ? <PanelLeftOpen size={17} aria-hidden="true" /> : <PanelLeftClose size={17} aria-hidden="true" />}
-            <span className="panel-toggle-label">{panelVisibility.sidebar ? "Боковая" : "Скрыть боковую"}</span>
+            {panelVisibility.sidebar ? <PanelLeftClose size={17} aria-hidden="true" /> : <PanelLeftOpen size={17} aria-hidden="true" />}
+            <span className="panel-toggle-label">{panelVisibility.sidebar ? "Скрыть боковую" : "Показать боковую"}</span>
           </button>
           <button
             className="button secondary compact-button board-panel-toggle"
             type="button"
             aria-pressed={panelVisibility.topbar}
             onClick={() => togglePanelVisibility("topbar")}
-            title={panelVisibility.topbar ? "Показать верхнюю панель" : "Скрыть верхнюю панель"}
+            title={panelVisibility.topbar ? "Скрыть верхнюю панель" : "Показать верхнюю панель"}
           >
-            {panelVisibility.topbar ? <PanelTopOpen size={17} aria-hidden="true" /> : <PanelTopClose size={17} aria-hidden="true" />}
-            <span className="panel-toggle-label">{panelVisibility.topbar ? "Верхняя" : "Скрыть верхнюю"}</span>
+            {panelVisibility.topbar ? <PanelTopClose size={17} aria-hidden="true" /> : <PanelTopOpen size={17} aria-hidden="true" />}
+            <span className="panel-toggle-label">{panelVisibility.topbar ? "Скрыть верхнюю" : "Показать верхнюю"}</span>
           </button>
           <button className="button secondary compact-button mobile-optional" type="button" onClick={() => void toggleFocusMode()} title="Открыть режим просмотра доски">
             <Expand size={17} />
@@ -700,19 +708,19 @@ export function BoardClient({ initialView }: { initialView: View }) {
         </div>
       </div>
 
-      {panelVisibility.sidebar || panelVisibility.topbar ? (
-        <div className="board-panel-controls" aria-label="Управление панелями">
+      {!panelVisibility.topbar ? (
+        <div className="board-panel-controls" aria-label="Восстановить панели" data-board-panel-recovery="true">
           <span className="board-panel-controls-label">Панели</span>
-          {panelVisibility.sidebar ? (
+          {!panelVisibility.sidebar ? (
             <button className="button secondary compact-button" type="button" onClick={() => togglePanelVisibility("sidebar")} title="Показать левую панель">
               <PanelLeftOpen size={16} aria-hidden="true" />
-              Боковая
+              Показать боковую
             </button>
           ) : null}
-          {panelVisibility.topbar ? (
+          {!panelVisibility.topbar ? (
             <button className="button secondary compact-button" type="button" onClick={() => togglePanelVisibility("topbar")} title="Показать верхнюю панель">
               <PanelTopOpen size={16} aria-hidden="true" />
-              Верхняя
+              Показать верхнюю
             </button>
           ) : null}
         </div>

@@ -1003,3 +1003,81 @@
 @media (max-width: 430px) {
   :root[data-interface-mode="new"] .files-head-summary { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Panel visibility contract ------------------------------------------
+   BoardClient owns the state; this final layer owns the geometry. The
+   interface-mode qualifier intentionally outranks the older compatibility
+   rules in globals.css and redesign.css, so a toggle cannot be visually
+   undone by a later shell declaration. */
+
+:root[data-interface-mode="new"][data-board-sidebar-hidden="true"] .app {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+:root[data-interface-mode="new"][data-board-sidebar-hidden="true"] .sidebar {
+  display: none;
+}
+
+:root[data-interface-mode="new"][data-board-topbar-hidden="true"] .main {
+  grid-template-rows: minmax(0, 1fr) !important;
+}
+
+:root[data-interface-mode="new"][data-board-topbar-hidden="true"] .board-topbar {
+  display: none;
+}
+
+:root[data-interface-mode="new"] .board-panel-controls {
+  position: sticky;
+  z-index: calc(var(--ds-z-sticky) + 1);
+  inset-block-start: var(--ds-space-1);
+  inset-inline-end: auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ds-space-1);
+  align-self: start;
+  justify-self: end;
+  inline-size: max-content;
+  max-inline-size: calc(100% - var(--ds-space-2));
+  block-size: fit-content;
+  min-block-size: 0;
+  margin-block: var(--ds-space-1) 0;
+  margin-inline: auto var(--ds-space-1);
+  border: 1px solid var(--ds-line);
+  border-radius: var(--ds-radius-control);
+  background: color-mix(in srgb, var(--ds-surface) 96%, transparent);
+  box-shadow: var(--ds-shadow-panel);
+  padding: var(--ds-space-1);
+  backdrop-filter: blur(16px);
+}
+
+:root[data-interface-mode="new"] .board-panel-controls-label {
+  color: var(--ds-muted);
+  font-size: var(--ds-font-xs);
+  font-weight: 800;
+  padding-inline: var(--ds-space-1);
+}
+
+:root[data-interface-mode="new"] .board-panel-controls .button {
+  min-block-size: 44px;
+  padding-inline: var(--ds-space-2);
+}
+
+/* When the sticky topbar is gone, the recovery strip becomes the first
+   explicit grid row rather than an overlay on the board. */
+:root[data-interface-mode="new"][data-board-topbar-hidden="true"] .main:has(> .board-panel-controls) {
+  grid-template-rows: max-content minmax(0, 1fr) !important;
+}
+
+@media (max-width: 960px) {
+  :root[data-interface-mode="new"][data-board-sidebar-hidden="true"] .main {
+    padding-block-end: 0;
+  }
+
+  :root[data-interface-mode="new"] .board-panel-controls {
+    justify-self: stretch;
+    inline-size: auto;
+    margin-inline: var(--ds-space-1);
+  }
+}
