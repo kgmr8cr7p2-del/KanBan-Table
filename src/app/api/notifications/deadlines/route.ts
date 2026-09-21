@@ -24,18 +24,9 @@ export async function POST(request: Request) {
     await authorizeRequest(request);
     const now = new Date();
     const tasks = await prisma.task.findMany({
-      where: {
-        archivedAt: null,
-        deadline: { not: null },
-        reminderDaysBefore: { not: null },
-      },
+      where: { archivedAt: null, deadline: { not: null }, reminderDaysBefore: { not: null } },
       select: {
-        id: true,
-        taskNumber: true,
-        title: true,
-        priority: true,
-        deadline: true,
-        reminderDaysBefore: true,
+        id: true, taskNumber: true, title: true, priority: true, deadline: true, reminderDaysBefore: true,
         column: { select: { name: true, board: { select: { id: true, name: true, ownerId: true } } } },
       },
       take: 1000,
@@ -55,7 +46,6 @@ export async function POST(request: Request) {
       else if (result === "duplicate") duplicate += 1;
       else failed += 1;
     }
-
     return ok({ checked: tasks.length, due: due.length, sent, failed, duplicate });
   } catch (error) {
     return handleRouteError(error);
@@ -66,11 +56,14 @@ async function dispatchReminder(task: ReminderTask): Promise<DeliveryResult> {
   if (task.priority === "PLANNED" || !task.deadline || task.reminderDaysBefore == null) return "failed";
   const deadlineKey = task.deadline.toISOString().slice(0, 10);
   const baseKey = `task-reminder:${task.id}:${deadlineKey}:${task.reminderDaysBefore}`;
+  const date = new Intl.DateTimeFormat("ru-RU", { dateStyle: "long", timeZone: "Europe/Moscow" }).format(task.deadline);
+  const shortMessage = task.reminderDaysBefore === 0
+    ? `Срок сегодня · ${date}`
+    : `Срок ${date} · осталось ${daysLabel(task.reminderDaysBefore)}`;
   const message = [
     `Задача: #${task.taskNumber} ${task.title}`,
     `Доска: ${task.column.board.name}`,
-    `Срок: ${new Intl.DateTimeFormat("ru-RU", { dateStyle: "long", timeZone: "Europe/Moscow" }).format(task.deadline)}`,
-    task.reminderDaysBefore === 0 ? "Напоминание: срок сегодня" : `Напоминание: за ${daysLabel(task.reminderDaysBefore)} до срока`,
+    shortMessage,
   ].join("\n");
 
   const [siteDelivery, telegramDelivery] = await Promise.all([
@@ -100,13 +93,12 @@ async function deliverSiteReminder(task: ReminderTask, message: string, dispatch
         })).map((user) => user.id);
     if (!recipientIds.length) throw new Error("No website reminder recipients");
 
-    const body = message.replaceAll("\n", " · ");
     await createNotifications(recipientIds.map((userId) => ({
       userId,
       type: "SYSTEM" as const,
       category: "deadline" as const,
-      title: `Срок задачи #${task.taskNumber}`,
-      body,
+      title: `⏰ Срок задачи · #${task.taskNumber}`,
+      body: `${task.title} · ${shortDeadlineBody(task)}`,
       href: `/board?task=${encodeURIComponent(task.id)}`,
     })));
     await triggerTaskReminderSoundEvent(task.column.board.ownerId ?? null).catch(() => undefined);
@@ -169,26 +161,21 @@ function secureEqual(left: string, right: string) {
 }
 
 function reminderAt(deadline: Date, daysBefore: number) {
-  return new Date(Date.UTC(
-    deadline.getUTCFullYear(),
-    deadline.getUTCMonth(),
-    deadline.getUTCDate() - daysBefore,
-    6,
-  ));
+  return new Date(Date.UTC(deadline.getUTCFullYear(), deadline.getUTCMonth(), deadline.getUTCDate() - daysBefore, 6));
 }
 
 function deadlineEnd(deadline: Date) {
-  return new Date(Date.UTC(
-    deadline.getUTCFullYear(),
-    deadline.getUTCMonth(),
-    deadline.getUTCDate() + 1,
-    -3,
-  ) - 1);
+  return new Date(Date.UTC(deadline.getUTCFullYear(), deadline.getUTCMonth(), deadline.getUTCDate() + 1, -3) - 1);
 }
 
 function isClosedColumn(name: string) {
   const normalized = name.toLocaleLowerCase("ru-RU");
   return normalized.includes("готов") || normalized.includes("провер") || normalized.includes("done") || normalized.includes("complete") || normalized.includes("review");
+}
+
+function shortDeadlineBody(task: ReminderTask) {
+  const date = task.deadline ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "long", timeZone: "Europe/Moscow" }).format(task.deadline) : "без даты";
+  return task.reminderDaysBefore === 0 ? `сегодня · ${date}` : `${date} · осталось ${daysLabel(task.reminderDaysBefore ?? 0)}`;
 }
 
 function daysLabel(days: number) {
