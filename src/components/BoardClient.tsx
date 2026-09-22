@@ -816,23 +816,17 @@ export function BoardClient({ initialView }: { initialView: View }) {
           ) : null}
         </div>
         <section className="new-board-overview" aria-label="Обзор рабочей доски">
-          <article className="new-board-hero-card">
-            <span className="new-interface-kicker">Рабочая область · обзор</span>
-            <h2>{view.board.name}</h2>
-            <p>Все задачи команды в одном спокойном ритме. Сначала — важное, затем — следующий шаг.</p>
-            <div className="new-board-hero-meta"><span><i /> Автообновление включено</span><span>{newBoardStats.total} карточек в поле зрения</span></div>
-          </article>
           <article className="new-board-stat-card new-board-stat-card-dark">
             <span>Активно</span>
             <strong>{newBoardStats.active}</strong>
             <small>задач требуют внимания</small>
           </article>
-          <article className="new-board-stat-card">
+          <article className="new-board-stat-card new-board-stat-card-done">
             <span>Готово</span>
             <strong>{newBoardStats.completed}</strong>
             <small>выполнено на доске</small>
           </article>
-          <article className="new-board-stat-card">
+          <article className="new-board-stat-card new-board-stat-card-due">
             <span>Со сроком</span>
             <strong>{newBoardStats.withDeadline}</strong>
             <small>задач привязаны к дате</small>

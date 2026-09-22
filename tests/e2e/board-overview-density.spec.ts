@@ -8,15 +8,9 @@ async function mountBoardOverview(page: Page) {
         <main class="main" style="inline-size:100%">
           <div class="content board-content" style="inline-size:100%">
             <section class="new-board-overview" aria-label="Обзор рабочей доски">
-              <article class="new-board-hero-card">
-                <span class="new-interface-kicker">Рабочая область · обзор</span>
-                <h2>Taskora</h2>
-                <p>Все задачи команды в одном спокойном ритме. Сначала — важное, затем — следующий шаг.</p>
-                <div class="new-board-hero-meta"><span><i></i> Автообновление включено</span><span>43 карточки в поле зрения</span></div>
-              </article>
               <article class="new-board-stat-card new-board-stat-card-dark"><span>Активно</span><strong>30</strong><small>задач требуют внимания</small></article>
-              <article class="new-board-stat-card"><span>Готово</span><strong>12</strong><small>выполнено на доске</small></article>
-              <article class="new-board-stat-card"><span>Со сроком</span><strong>42</strong><small>задач привязаны к дате</small></article>
+              <article class="new-board-stat-card new-board-stat-card-done"><span>Готово</span><strong>12</strong><small>выполнено на доске</small></article>
+              <article class="new-board-stat-card new-board-stat-card-due"><span>Со сроком</span><strong>42</strong><small>задач привязаны к дате</small></article>
               <article class="new-board-progress-card">
                 <div class="new-board-card-heading"><span>Ритм работы</span><strong>29%</strong></div>
                 <div class="new-board-column-progress">
@@ -46,22 +40,22 @@ for (const viewport of [
 
     const metrics = await page.evaluate(() => {
       const overview = document.querySelector<HTMLElement>(".new-board-overview");
-      const hero = document.querySelector<HTMLElement>(".new-board-hero-card");
       const progress = document.querySelector<HTMLElement>(".new-board-progress-card");
-      if (!overview || !hero || !progress) throw new Error("Board overview did not mount");
+      const statCards = document.querySelectorAll(".new-board-overview > .new-board-stat-card");
+      if (!overview || !progress) throw new Error("Board overview did not mount");
       return {
         overviewHeight: overview.getBoundingClientRect().height,
-        heroHeight: hero.getBoundingClientRect().height,
         progressHeight: progress.getBoundingClientRect().height,
+        heroRemoved: !document.querySelector(".new-board-hero-card"),
+        statCardCount: statCards.length,
         pageOverflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth,
-        heroContentVisible: hero.scrollHeight <= hero.clientHeight + 1,
       };
     });
 
     expect(metrics.overviewHeight).toBeLessThanOrEqual(260);
-    expect(metrics.heroHeight).toBeLessThanOrEqual(260);
     expect(metrics.progressHeight).toBeLessThanOrEqual(152);
+    expect(metrics.heroRemoved).toBe(true);
+    expect(metrics.statCardCount).toBe(3);
     expect(metrics.pageOverflow).toBeLessThanOrEqual(1);
-    expect(metrics.heroContentVisible).toBe(true);
   });
 }

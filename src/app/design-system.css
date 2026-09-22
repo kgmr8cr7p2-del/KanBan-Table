@@ -1335,3 +1335,49 @@
     block-size: 4px;
   }
 }
+
+/* The overview hero is intentionally removed. Keep the remaining metrics as
+   a compact, semantic grid so the board starts immediately after them. */
+:root[data-interface-mode="new"] .new-board-overview {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    "active done due"
+    "progress progress progress";
+}
+
+:root[data-interface-mode="new"] .new-board-overview > .new-board-stat-card.new-board-stat-card-done {
+  grid-area: done;
+  border-color: color-mix(in srgb, var(--accent-green) 28%, var(--border));
+  background: var(--card-low);
+}
+
+:root[data-interface-mode="new"] .new-board-overview > .new-board-stat-card.new-board-stat-card-done strong {
+  color: var(--success);
+}
+
+:root[data-interface-mode="new"] .new-board-overview > .new-board-stat-card.new-board-stat-card-due {
+  grid-area: due;
+  border-color: color-mix(in srgb, var(--accent-amber) 32%, var(--border));
+  background: var(--card-medium);
+}
+
+:root[data-interface-mode="new"] .new-board-overview > .new-board-stat-card.new-board-stat-card-due strong {
+  color: var(--warning);
+}
+
+@container board-workspace (max-width: 70rem) {
+  :root[data-interface-mode="new"] .new-board-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "active done"
+      "due due"
+      "progress progress";
+  }
+}
+
+@container board-workspace (max-width: 45rem) {
+  :root[data-interface-mode="new"] .new-board-overview {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "active" "done" "due" "progress";
+  }
+}
