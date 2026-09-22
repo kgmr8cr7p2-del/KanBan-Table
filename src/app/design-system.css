@@ -1112,3 +1112,16 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Task card content contract ----------------------------------------
+   Cards must grow with their content.  The column owns the vertical scroll
+   when there are many tasks; an individual card must never become a clipped
+   viewport for a long title, metadata row, or checklist progress indicator. */
+
+:root[data-interface-mode="new"] .task-card {
+  block-size: auto;
+  min-block-size: max-content;
+  max-block-size: none;
+  align-content: start;
+  overflow: visible;
+}

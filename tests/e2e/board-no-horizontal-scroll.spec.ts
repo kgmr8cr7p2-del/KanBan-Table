@@ -25,7 +25,7 @@ async function mountBoard(page: Page) {
         <main class="main">
           <div class="content board-content">
             <section class="board" aria-label="Канбан-доска">
-              <article class="column"><header class="column-head"><strong>Новые</strong><span class="count">19</span></header><div class="task-list"><article class="task-card"><strong class="task-title">Длинное название задачи должно переноситься внутри карточки</strong></article></div></article>
+              <article class="column"><header class="column-head"><strong>Новые</strong><span class="count">19</span></header><div class="task-list"><article class="task-card priority-card-HIGH" data-content-check="true"><div class="task-card-head"><span class="task-priority-signal">Высокий</span><span class="task-deadline-signal">Просрочено · 17.08.2026</span></div><strong class="task-title">#326 CHL07-TR-MSS01 — устранить избыточную генерацию событий auditd</strong><p class="task-description">Описание с дополнительным контекстом для проверки полной высоты карточки.</p><div class="task-context-row"><span class="task-assignee-summary">Исполнитель: Москаленко Н.Т.</span></div><div class="task-secondary-row"><span class="chip">💬 2</span><span class="chip">Критично</span></div></article></div></article>
               <article class="column"><header class="column-head"><strong>В работе</strong><span class="count">4</span></header><div class="task-list"><article class="task-card"><strong class="task-title">Задача</strong></article></div></article>
               <article class="column"><header class="column-head"><strong>На проверке</strong><span class="count">1</span></header><div class="task-list"><article class="task-card"><strong class="task-title">Задача</strong></article></div></article>
               <article class="column"><header class="column-head"><strong>Требует уточнения</strong><span class="count">1</span></header><div class="task-list"><article class="task-card"><strong class="task-title">Задача</strong></article></div></article>
@@ -54,6 +54,10 @@ for (const viewport of viewports) {
         pageOverflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth,
         boardOverflow: board.scrollWidth - board.clientWidth,
         boardOverflowX: getComputedStyle(board).overflowX,
+        cardsAreFullyVisible: Array.from(document.querySelectorAll<HTMLElement>("[data-content-check]"), (card) => {
+          const style = getComputedStyle(card);
+          return style.overflow === "visible" && card.scrollHeight <= card.clientHeight + 1;
+        }).every(Boolean),
         columnsInsideBoard: columns.every((column) => {
           const rect = column.getBoundingClientRect();
           return rect.left >= boardRect.left - 1 && rect.right <= boardRect.right + 1;
@@ -65,6 +69,7 @@ for (const viewport of viewports) {
     expect(metrics.pageOverflow).toBeLessThanOrEqual(1);
     expect(metrics.boardOverflow).toBeLessThanOrEqual(1);
     expect(metrics.boardOverflowX).toBe("visible");
+    expect(metrics.cardsAreFullyVisible).toBe(true);
     expect(metrics.columnsInsideBoard).toBe(true);
     expect(metrics.columnCount).toBe(6);
   });
