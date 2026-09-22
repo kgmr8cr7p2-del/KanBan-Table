@@ -1270,3 +1270,68 @@
     justify-content: flex-start;
   }
 }
+
+/* Compact board overview --------------------------------------------
+   The hero spans the first two grid rows, so its minimum height also sets
+   the height of the whole overview. Keep the desktop summary useful without
+   letting it push the actual kanban below the fold. */
+@container board-workspace (min-width: 70rem) {
+  :root[data-interface-mode="new"] .new-board-overview {
+    grid-template-rows: 104px minmax(104px, auto);
+    margin-block-end: 8px;
+  }
+
+  :root[data-interface-mode="new"] .new-board-hero-card {
+    min-block-size: 0;
+    align-content: start;
+    gap: 8px;
+    padding: 16px;
+  }
+
+  :root[data-interface-mode="new"] .new-board-hero-card h2 {
+    margin-block: 0;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+  }
+
+  :root[data-interface-mode="new"] .new-board-hero-card p {
+    line-height: 1.35;
+  }
+
+  :root[data-interface-mode="new"] .new-board-hero-meta {
+    gap: 8px;
+    margin-block-start: auto;
+  }
+
+  :root[data-interface-mode="new"] .new-board-stat-card {
+    min-block-size: 0;
+    gap: 8px;
+    padding-block: 8px;
+    padding-inline: 16px;
+  }
+
+  :root[data-interface-mode="new"] .new-board-stat-card strong {
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+  }
+
+  :root[data-interface-mode="new"] .new-board-progress-card {
+    gap: 8px;
+    padding-block: 8px;
+    padding-inline: 16px;
+  }
+
+  :root[data-interface-mode="new"] .new-board-card-heading {
+    margin-block-end: 0;
+  }
+
+  :root[data-interface-mode="new"] .new-board-column-progress {
+    gap: 8px 16px;
+  }
+
+  :root[data-interface-mode="new"] .new-board-column-progress-row {
+    row-gap: 0;
+  }
+
+  :root[data-interface-mode="new"] .new-board-column-progress-track {
+    block-size: 4px;
+  }
+}
