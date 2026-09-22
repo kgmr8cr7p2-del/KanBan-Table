@@ -1125,3 +1125,51 @@
   align-content: start;
   overflow: visible;
 }
+
+/* Board document-flow contract --------------------------------------
+   The board is a page, not a fixed-height application inside the page.
+   Keep all six statuses on one desktop row, let columns grow with their
+   task lists, and give the document the only vertical scrollbar. */
+
+:root[data-interface-mode="new"] .app:has(.board-content) {
+  block-size: auto;
+  min-block-size: 100dvh;
+  overflow: visible;
+}
+
+:root[data-interface-mode="new"] .main:has(> .board-content) {
+  block-size: auto;
+  min-block-size: 0;
+  overflow: visible;
+  scrollbar-gutter: auto;
+  overscroll-behavior-y: auto;
+  grid-template-rows: max-content auto !important;
+}
+
+:root[data-interface-mode="new"] .board {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-flow: row;
+  grid-auto-columns: auto;
+  gap: var(--ds-space-1);
+  overflow: visible;
+  scrollbar-gutter: auto;
+}
+
+:root[data-interface-mode="new"] .board > .column {
+  max-block-size: none;
+  overflow: visible;
+}
+
+:root[data-interface-mode="new"] .task-list {
+  min-block-size: 0;
+  overflow: visible;
+  scrollbar-gutter: auto;
+  overscroll-behavior: auto;
+}
+
+@media (max-width: 720px) {
+  :root[data-interface-mode="new"] .board {
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-flow: row;
+  }
+}

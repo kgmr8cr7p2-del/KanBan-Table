@@ -45,15 +45,32 @@ for (const viewport of viewports) {
     await page.waitForTimeout(250);
     await mountBoard(page);
 
-    const metrics = await page.evaluate(() => {
+    const metrics = await page.evaluate((viewportWidth) => {
       const board = document.querySelector<HTMLElement>(".board");
       if (!board) throw new Error("Board shell did not mount");
       const boardRect = board.getBoundingClientRect();
       const columns = Array.from(document.querySelectorAll<HTMLElement>(".board > .column"));
+      const taskLists = Array.from(document.querySelectorAll<HTMLElement>(".board > .column > .task-list"));
+      const columnTops = columns.map((column) => column.getBoundingClientRect().top);
+      const matchesResponsiveColumnFlow = viewportWidth <= 720 || (Math.max(...columnTops) - Math.min(...columnTops) <= 1);
+      const mainOverflowY = getComputedStyle(document.querySelector<HTMLElement>(".main")!).overflowY;
+      const columnOverflowY = columns.map((column) => getComputedStyle(column).overflowY);
+      const taskListOverflowY = taskLists.map((taskList) => getComputedStyle(taskList).overflowY);
+      const rootOverflowY = getComputedStyle(document.documentElement).overflowY;
+      const bodyOverflowY = getComputedStyle(document.body).overflowY;
+      const appOverflowY = getComputedStyle(document.querySelector<HTMLElement>(".app")!).overflowY;
+      const documentOwnsVerticalScroll = mainOverflowY === "visible"
+        && columnOverflowY.every((overflowY) => overflowY === "visible")
+        && taskListOverflowY.every((overflowY) => overflowY === "visible")
+        && (rootOverflowY === "visible" || rootOverflowY === "auto")
+        && bodyOverflowY === "auto"
+        && appOverflowY === "visible";
       return {
         pageOverflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth,
         boardOverflow: board.scrollWidth - board.clientWidth,
         boardOverflowX: getComputedStyle(board).overflowX,
+        matchesResponsiveColumnFlow,
+        documentOwnsVerticalScroll,
         cardsAreFullyVisible: Array.from(document.querySelectorAll<HTMLElement>("[data-content-check]"), (card) => {
           const style = getComputedStyle(card);
           return style.overflow === "visible" && card.scrollHeight <= card.clientHeight + 1;
@@ -64,11 +81,13 @@ for (const viewport of viewports) {
         }),
         columnCount: columns.length,
       };
-    });
+    }, viewport.width);
 
     expect(metrics.pageOverflow).toBeLessThanOrEqual(1);
     expect(metrics.boardOverflow).toBeLessThanOrEqual(1);
     expect(metrics.boardOverflowX).toBe("visible");
+    expect(metrics.matchesResponsiveColumnFlow).toBe(true);
+    expect(metrics.documentOwnsVerticalScroll).toBe(true);
     expect(metrics.cardsAreFullyVisible).toBe(true);
     expect(metrics.columnsInsideBoard).toBe(true);
     expect(metrics.columnCount).toBe(6);
