@@ -4,8 +4,8 @@ async function mountBoardHeader(page: import("@playwright/test").Page) {
   await page.evaluate(() => {
     document.documentElement.dataset.interfaceMode = "new";
     document.body.innerHTML = `
-      <div class="app">
-        <main class="main">
+      <div class="app" style="display:block;inline-size:100%">
+        <main class="main" style="inline-size:100%">
           <div class="topbar board-topbar">
             <form class="toolbar filters-compact filters-live" aria-label="Фильтры доски">
               <label class="field search compact-field"><span class="meta-row search-shell"><span aria-hidden="true">⌕</span><input class="input compact-input" placeholder="Поиск" /></span></label>
@@ -55,9 +55,10 @@ for (const viewport of [
       const filters = document.querySelector<HTMLElement>(".filters-live");
       const actions = document.querySelector<HTMLElement>(".board-topbar-actions");
       const reset = document.querySelector<HTMLElement>(".reset-filter-button");
+      const sync = document.querySelector<HTMLElement>(".sync-pill");
       const count = document.querySelector<HTMLElement>(".column-head .count");
       const columnHead = document.querySelector<HTMLElement>(".column-head");
-      if (!topbar || !filters || !actions || !reset || !count || !columnHead) throw new Error("Board header did not mount");
+      if (!topbar || !filters || !actions || !reset || !sync || !count || !columnHead) throw new Error("Board header did not mount");
 
       const overlaps = (first: DOMRect, second: DOMRect) => (
         first.left < second.right - 1
@@ -66,30 +67,33 @@ for (const viewport of [
         && first.bottom > second.top + 1
       );
       const resetRect = reset.getBoundingClientRect();
+      const syncRect = sync.getBoundingClientRect();
       const filterChildren = Array.from(filters.children)
         .filter((child) => child !== reset)
         .map((child) => child.getBoundingClientRect());
       const countRect = count.getBoundingClientRect();
       const headRect = columnHead.getBoundingClientRect();
       const countStyle = getComputedStyle(count);
-      const topbarStyle = getComputedStyle(topbar);
+      const mainStyle = getComputedStyle(topbar.closest<HTMLElement>(".main")!);
 
       return {
-        resetOverlapsSibling: filterChildren.some((rect) => rect !== resetRect && overlaps(resetRect, rect)),
+        resetOverlapsSibling: filterChildren.some((rect) => overlaps(resetRect, rect)),
         filtersOverlapActions: overlaps(filters.getBoundingClientRect(), actions.getBoundingClientRect()),
+        resetOverlapsSync: overlaps(resetRect, syncRect),
         countIsCentered: Math.abs((countRect.top + countRect.height / 2) - (headRect.top + headRect.height / 2)) <= 1
           && countStyle.textAlign === "center",
         countDisplay: countStyle.display,
         countPlaceItems: countStyle.placeItems,
-        topbarContainerType: topbarStyle.containerType,
+        mainContainerType: mainStyle.containerType,
       };
     });
 
     expect(metrics.resetOverlapsSibling).toBe(false);
     expect(metrics.filtersOverlapActions).toBe(false);
+    expect(metrics.resetOverlapsSync).toBe(false);
     expect(metrics.countIsCentered).toBe(true);
     expect(["grid", "inline-grid"]).toContain(metrics.countDisplay);
     expect(metrics.countPlaceItems).toBe("center");
-    expect(metrics.topbarContainerType).toBe("inline-size");
+    expect(metrics.mainContainerType).toBe("inline-size");
   });
 }
