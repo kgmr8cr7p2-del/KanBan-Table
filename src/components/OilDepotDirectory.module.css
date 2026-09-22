@@ -79,6 +79,35 @@
    narrow column as soon as the viewport leaves the wide-desktop range. */
 .people { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
 
+/* Keep depot cards aligned across owner columns instead of letting natural
+   content height move the next card up or down from column to column. */
+.depots {
+  grid-auto-rows: minmax(376px, auto);
+  align-items: stretch;
+}
+
+.depot {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 376px;
+}
+
+.activity time {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.checkButton {
+  margin-block-start: auto;
+}
+
 @media (max-width: 720px) {
   .people { grid-template-columns: minmax(0, 1fr); }
+  .depots { grid-auto-rows: minmax(352px, auto); }
+  .depot { min-block-size: 352px; }
+}
+
+@media (max-width: 430px) {
+  .depots { grid-auto-rows: minmax(336px, auto); }
+  .depot { min-block-size: 336px; }
 }
