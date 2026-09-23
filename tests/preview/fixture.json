@@ -43,7 +43,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": "preview-user"
           },
           {
             "id": "t102",
@@ -70,7 +75,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d2",
+            "assigneeId": null
           },
           {
             "id": "t103",
@@ -106,7 +116,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": "preview-user"
           }
         ]
       },
@@ -149,7 +164,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c1",
+            "boardId": "preview",
+            "oilDepotId": "d2",
+            "assigneeId": "preview-user"
           },
           {
             "id": "t105",
@@ -176,7 +196,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c1",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": null
           },
           {
             "id": "t106",
@@ -212,7 +237,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c1",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": "preview-user"
           }
         ]
       },
@@ -255,7 +285,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c2",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": "preview-user"
           },
           {
             "id": "t108",
@@ -282,7 +317,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c2",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": null
           }
         ]
       },
@@ -325,7 +365,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c3",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": "preview-user"
           },
           {
             "id": "t110",
@@ -352,7 +397,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c3",
+            "boardId": "preview",
+            "oilDepotId": "d2",
+            "assigneeId": null
           }
         ]
       },
@@ -395,7 +445,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c4",
+            "boardId": "preview",
+            "oilDepotId": "d2",
+            "assigneeId": "preview-user"
           },
           {
             "id": "t112",
@@ -422,7 +477,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c4",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": null
           }
         ]
       },
@@ -465,7 +525,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c5",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": "preview-user"
           },
           {
             "id": "t114",
@@ -492,7 +557,12 @@
             "comments": [],
             "fileAttachments": [],
             "checklists": [],
-            "reminderDaysBefore": null
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c5",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": null
           }
         ]
       }

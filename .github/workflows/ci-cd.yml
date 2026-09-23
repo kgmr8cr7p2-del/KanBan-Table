@@ -38,8 +38,8 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check oil depot task mapping
-        run: node --test tests/oil-depot-dashboard.test.cjs
+      - name: Check depot mapping and task deadlines
+        run: node --test tests/oil-depot-dashboard.test.cjs tests/task-deadline.test.cjs
 
   deploy:
     name: Deploy to production
