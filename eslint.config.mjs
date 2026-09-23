@@ -9,6 +9,7 @@ const config = [
   {
     ignores: [
       ".next/**",
+      ".local/**",
       "node_modules/**",
       "coverage/**",
       "public/**",

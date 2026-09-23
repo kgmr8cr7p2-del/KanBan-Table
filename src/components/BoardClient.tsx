@@ -7,6 +7,7 @@ import { CreateTaskButton } from "@/components/CreateTaskButton";
 import { TaskTimeline } from "@/components/TaskTimeline";
 import { UserProfileButton } from "@/components/ProfileCard/ProfileCard";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { isCompletedColumn, isOverdue, deadlineTone, deadlineText } from "@/lib/task-deadline";
 import { setPresenceActivity } from "@/lib/presence";
 
 const priorityLabels = {
@@ -60,6 +61,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [view, setView] = useState(initialView);
   const [filters, setFilters] = useState<Filters>(readFiltersFromUrl);
   const filtersRef = useRef(filters);
+  const filterMenuRef = useRef<HTMLDetailsElement>(null);
   const [selected, setSelected] = useState<Task | null>(null);
   const [returnToAi, setReturnToAi] = useState(false);
   const [taskFullscreen, setTaskFullscreen] = useState(false);
@@ -102,14 +104,15 @@ export function BoardClient({ initialView }: { initialView: View }) {
     const completed = visibleColumns
       .filter((column: any) => isCompletedColumn(column.name))
       .reduce((total: number, column: any) => total + column.tasks.length, 0);
-    const withDeadline = visibleTasks.filter((task: Task) => Boolean(task.deadline)).length;
+    const overdue = visibleTasks.filter((task: Task) => isOverdue(task)).length;
     return {
       total: visibleTasks.length,
       active: Math.max(visibleTasks.length - completed, 0),
       completed,
-      withDeadline,
+      overdue,
     };
   }, [visibleColumns, visibleTasks]);
+  const activeFilterCount = [filters.priority, filters.assignee, filters.deadline, filters.oilDepot, filters.withoutPlanned].filter(Boolean).length;
   const activeTask = selected ? tasks.find((task: Task) => task.id === selected.id) ?? selected : null;
   const activeTaskId = activeTask?.id ?? null;
   const activeTaskNumber = activeTask?.taskNumber ?? null;
@@ -118,6 +121,15 @@ export function BoardClient({ initialView }: { initialView: View }) {
   useEffect(() => {
     filtersRef.current = filters;
   }, [filters]);
+
+  useEffect(() => {
+    function closeFilters(event: PointerEvent) {
+      const menu = filterMenuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+    }
+    document.addEventListener("pointerdown", closeFilters);
+    return () => document.removeEventListener("pointerdown", closeFilters);
+  }, []);
 
   useEffect(() => {
     setLastUpdatedAt(new Date());
@@ -596,7 +608,37 @@ export function BoardClient({ initialView }: { initialView: View }) {
 
   return (
     <>
-      <div className="topbar board-topbar">
+      <header className="workspace-header">
+          <div className="board-copy">
+            <h1>{view.board.name}</h1>
+            <label className="board-switcher">
+              <span className="visually-hidden">Выбрать доску</span>
+              <select className="select" value={view.board.id} onChange={(event) => switchBoard(event.currentTarget.value)}>
+                {view.availableBoards.map((board: any) => (
+                  <option key={board.id} value={board.id}>
+                    {board.ownerId ? `Личная · ${board.name}` : `Общая · ${board.name}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {view.permissions.canCreateTask ? (
+            <div className="board-create-actions">
+              {view.ai?.taskDraftEnabled ? <button
+                className="button secondary compact-button ai-task-button"
+                type="button"
+                disabled={!view.ai?.taskDraftEnabled}
+                title={view.ai?.taskDraftEnabled ? "Создать черновик задачи с ИИ" : "ИИ не настроен на сервере"}
+                onClick={openAiAssistant}
+              >
+                <Sparkles size={17} />
+                ИИ-помощник
+              </button> : null}
+              <CreateTaskButton onClick={openCreateTask} />
+            </div>
+          ) : null}
+      </header>
+      <div className="topbar board-topbar workspace-toolbar">
         <form className="toolbar filters-compact filters-live" onSubmit={preventFilterSubmit}>
           <label className="field search compact-field">
             <span className="meta-row search-shell">
@@ -604,6 +646,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
               <input className="input compact-input" name="q" placeholder="Поиск" aria-label="Поиск по задачам" value={filters.q} onChange={(event) => updateFilter("q", event.currentTarget.value)} />
             </span>
           </label>
+          <details ref={filterMenuRef} className="workspace-filters" onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.currentTarget.open = false;
+              event.currentTarget.querySelector("summary")?.focus();
+            }
+          }}>
+            <summary>Фильтры{activeFilterCount ? ` · ${activeFilterCount}` : ""}<ChevronDown size={14} aria-hidden="true" /></summary>
+            <div className="workspace-filter-fields">
           {!view.board.ownerId ? <select className="select compact-select depot-filter" name="oilDepot" aria-label="Фильтр по нефтебазе" value={filters.oilDepot} onChange={(event) => updateFilter("oilDepot", event.currentTarget.value)}>
             <option value="">Нефтебаза</option>
             {view.oilDepots.map((depot: any) => (
@@ -621,7 +671,8 @@ export function BoardClient({ initialView }: { initialView: View }) {
             ))}
           </select>
           {!view.board.ownerId ? <select className="select compact-select" name="assignee" aria-label="Фильтр по исполнителю" value={filters.assignee} onChange={(event) => updateFilter("assignee", event.currentTarget.value)}>
-            <option value="">Исполнитель</option>
+            <option value="">Все исполнители</option>
+            <option value="unassigned">Без исполнителя</option>
             {view.users.map((user: any) => (
               <option key={user.id} value={user.id}>
                 {user.name}
@@ -633,41 +684,34 @@ export function BoardClient({ initialView }: { initialView: View }) {
             <option value="week">На этой неделе</option>
             <option value="overdue">Просрочено</option>
           </select>
-          <button className="button secondary compact-button reset-filter-button" type="button" title="Сбросить фильтры" onClick={resetFilters}>
+          <button
+            className={`button secondary compact-button board-planned-toggle ${filters.withoutPlanned === "1" ? "is-active" : ""}`}
+            type="button"
+            aria-pressed={filters.withoutPlanned === "1"}
+            onClick={() => updateFilter("withoutPlanned", filters.withoutPlanned === "1" ? "" : "1")}
+            title="Показывать или скрывать задачи с приоритетом «Плановые работы»"
+          >
+            <Flag size={16} aria-hidden="true" />
+            {filters.withoutPlanned === "1" ? "Показать плановые" : "Без плановых работ"}
+          </button>
+          <label className="board-sort-control">
+            <span className="visually-hidden">Сортировка задач</span>
+            <select
+              className="select compact-select"
+              aria-label="Сортировка задач"
+              value={filters.sort}
+              onChange={(event) => updateFilter("sort", event.currentTarget.value)}
+            >
+              {Object.entries(sortLabels).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </label>
+            </div>
+          </details>
+          <button disabled={!activeFilterCount && !filters.q} className="button secondary compact-button reset-filter-button" type="button" title="Сбросить фильтры" onClick={resetFilters}>
             <X size={17} />
             Сбросить
-          </button>
-        </form>
-        <form className="toolbar filters-compact filters-legacy" onSubmit={preventFilterSubmit}>
-          <label className="field search compact-field">
-            <span className="meta-row search-shell">
-              <Search size={17} />
-              <input className="input compact-input" name="q" placeholder="Поиск" aria-label="Поиск по задачам" defaultValue={filters.q} />
-            </span>
-          </label>
-          <select className="select compact-select" name="priority" aria-label="Фильтр по приоритету" defaultValue={filters.priority}>
-            <option value="">Приоритет</option>
-            {Object.entries(priorityLabels).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          {!view.board.ownerId ? <select className="select compact-select" name="assignee" aria-label="Фильтр по исполнителю" defaultValue={filters.assignee}>
-            <option value="">Исполнитель</option>
-            {view.users.map((user: any) => (
-              <option key={user.id} value={user.id}>
-                {user.name}
-              </option>
-            ))}
-          </select> : null}
-          <select className="select compact-select" name="deadline" aria-label="Фильтр по дедлайну" defaultValue={filters.deadline}>
-            <option value="">Дедлайн</option>
-            <option value="week">На этой неделе</option>
-            <option value="overdue">Просрочено</option>
-          </select>
-          <button className="button secondary compact-button" title="Применить фильтры">
-            <Search size={17} />
           </button>
         </form>
         <div className="board-topbar-actions">
@@ -697,9 +741,9 @@ export function BoardClient({ initialView }: { initialView: View }) {
             {panelVisibility.topbar ? <PanelTopClose size={17} aria-hidden="true" /> : <PanelTopOpen size={17} aria-hidden="true" />}
             <span className="panel-toggle-label">{panelVisibility.topbar ? "Скрыть верхнюю" : "Показать верхнюю"}</span>
           </button>
-          <button className="button secondary compact-button mobile-optional" type="button" onClick={() => void toggleFocusMode()} title="Открыть режим просмотра доски">
+          <button className="button secondary compact-button mobile-optional" type="button" onClick={() => void toggleFocusMode()} title="На весь экран" aria-label="На весь экран">
             <Expand size={17} />
-            Доска
+            <span className="panel-toggle-label">На весь экран</span>
           </button>
           <a className="button secondary compact-button mobile-optional" href="/board/tv" title="TV-режим для офисного экрана">
             <Monitor size={17} />
@@ -733,122 +777,25 @@ export function BoardClient({ initialView }: { initialView: View }) {
         </button>
       ) : null}
 
-      <div className={`content board-content ${focusMode ? "focus-mode" : ""}`}>
-        <div className="board-head">
-          <div className="board-copy">
-            <h1>{view.board.name}</h1>
-            <label className="board-switcher">
-              <span className="visually-hidden">Выбрать доску</span>
-              <select className="select" value={view.board.id} onChange={(event) => switchBoard(event.currentTarget.value)}>
-                {view.availableBoards.map((board: any) => (
-                  <option key={board.id} value={board.id}>
-                    {board.ownerId ? `Личная · ${board.name}` : `Общая · ${board.name}`}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <span className="spacer" />
+      <div className={`content board-content workspace-content ${focusMode ? "focus-mode" : ""}`}>
+        <div className="workspace-viewbar">
           <div className="board-view-tabs board-view-tabs-inline" role="group" aria-label="Режим отображения">
             <button className={viewMode === "board" ? "active" : ""} type="button" aria-pressed={viewMode === "board"} onClick={() => setViewMode("board")}>Доска</button>
             <button className={viewMode === "list" ? "active" : ""} type="button" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}>Список</button>
             <button className={viewMode === "timeline" ? "active" : ""} type="button" aria-pressed={viewMode === "timeline"} onClick={() => setViewMode("timeline")}>Таймлайн</button>
             {!view.board.ownerId ? <button className={viewMode === "mine" ? "active" : ""} type="button" aria-pressed={viewMode === "mine"} onClick={() => setViewMode("mine")}>Моя работа</button> : null}
           </div>
-          <button
-            className={`button secondary compact-button board-planned-toggle ${filters.withoutPlanned === "1" ? "is-active" : ""}`}
-            type="button"
-            aria-pressed={filters.withoutPlanned === "1"}
-            onClick={() => updateFilter("withoutPlanned", filters.withoutPlanned === "1" ? "" : "1")}
-            title="Показывать или скрывать задачи с приоритетом «Плановые работы»"
-          >
-            <Flag size={16} aria-hidden="true" />
-            {filters.withoutPlanned === "1" ? "Показать плановые" : "Без плановых работ"}
-          </button>
-          <div className="board-quick-filters" role="group" aria-label="Быстрые фильтры">
-            <button className={`button secondary compact-button ${filters.assignee === "unassigned" ? "is-active" : ""}`} type="button" aria-pressed={filters.assignee === "unassigned"} onClick={() => updateFilter("assignee", filters.assignee === "unassigned" ? "" : "unassigned")}>Без исполнителя</button>
-          </div>
-          <label className="board-sort-control">
-            <span className="visually-hidden">Сортировка задач</span>
-            <select
-              className="select compact-select"
-              aria-label="Сортировка задач"
-              value={filters.sort}
-              onChange={(event) => updateFilter("sort", event.currentTarget.value)}
-            >
-              {Object.entries(sortLabels).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </label>
-          {view.permissions.canCreateTask ? (
-            <div className="board-create-actions">
-              <button
-                className="button secondary compact-button ai-task-button"
-                type="button"
-                disabled={!view.ai?.taskDraftEnabled}
-                title={view.ai?.taskDraftEnabled ? "Создать черновик задачи с ИИ" : "ИИ не настроен на сервере"}
-                onClick={openAiAssistant}
-              >
-                <Sparkles size={17} />
-                ИИ-помощник
-              </button>
-              <CreateTaskButton onClick={openCreateTask} />
-            </div>
-          ) : null}
-          {view.permissions.canCreateTask ? (
-            <form className="toolbar quick-create" action={createTask}>
-              <input type="hidden" name="columnId" value={view.board.columns[0]?.id ?? ""} />
-              <input type="hidden" name="oilDepotId" value="" />
-              <input className="input" name="title" placeholder="Новая задача" required />
-              <select className="select" name="priority" defaultValue="MEDIUM">
-                {Object.entries(priorityLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <button className="button">
-                <Plus size={17} />
-                Создать
-              </button>
-            </form>
-          ) : null}
         </div>
-        <section className="new-board-overview" aria-label="Обзор рабочей доски">
-          <article className="new-board-stat-card new-board-stat-card-dark">
-            <span>Активно</span>
-            <strong>{newBoardStats.active}</strong>
-            <small>задач требуют внимания</small>
-          </article>
-          <article className="new-board-stat-card new-board-stat-card-done">
-            <span>Готово</span>
-            <strong>{newBoardStats.completed}</strong>
-            <small>выполнено на доске</small>
-          </article>
-          <article className="new-board-stat-card new-board-stat-card-due">
-            <span>Со сроком</span>
-            <strong>{newBoardStats.withDeadline}</strong>
-            <small>задач привязаны к дате</small>
-          </article>
-          <article className="new-board-progress-card">
-            <div className="new-board-card-heading"><span>Ритм работы</span><strong>{newBoardStats.total ? Math.round((newBoardStats.completed / newBoardStats.total) * 100) : 0}%</strong></div>
-            <div className="new-board-column-progress">
-              {visibleColumns.map((column: any) => {
-                const percent = newBoardStats.total ? Math.round((column.tasks.length / newBoardStats.total) * 100) : 0;
-                return <div className="new-board-column-progress-row" key={column.id}>
-                  <span>{column.name}</span>
-                  <b>{column.tasks.length}</b>
-                  <span className="new-board-column-progress-track"><i style={{ inlineSize: `${Math.min(100, Math.max(4, percent))}%` }} /></span>
-                </div>;
-              })}
-            </div>
-          </article>
-        </section>
+        <div className="workspace-summary" aria-label="Сводка показанных задач">
+          <span>Всего <strong>{newBoardStats.total}</strong></span>
+          <span>Активно <strong>{newBoardStats.active}</strong></span>
+          <span>Готово <strong>{newBoardStats.completed}</strong></span>
+          {newBoardStats.overdue > 0 ? <span className="workspace-overdue">Просрочено <strong>{newBoardStats.overdue}</strong></span> : null}
+        </div>
         {error && !createOpen && !activeTask ? <p className="chip priority-HIGH" role="alert">{error}</p> : null}
         {viewMode === "list" ? <TaskTable tasks={visibleTasks} onOpen={openTask} personal={Boolean(view.board.ownerId)} /> : null}
         {viewMode === "timeline" ? <TaskTimeline tasks={visibleTasks} onOpen={openTask} /> : null}
-        {viewMode === "board" || viewMode === "mine" ? <section className="board" aria-label="Канбан-доска">
+        {viewMode === "board" || viewMode === "mine" ? <section className="board workspace-board" aria-label="Канбан-доска">
           {visibleColumns.map((column: any) => (
             <article
               className={`column ${dropColumn === column.id ? "drop-target" : ""} ${isCompletedColumn(column.name) ? "column-done" : ""}`}
@@ -1050,7 +997,6 @@ function TaskCard({
         <span className="task-number">#{task.taskNumber}</span>
         {task.title}
       </span>
-      {task.description ? <p className="task-description">{task.description}</p> : null}
       <div className="task-context-row">
         {task.oilDepot ? (
           <div className="task-depot">
@@ -2314,63 +2260,11 @@ function readFiltersFromUrl() {
   };
 }
 
-function isCompletedColumn(name: string) {
-  const normalized = name.toLowerCase();
-  return normalized.includes("готов") || normalized.includes("done") || normalized.includes("complete") || normalized.includes("РіРѕС‚РѕРІ".toLowerCase());
-}
-
-function isReviewColumn(name: string) {
-  const normalized = name.toLowerCase();
-  return normalized.includes("провер") || normalized.includes("review") || normalized.includes("verify") || normalized.includes("approval") || normalized.includes("РїСЂРѕРІРµСЂ".toLowerCase());
-}
-
-function isOverdue(task: Task) {
-  return Boolean(task.deadline && new Date(task.deadline).getTime() < startOfToday().getTime() && !isCompletedColumn(task.column?.name ?? "") && !isReviewColumn(task.column?.name ?? ""));
-}
-
-function isDueToday(task: Task) {
-  if (!task.deadline) return false;
-  const deadline = new Date(task.deadline);
-  const today = startOfToday();
-  const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
-  return deadline >= today && deadline < tomorrow;
-}
-
-function isDueSoon(task: Task) {
-  if (!task.deadline || isOverdue(task) || isDueToday(task)) return false;
-  const deadline = new Date(task.deadline).getTime();
-  const soon = startOfToday().getTime() + 4 * 24 * 60 * 60 * 1000;
-  return deadline <= soon;
-}
-
-function deadlineTone(task: Task) {
-  if (isReviewColumn(task.column?.name ?? "")) return "deadline-review";
-  if (isOverdue(task)) return "deadline-overdue";
-  if (isDueToday(task)) return "deadline-today";
-  if (isDueSoon(task)) return "deadline-soon";
-  return "deadline-normal";
-}
-
-function deadlineText(task: Task) {
-  if (!task.deadline) return "Без срока";
-  if (isReviewColumn(task.column?.name ?? "")) return "На согласовании";
-  if (isOverdue(task)) return `Просрочено · ${dateOnly(task.deadline)}`;
-  if (isDueToday(task)) return "Сегодня";
-  if (isDueSoon(task)) return `Скоро · ${dateOnly(task.deadline)}`;
-  return dateOnly(task.deadline);
-}
-
 function reminderLabel(days: number) {
   if (days === 0) return "В день срока";
   if (days === 1) return "За 1 день";
   if (days >= 5) return `За ${days} дней`;
   return `За ${days} дня`;
-}
-
-function startOfToday() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return today;
 }
 
 function checklistProgress(task: Task) {

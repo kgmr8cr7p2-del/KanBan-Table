@@ -80,12 +80,19 @@ export function AppNav({ user }: { user: CurrentUser }) {
     <>
       <nav className="nav nav-desktop" aria-label="Основная навигация">
         <div className="nav-links">
-          {desktopLinks.map(({ href, label, icon: Icon }) => (
+          {[
+            { label: "Рабочее пространство", paths: ["/board", "/desktop", "/chats", "/oil-depots", "/files"] },
+            { label: "Обзор", paths: ["/reports", "/history", "/archive", "/changelog"] },
+            { label: "Управление", paths: ["/settings", "/admin"] },
+          ].map((group) => <div className="nav-section" key={group.label}>
+            {desktopLinks.some(({ href }) => group.paths.includes(href)) ? <span className="nav-section-label">{group.label}</span> : null}
+            {desktopLinks.filter(({ href }) => group.paths.includes(href)).map(({ href, label, icon: Icon }) => (
             <Link className={href === "/chats" ? "nav-chat-link" : undefined} aria-current={pathname === href ? "page" : undefined} href={href} key={href}>
               <Icon size={18} aria-hidden="true" /><span>{label}</span>
               {href === "/chats" && unreadChats ? <span className="nav-unread-badge" aria-label={`Непрочитанных сообщений: ${unreadChats}`}>{unreadChats > 99 ? "99+" : unreadChats}</span> : null}
             </Link>
           ))}
+          </div>)}
         </div>
         <div className="sidebar-account">
           <Link className="sidebar-profile-link" aria-current={pathname === "/profile" ? "page" : undefined} href="/profile">

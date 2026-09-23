@@ -1,0 +1,563 @@
+{
+  "board": {
+    "id": "preview",
+    "name": "Команда АСУ ТП",
+    "ownerId": null,
+    "columns": [
+      {
+        "id": "c0",
+        "name": "Новые",
+        "position": 0,
+        "tasks": [
+          {
+            "id": "t101",
+            "taskNumber": 101,
+            "title": "Проверить резервное копирование сервера АСУ ТП",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "MEDIUM",
+            "deadline": "2026-09-21T12:05:03.542Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          },
+          {
+            "id": "t102",
+            "taskNumber": 102,
+            "title": "Обновить схему сети нефтебазы",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "HIGH",
+            "deadline": "2026-09-22T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d2",
+              "name": "Омская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          },
+          {
+            "id": "t103",
+            "taskNumber": 103,
+            "title": "Подготовить отчёт по регламентным работам",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "PLANNED",
+            "deadline": "2026-09-23T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 2,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          }
+        ]
+      },
+      {
+        "id": "c1",
+        "name": "В работе",
+        "position": 1,
+        "tasks": [
+          {
+            "id": "t104",
+            "taskNumber": 104,
+            "title": "Обновить схему сети нефтебазы",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c1",
+              "name": "В работе"
+            },
+            "priority": "HIGH",
+            "deadline": "2026-09-21T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d2",
+              "name": "Омская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          },
+          {
+            "id": "t105",
+            "taskNumber": 105,
+            "title": "Подготовить отчёт по регламентным работам",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c1",
+              "name": "В работе"
+            },
+            "priority": "PLANNED",
+            "deadline": "2026-09-22T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          },
+          {
+            "id": "t106",
+            "taskNumber": 106,
+            "title": "Согласовать окно обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c1",
+              "name": "В работе"
+            },
+            "priority": "CRITICAL",
+            "deadline": "2026-09-23T12:05:03.544Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 2,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          }
+        ]
+      },
+      {
+        "id": "c2",
+        "name": "На проверке",
+        "position": 2,
+        "tasks": [
+          {
+            "id": "t107",
+            "taskNumber": 107,
+            "title": "Подготовить отчёт по регламентным работам",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c2",
+              "name": "На проверке"
+            },
+            "priority": "PLANNED",
+            "deadline": "2026-09-21T12:05:03.544Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          },
+          {
+            "id": "t108",
+            "taskNumber": 108,
+            "title": "Согласовать окно обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c2",
+              "name": "На проверке"
+            },
+            "priority": "CRITICAL",
+            "deadline": "2026-09-22T12:05:03.544Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          }
+        ]
+      },
+      {
+        "id": "c3",
+        "name": "Требует уточнения",
+        "position": 3,
+        "tasks": [
+          {
+            "id": "t109",
+            "taskNumber": 109,
+            "title": "Согласовать окно обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c3",
+              "name": "Требует уточнения"
+            },
+            "priority": "CRITICAL",
+            "deadline": "2026-09-21T12:05:03.544Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          },
+          {
+            "id": "t110",
+            "taskNumber": 110,
+            "title": "Восстановить связь с контроллером резервуарного парка",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c3",
+              "name": "Требует уточнения"
+            },
+            "priority": "LOW",
+            "deadline": "2026-09-22T12:05:03.544Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d2",
+              "name": "Омская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          }
+        ]
+      },
+      {
+        "id": "c4",
+        "name": "На паузе",
+        "position": 4,
+        "tasks": [
+          {
+            "id": "t111",
+            "taskNumber": 111,
+            "title": "Восстановить связь с контроллером резервуарного парка",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c4",
+              "name": "На паузе"
+            },
+            "priority": "LOW",
+            "deadline": "2026-09-21T12:05:03.544Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d2",
+              "name": "Омская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          },
+          {
+            "id": "t112",
+            "taskNumber": 112,
+            "title": "Проверить журналы событий и подготовить план устранения замечаний по итогам технического обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c4",
+              "name": "На паузе"
+            },
+            "priority": "MEDIUM",
+            "deadline": "2026-09-22T12:05:03.544Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          }
+        ]
+      },
+      {
+        "id": "c5",
+        "name": "Готово",
+        "position": 5,
+        "tasks": [
+          {
+            "id": "t113",
+            "taskNumber": 113,
+            "title": "Проверить журналы событий и подготовить план устранения замечаний по итогам технического обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c5",
+              "name": "Готово"
+            },
+            "priority": "MEDIUM",
+            "deadline": "2025-01-01",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          },
+          {
+            "id": "t114",
+            "taskNumber": 114,
+            "title": "Проверить резервное копирование сервера АСУ ТП",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c5",
+              "name": "Готово"
+            },
+            "priority": "HIGH",
+            "deadline": "2025-01-01",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [],
+            "reminderDaysBefore": null
+          }
+        ]
+      }
+    ]
+  },
+  "availableBoards": [
+    {
+      "id": "preview",
+      "name": "Команда АСУ ТП",
+      "ownerId": null
+    }
+  ],
+  "currentUser": {
+    "id": "preview-user",
+    "name": "Немых Д.Д.",
+    "approvedAt": "2026-01-01",
+    "role": {
+      "systemKey": "ADMIN",
+      "permissions": []
+    },
+    "jobTitle": "Инженер АСУ ТП"
+  },
+  "users": [
+    {
+      "id": "preview-user",
+      "name": "Немых Д.Д.",
+      "approvedAt": "2026-01-01",
+      "role": {
+        "systemKey": "ADMIN",
+        "permissions": []
+      },
+      "jobTitle": "Инженер АСУ ТП"
+    },
+    {
+      "id": "u2",
+      "name": "Москаленко Н.Т."
+    },
+    {
+      "id": "u3",
+      "name": "Лесин В.В."
+    }
+  ],
+  "oilDepots": [
+    {
+      "id": "d1",
+      "name": "Нижний Тагил",
+      "active": true
+    },
+    {
+      "id": "d2",
+      "name": "Омская",
+      "active": true
+    },
+    {
+      "id": "d3",
+      "name": "Челябинская",
+      "active": true
+    }
+  ],
+  "activityLogs": [],
+  "permissions": {
+    "canCreateTask": true,
+    "canDeleteTask": false
+  },
+  "ai": {
+    "taskDraftEnabled": false
+  }
+}
