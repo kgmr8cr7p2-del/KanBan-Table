@@ -122,6 +122,889 @@
             "boardId": "preview",
             "oilDepotId": "d3",
             "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-3",
+            "taskNumber": 203,
+            "title": "Провести контрольную проверку после технического обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "MEDIUM",
+            "deadline": "2026-09-21T12:05:03.542Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-3",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a3",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b3",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-4",
+            "taskNumber": 204,
+            "title": "Обновить исполнительную документацию и схему подключений",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "HIGH",
+            "deadline": "2026-09-22T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d2",
+              "name": "Омская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-4",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a4",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b4",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d2",
+            "assigneeId": null
+          },
+          {
+            "id": "density-5",
+            "taskNumber": 205,
+            "title": "Проверить восстановление из резервной копии",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "PLANNED",
+            "deadline": "2026-09-23T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 2,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-5",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a5",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b5",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-6",
+            "taskNumber": 206,
+            "title": "Провести контрольную проверку после технического обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "MEDIUM",
+            "deadline": "2026-09-21T12:05:03.542Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-6",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a6",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b6",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-7",
+            "taskNumber": 207,
+            "title": "Обновить исполнительную документацию и схему подключений",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "HIGH",
+            "deadline": "2026-09-22T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d2",
+              "name": "Омская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-7",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a7",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b7",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d2",
+            "assigneeId": null
+          },
+          {
+            "id": "density-8",
+            "taskNumber": 208,
+            "title": "Проверить восстановление из резервной копии",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "PLANNED",
+            "deadline": "2026-09-23T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 2,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-8",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a8",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b8",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-9",
+            "taskNumber": 209,
+            "title": "Провести контрольную проверку после технического обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "MEDIUM",
+            "deadline": "2026-09-21T12:05:03.542Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-9",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a9",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b9",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-10",
+            "taskNumber": 210,
+            "title": "Обновить исполнительную документацию и схему подключений",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "HIGH",
+            "deadline": "2026-09-22T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d2",
+              "name": "Омская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-10",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a10",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b10",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d2",
+            "assigneeId": null
+          },
+          {
+            "id": "density-11",
+            "taskNumber": 211,
+            "title": "Проверить восстановление из резервной копии",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "PLANNED",
+            "deadline": "2026-09-23T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 2,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-11",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a11",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b11",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-12",
+            "taskNumber": 212,
+            "title": "Провести контрольную проверку после технического обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "MEDIUM",
+            "deadline": "2026-09-21T12:05:03.542Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-12",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a12",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b12",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-13",
+            "taskNumber": 213,
+            "title": "Обновить исполнительную документацию и схему подключений",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "HIGH",
+            "deadline": "2026-09-22T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d2",
+              "name": "Омская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-13",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a13",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b13",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d2",
+            "assigneeId": null
+          },
+          {
+            "id": "density-14",
+            "taskNumber": 214,
+            "title": "Проверить восстановление из резервной копии",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "PLANNED",
+            "deadline": "2026-09-23T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 2,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-14",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a14",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b14",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-15",
+            "taskNumber": 215,
+            "title": "Провести контрольную проверку после технического обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "MEDIUM",
+            "deadline": "2026-09-21T12:05:03.542Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-15",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a15",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b15",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-16",
+            "taskNumber": 216,
+            "title": "Обновить исполнительную документацию и схему подключений",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "HIGH",
+            "deadline": "2026-09-22T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 1,
+            "assignee": null,
+            "assignees": [],
+            "oilDepot": {
+              "id": "d2",
+              "name": "Омская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-16",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a16",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b16",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d2",
+            "assigneeId": null
+          },
+          {
+            "id": "density-17",
+            "taskNumber": 217,
+            "title": "Проверить восстановление из резервной копии",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "PLANNED",
+            "deadline": "2026-09-23T12:05:03.543Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 2,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d3",
+              "name": "Челябинская",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-17",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a17",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b17",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d3",
+            "assigneeId": "preview-user"
+          },
+          {
+            "id": "density-18",
+            "taskNumber": 218,
+            "title": "Провести контрольную проверку после технического обслуживания",
+            "description": "Синтетический пример для проверки интерфейса. Не является рабочей задачей.",
+            "column": {
+              "id": "c0",
+              "name": "Новые"
+            },
+            "priority": "MEDIUM",
+            "deadline": "2026-09-21T12:05:03.542Z",
+            "createdAt": "2026-09-01T12:00:00Z",
+            "updatedAt": "2026-09-20T12:00:00Z",
+            "position": 0,
+            "assignee": {
+              "id": "preview-user",
+              "name": "Немых Д.Д.",
+              "approvedAt": "2026-01-01",
+              "role": {
+                "systemKey": "ADMIN",
+                "permissions": []
+              },
+              "jobTitle": "Инженер АСУ ТП"
+            },
+            "assignees": [],
+            "oilDepot": {
+              "id": "d1",
+              "name": "Нижний Тагил",
+              "active": true
+            },
+            "tags": [],
+            "comments": [],
+            "fileAttachments": [],
+            "checklists": [
+              {
+                "id": "check-18",
+                "title": "Контроль",
+                "items": [
+                  {
+                    "id": "a18",
+                    "completed": true,
+                    "title": "Сохранить конфигурацию"
+                  },
+                  {
+                    "id": "b18",
+                    "completed": false,
+                    "title": "Проверить результат"
+                  }
+                ]
+              }
+            ],
+            "reminderDaysBefore": null,
+            "activityLogs": [],
+            "columnId": "c0",
+            "boardId": "preview",
+            "oilDepotId": "d1",
+            "assigneeId": "preview-user"
           }
         ]
       },

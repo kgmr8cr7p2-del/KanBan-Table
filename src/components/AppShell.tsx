@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { WorkspaceBrand } from "@/components/WorkspaceBrand";
 import type { CurrentUser } from "@/lib/auth";
 import { AppNav } from "@/components/AppNav";
 import { GoidaReminder } from "@/components/GoidaReminder";
@@ -13,12 +13,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
     <div className="app">
       <InterfaceModeSync mode="new" />
       <aside className="sidebar">
-        <div className="brand">
-          <span className="brand-mark">
-            <Image className="brand-icon-image" src="/taskora-icon-v2.png" width={32} height={32} alt="" />
-          </span>
-          <span>Taskora</span>
-        </div>
+        <WorkspaceBrand />
         <AppNav user={user} />
       </aside>
       <main className="main">{children}</main>

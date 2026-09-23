@@ -45,7 +45,7 @@ export function OilDepotDirectory({ depots, canCheck }: { depots: DepotSummary[]
     `${d.name} ${d.owner} ${d.os} ${d.equipment}`.toLocaleLowerCase("ru").replaceAll("ё", "е").includes(needle));
 
   return <div className={`content insights-page ${styles.directory}`}>
-    <section className="page-heading"><h1>Наши нефтебазы</h1><p className="muted">Зоны ответственности, задачи и проверки объектов.</p></section>
+    <header className={styles.heading}><span aria-hidden="true"><Building2 size={25} /></span><div><small>Команда / Объекты</small><h1>Нефтебазы</h1><p>Ответственные, задачи и состояние объектов — в одном месте.</p></div></header>
     <div className={styles.overview}>
       <div><Building2 size={20} aria-hidden="true" /><span><strong>{depots.length}</strong> нефтебаз</span></div>
       <div><ListTodo size={20} aria-hidden="true" /><span><strong>{depots.reduce((n, d) => n + d.active, 0)}</strong> открытых задач</span></div>
@@ -54,7 +54,7 @@ export function OilDepotDirectory({ depots, canCheck }: { depots: DepotSummary[]
     </div>
     {attention > 0 && <div className={styles.reminder} role="status"><Clock3 size={20} aria-hidden="true" /><p><strong>Стоит проверить нефтебазы</strong><br />У {attention} объектов нет записей о работе или проверке за последние {CHECK_AFTER_DAYS} дней. Убедитесь, что всё в порядке, и отметьте проверку.</p></div>}
     <div className={styles.toolbar}>
-      <label className={styles.search}><Search size={18} aria-hidden="true" /><input aria-label="Поиск нефтебазы или сотрудника" className="input" value={query} onChange={e => setQuery(e.target.value)} placeholder="Нефтебаза или сотрудник" /></label>
+      <label className={styles.search}><Search size={18} aria-hidden="true" /><input aria-label="Поиск нефтебазы или сотрудника" className={styles.searchInput} value={query} onChange={e => setQuery(e.target.value)} placeholder="Нефтебаза или сотрудник" /></label>
       <button type="button" className={`button ${onlyAttention ? "" : "secondary"}`} aria-pressed={onlyAttention} onClick={() => setOnlyAttention(v => !v)}>Требуют внимания</button>
       <span className="muted" role="status">Показано {shown.length} из {depots.length}</span>
     </div>
@@ -64,7 +64,7 @@ export function OilDepotDirectory({ depots, canCheck }: { depots: DepotSummary[]
         const all = depots.filter(d => d.owner === owner);
         const rows = shown.filter(d => d.owner === owner).sort((a, b) => Number(b.needsCheck || b.overdue > 0) - Number(a.needsCheck || a.overdue > 0) || a.name.localeCompare(b.name, "ru"));
         return <section className={styles.person} key={owner} aria-label={owner}>
-          <header className={styles.personHeading}><div className={`${styles.avatar} ${styles[`person${index}`]}`} aria-hidden="true">{owner.split(" ")[0].slice(0, 1)}</div><div><h2>{owner}</h2><p className="muted">Нефтебаз: {all.length} · Открытых задач: {all.reduce((n, d) => n + d.active, 0)}</p></div></header>
+          <header className={styles.personHeading}><div className={`${styles.avatar} ${styles[`person${index}`]}`} aria-hidden="true">{owner.split(" ")[0].slice(0, 1)}{owner.split(" ")[1]?.slice(0, 1)}</div><div><h2>{owner}</h2><p className="muted">Нефтебаз: {all.length} · Открытых задач: {all.reduce((n, d) => n + d.active, 0)}</p></div></header>
           <div className={styles.depots}>
             {rows.length === 0 && <p className={`muted ${styles.empty}`}>Нет нефтебаз по выбранным условиям.</p>}
             {rows.map(d => <article key={d.key} className={`${styles.depot} ${d.needsCheck ? styles.needsCheck : ""}`}>

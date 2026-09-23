@@ -7,7 +7,7 @@ const http = require('node:http');
 const esbuild = require('esbuild');
 const {createRequire} = require('node:module');
 const root = path.resolve(__dirname, '../..');
-const fixture = require('./fixture.json');
+const readFixture = () => JSON.parse(fs.readFileSync(path.join(__dirname, "fixture.json"), "utf8"));
 const output = path.join(root, '.local/preview');
 fs.mkdirSync(output, {recursive:true});
 async function build() {
@@ -29,7 +29,7 @@ async function build() {
         if(!resolved) throw Error('Cannot resolve '+spec);
         return {path:resolved,namespace:'workspace'};
       });
-      build.onLoad({filter:/.*/,namespace:'workspace'},args=>({contents:fs.readFileSync(args.path,'utf8'),loader:({'.tsx':'tsx','.ts':'ts','.json':'json','.css':'css'})[path.extname(args.path)]||'jsx'}));
+      build.onLoad({filter:/.*/,namespace:'workspace'},args=>({contents:fs.readFileSync(args.path,'utf8'),loader:args.path.endsWith('.module.css') ? 'local-css' : ({'.tsx':'tsx','.ts':'ts','.json':'json','.css':'css'})[path.extname(args.path)]||'jsx'}));
     }
   }]}).then(result=>result.outputFiles.forEach(file=>fs.writeFileSync(file.path,file.contents)));
 }
@@ -39,9 +39,10 @@ build().then(() => {
     const url = new URL(req.url, 'http://127.0.0.1:3015');
     res.setHeader('Cache-Control','no-store');
     if (url.pathname === '/api/board') {
-      const view = structuredClone(fixture), p = url.searchParams;
+      const view = readFixture(), p = url.searchParams;
       view.board.columns.forEach(column => column.tasks = column.tasks.filter(task =>
-        (!p.get('q') || task.title.toLowerCase().includes(p.get('q').toLowerCase())) &&
+        (!p.get('q') || (task.title + ' ' + task.taskNumber).toLowerCase().includes(p.get('q').toLowerCase())) &&
+        (!p.get('deadline') || (p.get('deadline') === 'overdue' ? task.column.name !== 'Готово' && task.column.name !== 'На проверке' && new Date(task.deadline) < new Date(new Date().setHours(0,0,0,0)) : true)) &&
         (!p.get('priority') || task.priority === p.get('priority')) &&
         (!p.get('oilDepot') || task.oilDepot?.id === p.get('oilDepot')) &&
         (!p.get('assignee') || (p.get('assignee') === 'unassigned' ? !task.assignee : task.assignee?.id === p.get('assignee')))
@@ -50,12 +51,12 @@ build().then(() => {
     }
     if (url.pathname.startsWith('/api/')) {
       res.setHeader('Content-Type','application/json');
-      if(req.method !== 'GET') { res.statusCode=405; return res.end('{"error":"Preview is read-only"}'); }
+      if(req.method !== 'GET') { res.statusCode=405; return res.end('{"error":"Демонстрация: сохранение изменений отключено. Рабочие данные не изменены."}'); }
       return res.end('{"notifications":[],"unreadCount":0,"unreadTotal":0,"conversations":[]}');
     }
     const files = {'/board.css':[path.join(output,'board.css'),'text/css'],'/board.js':[path.join(output,'board.js'),'text/javascript'], '/globals.css':[path.join(root,'src/app/globals.css'),'text/css'], '/redesign.css':[path.join(root,'src/app/redesign.css'),'text/css'], '/design-system.css':[path.join(root,'src/app/design-system.css'),'text/css'], '/taskora-icon-v2.png':[path.join(root,'public/taskora-icon-v2.png'),'image/png']};
     if(files[url.pathname]) { const [file,type]=files[url.pathname]; res.setHeader('Content-Type',type); return fs.createReadStream(file).pipe(res); }
     res.setHeader('Content-Type','text/html; charset=utf-8');
     res.end('<!doctype html><html lang="ru" data-interface-mode="new"><head><meta name="viewport" content="width=device-width, initial-scale=1"><title>TASKora · UI preview</title><link rel="stylesheet" href="/board.css"><link rel="stylesheet" href="/globals.css"><link rel="stylesheet" href="/redesign.css"><link rel="stylesheet" href="/design-system.css"></head><body><div id="root"></div><script src="/board.js"></script></body></html>');
-  }).listen(3015,'127.0.0.1',()=>console.log('Preview ready: http://127.0.0.1:3015'));
+  }).listen(Number(process.env.PORT || 3015),'127.0.0.1',()=>console.log('Preview ready: http://127.0.0.1:' + (process.env.PORT || 3015)));
 });
