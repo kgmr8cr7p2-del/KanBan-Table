@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowUpRight, Building2, Check, CheckCheck, Clock3, ListTodo, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { CHECK_AFTER_DAYS, DEPOT_OWNERS, type DepotSummary } from "@/lib/oil-depot-summary";
 import styles from "./OilDepotDirectory.module.css";
 
@@ -45,18 +45,18 @@ export function OilDepotDirectory({ depots, canCheck }: { depots: DepotSummary[]
     `${d.name} ${d.owner} ${d.os} ${d.equipment}`.toLocaleLowerCase("ru").replaceAll("ё", "е").includes(needle));
 
   return <div className={`content insights-page ${styles.directory}`}>
-    <header className={styles.heading}><span aria-hidden="true"><Building2 size={25} /></span><div><small>Команда / Объекты</small><h1>Нефтебазы</h1><p>Ответственные, задачи и состояние объектов — в одном месте.</p></div></header>
+    <header className={styles.heading}><h1>Нефтебазы</h1></header>
     <div className={styles.overview}>
-      <div><Building2 size={20} aria-hidden="true" /><span><strong>{depots.length}</strong> нефтебаз</span></div>
-      <div><ListTodo size={20} aria-hidden="true" /><span><strong>{depots.reduce((n, d) => n + d.active, 0)}</strong> открытых задач</span></div>
-      <div className={overdue ? styles.danger : undefined}><AlertCircle size={20} aria-hidden="true" /><span><strong>{overdue}</strong> просрочено</span></div>
-      <div className={attention ? styles.warning : undefined}><Clock3 size={20} aria-hidden="true" /><span><strong>{attention}</strong> стоит проверить</span></div>
+      <div><span><strong>{depots.length}</strong> нефтебаз</span></div>
+      <div><span><strong>{depots.reduce((n, d) => n + d.active, 0)}</strong> открытых задач</span></div>
+      <div className={overdue ? styles.danger : undefined}><span><strong>{overdue}</strong> просрочено</span></div>
+      <div className={attention ? styles.warning : undefined}><span><strong>{attention}</strong> требуют проверки</span></div>
     </div>
-    {attention > 0 && <div className={styles.reminder} role="status"><Clock3 size={20} aria-hidden="true" /><p><strong>Стоит проверить нефтебазы</strong><br />У {attention} объектов нет записей о работе или проверке за последние {CHECK_AFTER_DAYS} дней. Убедитесь, что всё в порядке, и отметьте проверку.</p></div>}
+    {attention > 0 && <div className={styles.reminder} role="status"><p><strong>Пора проверить {attention} объектов.</strong> Нет активности более {CHECK_AFTER_DAYS} дней.</p></div>}
     <div className={styles.toolbar}>
       <label className={styles.search}><Search size={18} aria-hidden="true" /><input aria-label="Поиск нефтебазы или сотрудника" className={styles.searchInput} value={query} onChange={e => setQuery(e.target.value)} placeholder="Нефтебаза или сотрудник" /></label>
       <button type="button" className={`button ${onlyAttention ? "" : "secondary"}`} aria-pressed={onlyAttention} onClick={() => setOnlyAttention(v => !v)}>Требуют внимания</button>
-      <span className="muted" role="status">Показано {shown.length} из {depots.length}</span>
+      {(query || onlyAttention) && <span className="muted" role="status">Найдено: {shown.length}</span>}
     </div>
     {feedback && <p role={feedback.error ? "alert" : "status"} className={feedback.error ? styles.danger : styles.success}>{feedback.text}</p>}
     <div className={styles.people}>
@@ -73,16 +73,16 @@ export function OilDepotDirectory({ depots, canCheck }: { depots: DepotSummary[]
               <div className={styles.activity}><span>Работа по задачам</span><time dateTime={d.lastActivityAt ?? undefined}>{dateLabel(d.lastActivityAt)}</time></div>
               <div className={styles.activity}><span>Последняя проверка</span><time dateTime={d.checkedAt ?? undefined}>{dateLabel(d.checkedAt)}</time></div>
               {d.checkedBy && <p className={styles.checkedBy}>Проверил: {d.checkedBy}</p>}
-              {d.needsCheck ? <p className={styles.checkNotice}><Clock3 size={15} aria-hidden="true" />{d.idleDays === null ? "Проверка ещё не зафиксирована" : `Без активности ${d.idleDays} дн. — стоит проверить`}</p> : <p className={styles.fresh}><Check size={15} aria-hidden="true" />{d.idleDays === 0 ? "Активность сегодня" : `Активность ${d.idleDays} дн. назад`}</p>}
+              {d.needsCheck ? <p className={styles.checkNotice}>{d.idleDays === null ? "Проверка ещё не зафиксирована" : `Без активности ${d.idleDays} дн.`}</p> : <p className={styles.fresh}>{d.idleDays === 0 ? "Активность сегодня" : `Активность ${d.idleDays} дн. назад`}</p>}
               {!d.matched && <p className={styles.unmatched}>Связь с нефтебазой на доске не найдена. Задачи могут быть не привязаны к объекту.</p>}
-              {d.tasks.length > 0 && <details className={styles.details}><summary>Открытые задачи ({d.tasks.length})</summary><ul className={styles.taskList}>{d.tasks.map(t => <li key={t.id}><Link href={t.href}><span><small className={t.overdue ? styles.danger : "muted"}>№{t.number} · {t.overdue ? "Просрочено" : t.status}</small><span>{t.title}</span></span><ArrowUpRight size={15} aria-hidden="true" /></Link></li>)}</ul></details>}
+              {d.tasks.length > 0 && <details className={styles.details}><summary>Открытые задачи ({d.tasks.length})</summary><ul className={styles.taskList}>{d.tasks.map(t => <li key={t.id}><Link href={t.href}><span><small className={t.overdue ? styles.danger : "muted"}>№{t.number} · {t.overdue ? "Просрочено" : t.status}</small><span>{t.title}</span></span></Link></li>)}</ul></details>}
               <details className={styles.details}><summary>Состав АСУ ТП</summary><p>{d.equipment}</p><p className="muted">Часовой пояс: {d.timezone} (как в источнике)</p></details>
-              {canCheck && <button type="button" className={`button secondary ${styles.checkButton}`} disabled={pending !== null} onClick={() => void checkDepot(d)}><CheckCheck size={16} aria-hidden="true" />{pending === d.key ? "Сохраняем…" : "Отметить проверку"}</button>}
+              {canCheck && <button type="button" className={`button secondary ${styles.checkButton}`} disabled={pending !== null} onClick={() => void checkDepot(d)}>{pending === d.key ? "Сохраняем…" : "Отметить проверку"}</button>}
             </article>)}
           </div>
         </section>;
       })}
     </div>
-    <p className={`muted ${styles.note}`}>Показатели общей доски, без архивных задач. «Готово» — задачи в завершённых колонках. Для напоминаний учитываются изменения задач и явные проверки; открытие страницы не сбрасывает срок. Данные обновляются каждую минуту. Распределение нефтебаз — из исходной таблицы с исправлениями команды.</p>
+    <details className={styles.note}><summary>О данных</summary><p className="muted">Показатели общей доски без архива. Напоминания учитывают изменения задач и явные проверки. Данные обновляются каждую минуту.</p></details>
   </div>;
 }

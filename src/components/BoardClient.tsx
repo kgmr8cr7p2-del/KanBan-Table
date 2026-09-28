@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, LayoutDashboard, List, GanttChart, CircleUserRound, SlidersHorizontal, Clock3, Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, Monitor, PanelLeftClose, PanelLeftOpen, PanelTopClose, PanelTopOpen, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { SlidersHorizontal, Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, Monitor, PanelLeftClose, PanelLeftOpen, PanelTopClose, PanelTopOpen, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskButton } from "@/components/CreateTaskButton";
@@ -619,8 +619,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
     <>
       <header className="workspace-header">
           <div className="board-copy">
-            <span className="workspace-board-mark" aria-hidden="true"><LayoutDashboard size={25} /></span>
-            <div className="workspace-title-block"><span className="workspace-eyebrow">{view.board.ownerId ? "Личное пространство" : "Рабочее пространство / Команда"}</span><h1>{view.board.name}</h1></div>
+            <div className="workspace-title-block"><h1>{view.board.name}</h1></div>
             <label className="board-switcher">
               <span className="visually-hidden">Выбрать доску</span>
               <select className="select" value={view.board.id} onChange={(event) => switchBoard(event.currentTarget.value)}>
@@ -790,17 +789,16 @@ export function BoardClient({ initialView }: { initialView: View }) {
       <div className={`content board-content workspace-content ${focusMode ? "focus-mode" : ""}`}>
         <div className="workspace-viewbar">
           <div className="board-view-tabs board-view-tabs-inline" role="group" aria-label="Режим отображения">
-            <button className={viewMode === "board" ? "active" : ""} type="button" aria-pressed={viewMode === "board"} onClick={() => setViewMode("board")}><LayoutDashboard size={15} aria-hidden="true" />Доска</button>
-            <button className={viewMode === "list" ? "active" : ""} type="button" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}><List size={15} aria-hidden="true" />Список</button>
-            <button className={viewMode === "timeline" ? "active" : ""} type="button" aria-pressed={viewMode === "timeline"} onClick={() => setViewMode("timeline")}><GanttChart size={15} aria-hidden="true" />Таймлайн</button>
-            {!view.board.ownerId ? <button className={viewMode === "mine" ? "active" : ""} type="button" aria-pressed={viewMode === "mine"} onClick={() => setViewMode("mine")}><CircleUserRound size={15} aria-hidden="true" />Моя работа</button> : null}
+            <button className={viewMode === "board" ? "active" : ""} type="button" aria-pressed={viewMode === "board"} onClick={() => setViewMode("board")}>Доска</button>
+            <button className={viewMode === "list" ? "active" : ""} type="button" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}>Список</button>
+            <button className={viewMode === "timeline" ? "active" : ""} type="button" aria-pressed={viewMode === "timeline"} onClick={() => setViewMode("timeline")}>Таймлайн</button>
+            {!view.board.ownerId ? <button className={viewMode === "mine" ? "active" : ""} type="button" aria-pressed={viewMode === "mine"} onClick={() => setViewMode("mine")}>Моя работа</button> : null}
           </div>
         </div>
         <div className="workspace-pulse" aria-label="Сводка показанных задач">
           <div className="workspace-pulse-count"><strong>{newBoardStats.total}</strong><span>задач на доске</span></div>
           <div className="workspace-pulse-progress"><span><strong>{newBoardStats.completed}</strong> завершено <span>из {newBoardStats.total}</span></span><progress max={Math.max(1,newBoardStats.total)} value={newBoardStats.completed} aria-label="Завершённые задачи" /></div>
-          <span className="workspace-pulse-active"><span className="pulse-dot" />{newBoardStats.active} активных</span>
-          {newBoardStats.overdue > 0 ? <button className="workspace-attention" type="button" onClick={() => updateFilter("deadline", filters.deadline === "overdue" ? "" : "overdue")} aria-pressed={filters.deadline === "overdue"}><Clock3 size={15} aria-hidden="true" /><strong>{newBoardStats.overdue}</strong> просрочено<ArrowRight size={14} aria-hidden="true" /></button> : <span className="workspace-ontrack"><Check size={15} />Нет просроченных задач</span>}
+          {newBoardStats.overdue > 0 ? <button className="workspace-attention" type="button" onClick={() => updateFilter("deadline", filters.deadline === "overdue" ? "" : "overdue")} aria-pressed={filters.deadline === "overdue"}><strong>{newBoardStats.overdue}</strong> просрочено</button> : <span className="workspace-ontrack">Нет просроченных задач</span>}
         </div>
         {(viewMode === "board" || viewMode === "mine") && <nav className="board-lane-nav" aria-label="Переход к статусу задачи">
           {visibleColumns.map((column: any, index: number) => <button key={column.id} type="button" data-lane-tone={isCompletedColumn(column.name) ? "done" : index % 5} aria-pressed={(activeLane || visibleColumns[0]?.id) === column.id} onClick={() => goToLane(column.id)} onDragOver={(event) => event.preventDefault()} onDragEnter={() => goToLane(column.id)} onDrop={(event) => { event.preventDefault(); void moveTask(column.id, event.dataTransfer.getData("text/plain") || draggingId); }}><i aria-hidden="true" />{column.name}<span>{column.tasks.length}</span></button>)}
@@ -997,12 +995,12 @@ function TaskCard({
         if (event.key === " ") onOpen();
       }}
     >
-      <div className="task-card-kicker"><span className="task-location" title={task.oilDepot?.name}><Building2 size={13} aria-hidden="true" />{task.oilDepot?.name ?? "Без нефтебазы"}</span><span className="task-number">#{task.taskNumber}</span></div>
+      <div className="task-card-kicker"><span className="task-location" title={task.oilDepot?.name}>{task.oilDepot?.name ?? "Без нефтебазы"}</span><span className="task-number">#{task.taskNumber}</span></div>
       <span className="task-title">{task.title}</span>
       <div className="task-card-labels"><span className={"task-priority-signal " + (done ? "priority-DONE" : "priority-" + task.priority)}><i aria-hidden="true" />{done ? "Завершено" : priorityLabels[task.priority as keyof typeof priorityLabels]}</span>{visibleTags.map((item: any) => <span className="task-tag" key={item.tag.id}>{item.tag.name}</span>)}{task.tags.length > visibleTags.length ? <span className="task-tag">+{task.tags.length-visibleTags.length}</span> : null}</div>
       {checklist.total > 0 && <div className="task-checklist-summary"><span><CheckSquare size={13} aria-hidden="true" />{checklist.completed}/{checklist.total}</span><progress value={checklist.completed} max={checklist.total} aria-label={"Чек-лист: " + checklist.completed + " из " + checklist.total} /></div>}
       <div className="task-card-foot">
-        <span className={"task-deadline-signal " + deadlineTone(task)}><Calendar size={13} aria-hidden="true" />{deadlineState || "Без срока"}</span>
+        <span className={"task-deadline-signal " + deadlineTone(task)}>{deadlineState || "Без срока"}</span>
         <span className="task-people" title={assigneeLabel} aria-label={"Исполнители: " + assigneeLabel}>{assignees.length ? assignees.slice(0,3).map((user: any) => <ProfileAvatar key={user.id} name={user.name} avatarUrl={user.avatarUrl} size={25} />) : <span className="task-unassigned"><UserRound size={14} /></span>}{assignees.length > 3 ? <span className="task-extra-people">+{assignees.length-3}</span> : null}</span>
       </div>
       {(task.comments.length > 0 || task.fileAttachments.length > 0 || task.reminderDaysBefore != null) && <div className="task-card-activity">{task.comments.length > 0 && <span title="Комментарии"><MessageSquare size={12} />{task.comments.length}</span>}{task.fileAttachments.length > 0 && <span title="Файлы"><Paperclip size={12} />{task.fileAttachments.length}</span>}{task.reminderDaysBefore != null && <span title={"Напоминание: " + reminderLabel(task.reminderDaysBefore)}><Bell size={12} />{reminderLabel(task.reminderDaysBefore)}</span>}</div>}
