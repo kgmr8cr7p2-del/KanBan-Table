@@ -8,7 +8,7 @@ import fixture from "./fixture.json";
 
 const view = fixture as any;
 const previewPath = window.location.pathname;
-const previewTitles: Record<string, string> = { '/settings': 'Настройки', '/desktop': 'Рабочий экран', '/chats': 'Чаты', '/files': 'Документы', '/reports': 'Отчёты', '/history': 'История', '/changelog': 'Что нового', '/archive': 'Архив', '/admin': 'Администрирование', '/profile': 'Профиль', '/board/tv': 'TV-режим' };
+const previewTitles: Record<string, string> = { '/settings': 'Настройки', '/desktop': 'Рабочий экран', '/chats': 'Чаты', '/files': 'Документы', '/reports': 'Отчёты', '/history': 'История', '/changelog': 'Что нового', '/archive': 'Архив', '/admin': 'Администрирование', '/profile': 'Профиль' };
 function PreviewUnavailable() {
   return <section style={{maxWidth:680,margin:'48px auto',padding:24}}>
     <p style={{color:'var(--ds-muted)',marginBottom:12}}>Предпросмотр TASKora</p>

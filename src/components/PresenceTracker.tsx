@@ -90,7 +90,6 @@ export function PresenceTracker() {
 }
 
 function activityForPath(pathname: string) {
-  if (pathname.startsWith("/board/tv")) return "Смотрит доску на большом экране";
   if (pathname.startsWith("/board")) return "Просматривает задачи на доске";
   if (pathname.startsWith("/chats")) return "Общается в чатах";
   if (pathname.startsWith("/reports")) return "Смотрит отчёты";

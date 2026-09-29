@@ -21,7 +21,6 @@ async function mountBoardHeader(page: import("@playwright/test").Page) {
               <button class="button secondary compact-button board-panel-toggle" type="button"><span class="panel-toggle-label">Скрыть боковую</span></button>
               <button class="button secondary compact-button board-panel-toggle" type="button"><span class="panel-toggle-label">Скрыть верхнюю</span></button>
               <button class="button secondary compact-button" type="button">Доска</button>
-              <a class="button secondary compact-button" href="#">TV</a>
             </div>
           </div>
           <div class="content board-content">

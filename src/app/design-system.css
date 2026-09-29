@@ -1687,3 +1687,52 @@
   :root[data-interface-mode="new"] .workspace-pulse { margin-inline: 12px; }
   :root[data-interface-mode="new"] .board-lane-nav { display: flex; }
 }
+
+/* One continuous rounded work surface across the application. */
+@media (min-width: 961px) {
+  :root[data-interface-mode="new"] .app > .main,
+  :root[data-interface-mode="new"] .main:has(> .workspace-header) {
+    block-size: calc(100dvh - 24px);
+    margin: 12px 12px 12px 0;
+    border-radius: 28px;
+  }
+}
+
+/* The board toolbar consumes the available width instead of capping search. */
+:root[data-interface-mode="new"] .topbar.board-topbar.workspace-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  inline-size: 100%;
+}
+:root[data-interface-mode="new"] .workspace-toolbar .filters-live {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) auto auto;
+  align-items: center;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+:root[data-interface-mode="new"] .workspace-toolbar .filters-live .search {
+  inline-size: 100%;
+  max-inline-size: none;
+}
+:root[data-interface-mode="new"] .workspace-toolbar .board-topbar-actions {
+  margin-inline-start: 0;
+}
+@media (max-width: 1100px) {
+  :root[data-interface-mode="new"] .topbar.board-topbar.workspace-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  :root[data-interface-mode="new"] .workspace-toolbar .board-topbar-actions {
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 600px) {
+  :root[data-interface-mode="new"] .workspace-toolbar .filters-live {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  :root[data-interface-mode="new"] .workspace-toolbar .filters-live .reset-filter-button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}

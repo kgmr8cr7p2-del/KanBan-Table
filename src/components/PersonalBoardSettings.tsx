@@ -57,7 +57,7 @@ export function PersonalBoardSettings({ initialBoards }: { initialBoards: Person
         <span className="settings-manager-icon"><LayoutDashboard size={20} /></span>
         <div>
           <h2 id="personal-boards-title">Личные доски</h2>
-          <p>Эти доски и задачи видны только вам и не выводятся в TV-режиме.</p>
+          <p>Эти доски и задачи видны только вам.</p>
         </div>
         <span className="settings-summary-badge">{boards.length}</span>
       </header>

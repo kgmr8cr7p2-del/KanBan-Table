@@ -1,6 +1,6 @@
 "use client";
 
-import { SlidersHorizontal, Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, Monitor, PanelLeftClose, PanelLeftOpen, PanelTopClose, PanelTopOpen, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { SlidersHorizontal, Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelTopClose, PanelTopOpen, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskButton } from "@/components/CreateTaskButton";
@@ -754,10 +754,6 @@ export function BoardClient({ initialView }: { initialView: View }) {
             <Expand size={17} />
             <span className="panel-toggle-label">На весь экран</span>
           </button>
-          <a className="button secondary compact-button mobile-optional" href="/board/tv" title="TV-режим для офисного экрана">
-            <Monitor size={17} />
-            TV
-          </a>
         </div>
       </div>
 
