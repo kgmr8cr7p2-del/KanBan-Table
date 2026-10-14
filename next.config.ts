@@ -30,6 +30,12 @@ const nextConfig: NextConfig = {
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
         ...(isProduction ? [{ key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" }] : []),
       ],
+    }, {
+      source: "/api/important-files/:id/content",
+      headers: [
+        { key: "Content-Security-Policy", value: "default-src 'none'; frame-ancestors 'self'" },
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      ],
     }];
   },
 };

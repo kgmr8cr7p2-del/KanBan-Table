@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import nextConfig from "../next.config";
 import {
   csvPreview,
   decodeDocumentText,
@@ -10,6 +11,17 @@ import {
   parseSoundPreferences,
   shouldPlaySound,
 } from "../src/lib/sound-preferences";
+
+test("document content can be framed only by this site while pages stay protected", async () => {
+  const rules = await nextConfig.headers!();
+  const global = rules.find((rule) => rule.source === "/(.*)")!;
+  const content = rules.find((rule) => rule.source === "/api/important-files/:id/content")!;
+  assert.ok(content);
+  const effective = new Map([...global.headers, ...content.headers].map(({ key, value }) => [key.toLowerCase(), value]));
+  assert.equal(effective.get("x-frame-options"), "SAMEORIGIN");
+  assert.equal(effective.get("content-security-policy"), "default-src 'none'; frame-ancestors 'self'");
+  assert.ok(global.headers.some(({ key, value }) => key === "Content-Security-Policy" && value.includes("frame-ancestors 'none'")));
+});
 
 test("CSV keeps quoted delimiters, escaped quotes and multiline cells", async () => {
   const result = await csvPreview(
