@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-14T00:00:00Z",
+  "title": "Design System: Taskora",
+  "extensions": {
+    "colorMeta": {
+      "signal-lime": { "role": "primary", "displayName": "Signal Lime", "canonical": "#e9ff43", "tonalRamp": ["oklch(15% 0.09 115)", "oklch(26% 0.11 115)", "oklch(38% 0.13 115)", "oklch(50% 0.15 115)", "oklch(62% 0.16 115)", "oklch(74% 0.16 115)", "#e9ff43", "oklch(95% 0.08 115)"] },
+      "graphite": { "role": "neutral", "displayName": "Graphite Frame", "canonical": "#202320", "tonalRamp": ["oklch(15% 0.01 145)", "#202320", "oklch(35% 0.01 145)", "oklch(47% 0.01 145)", "oklch(59% 0.01 145)", "oklch(71% 0.01 145)", "oklch(83% 0.01 145)", "oklch(95% 0.01 145)"] },
+      "canvas": { "role": "neutral", "displayName": "Work Canvas", "canonical": "#e9e9e5", "tonalRamp": ["oklch(15% 0.005 100)", "oklch(26% 0.005 100)", "oklch(38% 0.005 100)", "oklch(50% 0.005 100)", "oklch(62% 0.005 100)", "oklch(74% 0.005 100)", "#e9e9e5", "oklch(95% 0.005 100)"] },
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#ffffff", "tonalRamp": ["#202320", "#383b37", "#555852", "#72756e", "#93968e", "#b5b8af", "#d9dcd4", "#ffffff"] },
+      "paper-subtle": { "role": "neutral", "displayName": "Quiet Paper", "canonical": "#f5f5f1", "tonalRamp": ["#202320", "#383b37", "#555852", "#72756e", "#93968e", "#b5b8af", "#d9dcd4", "#f5f5f1"] },
+      "paper-raised": { "role": "neutral", "displayName": "Raised Paper", "canonical": "#ebebe5", "tonalRamp": ["#202320", "#383b37", "#555852", "#72756e", "#93968e", "#b5b8af", "#d9dcd4", "#ebebe5"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#20221f", "tonalRamp": ["#20221f", "#383b37", "#555852", "#72756e", "#93968e", "#b5b8af", "#d9dcd4", "#f5f5f1"] },
+      "muted-ink": { "role": "neutral", "displayName": "Muted Ink", "canonical": "#5d625c", "tonalRamp": ["#20221f", "#383b37", "#5d625c", "#72756e", "#93968e", "#b5b8af", "#d9dcd4", "#f5f5f1"] },
+      "line": { "role": "neutral", "displayName": "Quiet Line", "canonical": "#dcded6", "tonalRamp": ["#20221f", "#383b37", "#555852", "#72756e", "#93968e", "#b5b8af", "#dcded6", "#f5f5f1"] },
+      "signal-ink": { "role": "neutral", "displayName": "Signal Ink", "canonical": "#22251d", "tonalRamp": ["#22251d", "#383b37", "#555852", "#72756e", "#93968e", "#b5b8af", "#d9dcd4", "#f5f5f1"] }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Section and task map headings." },
+      "body": { "displayName": "Body", "purpose": "Workspace content." },
+      "map-title": { "displayName": "Map Title", "purpose": "Task name in a compact map card." },
+      "label": { "displayName": "Label", "purpose": "Control and supporting metadata." }
+    },
+    "shadows": [
+      { "name": "shell", "value": "0 26px 55px rgb(25 29 20 / 14%)", "purpose": "Separate the graphite shell from the canvas." },
+      { "name": "panel", "value": "0 8px 22px rgb(25 29 20 / 6%)", "purpose": "Quiet depth for workspace panels." },
+      { "name": "popover", "value": "0 20px 50px rgb(16 19 15 / 20%)", "purpose": "Bring temporary controls above the work plane." },
+      { "name": "map-card", "value": "0 7px 18px rgb(24 30 18 / 7%)", "purpose": "Separate a task node from the map plane." }
+    ],
+    "motion": [
+      { "name": "map-card-enter", "value": "430ms cubic-bezier(.16,1,.3,1)", "purpose": "Reveal a task node without hiding the plane." },
+      { "name": "map-branch-enter", "value": "420–470ms cubic-bezier(.16,1,.3,1)", "purpose": "Unfold details and child tasks from the parent." },
+      { "name": "map-link-enter", "value": "700ms cubic-bezier(.16,1,.3,1)", "purpose": "Draw connection lines after nodes appear." },
+      { "name": "map-card-state", "value": "260ms cubic-bezier(.16,1,.3,1)", "purpose": "Lift and settle task cards on interaction." },
+      { "name": "reduced-motion", "value": "animation: none; transition-duration: 80ms; scroll-behavior: auto", "purpose": "Respect prefers-reduced-motion while preserving state feedback." }
+    ],
+    "breakpoints": [
+      { "name": "mobile-shell", "value": "960px" },
+      { "name": "compact-map", "value": "600px" }
+    ]
+  },
+  "components": [
+    { "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "Main action with a visible lime signal.", "html": "<button class=\"ds-primary\">Создать задачу</button>", "css": ".ds-primary{min-height:44px;border:0;border-radius:999px;padding:10px 18px;background:#e9ff43;color:#22251d;font:700 12px 'Segoe UI Variable','Segoe UI',Arial,sans-serif;cursor:pointer;transition:background 260ms ease}.ds-primary:hover{background:#f0ff7b}.ds-primary:focus-visible{outline:2px solid #90a014;outline-offset:3px}.ds-primary:active{transform:translateY(1px)}" },
+    { "name": "Active View Tab", "kind": "button", "refersTo": "view-tab-active", "description": "Selected view inside a graphite switcher.", "html": "<span class=\"ds-switcher\"><button class=\"ds-tab\" aria-pressed=\"true\">Карта</button></span>", "css": ".ds-switcher{display:inline-flex;padding:4px;border-radius:999px;background:#202320}.ds-tab{min-height:44px;border:0;border-radius:999px;padding:7px 14px;background:#e9ff43;color:#22251d;font:750 12px 'Segoe UI Variable','Segoe UI',Arial,sans-serif;cursor:pointer}.ds-tab:hover{background:#f0ff7b}.ds-tab:focus-visible{outline:2px solid #90a014;outline-offset:2px}" },
+    { "name": "Task Map Card", "kind": "card", "refersTo": "map-card", "description": "Compact task node on the light time plane.", "html": "<article class=\"ds-map-card\"><small>СЕГОДНЯ · МОЯ</small><strong>Проверить задачу</strong><span>До 18:00</span></article>", "css": ".ds-map-card{display:grid;gap:8px;width:240px;min-height:112px;padding:15px;border:1px solid #dcded6;border-radius:18px;background:#fff;color:#20221f;box-shadow:0 7px 18px rgb(24 30 18 / 7%);font-family:'Segoe UI Variable','Segoe UI',Arial,sans-serif;transition:transform 260ms cubic-bezier(.16,1,.3,1),box-shadow 260ms ease,border-color 260ms ease}.ds-map-card small,.ds-map-card span{color:#5d625c;font-size:10px}.ds-map-card strong{font-size:15px;line-height:1.3}.ds-map-card:hover{transform:translateY(-3px);border-color:#9eae30;box-shadow:0 14px 25px rgb(24 30 18 / 11%)}.ds-map-card:focus-within{outline:2px solid #90a014}" },
+    { "name": "Context Task Card", "kind": "card", "refersTo": "map-context-card", "description": "Related task owned by someone else, clearly marked read only.", "html": "<article class=\"ds-context-card\"><small>Не моя</small><strong>Связанная задача</strong></article>", "css": ".ds-context-card{display:grid;gap:9px;width:240px;min-height:112px;padding:15px;border:1px dashed #899086;border-radius:18px;background:#e8eae5;color:#20221f;font-family:'Segoe UI Variable','Segoe UI',Arial,sans-serif}.ds-context-card small{color:#585f58;font-size:10px;font-weight:750}.ds-context-card strong{font-size:15px;line-height:1.3}.ds-context-card:hover{border-color:#5d625c}.ds-context-card:focus-within{outline:2px solid #90a014}" },
+    { "name": "Map Field", "kind": "input", "description": "Compact field for a map detail or deadline.", "html": "<input class=\"ds-field\" aria-label=\"Срок\" placeholder=\"Срок\" />", "css": ".ds-field{min-height:44px;width:220px;border:1px solid #dcded6;border-radius:9px;padding:0 10px;background:#fff;color:#20221f;font:12px 'Segoe UI Variable','Segoe UI',Arial,sans-serif}.ds-field:hover{border-color:#9eae30}.ds-field:focus-visible{outline:2px solid #90a014;outline-offset:2px}" }
+  ],
+  "narrative": {
+    "northStar": "The Connected Work Plane",
+    "overview": "Taskora places dense work on calm paper surfaces inside a graphite frame. Electric lime is a precise signal for selection, primary action, and a few points of attention. The interface stays compact enough for a working board while preserving hierarchy. The personal task map extends this language into a scrollable time plane: cards sit near dates, relationships remain visible, and details open beside their parent. The same visual roles apply in light and dark themes.",
+    "keyCharacteristics": ["Graphite navigation and switchers frame light work surfaces.", "One bright lime signal identifies active states and key actions.", "Compact cards and explicit connection lines keep relationships legible.", "Motion reveals structure without withholding content."],
+    "rules": [
+      { "name": "The One Signal Rule", "body": "Lime marks selection and action; it does not fill ordinary content surfaces.", "section": "colors" },
+      { "name": "The Content First Rule", "body": "Essential content is visible before entrance animation, so loading or reduced motion never creates an empty work plane.", "section": "elevation" }
+    ],
+    "dos": ["Do keep Taskora data and primary actions immediately legible on the work plane.", "Do pair lime with dark text and retain a visible focus state.", "Do use text and line style to distinguish selected, proposed, and contextual states.", "Do let the map scroll at phone widths and preserve date meaning across scales."],
+    "donts": ["Don't spread lime across ordinary card backgrounds.", "Don't hide content until animation completes.", "Don't encode ownership or dependency status through color alone."]
+  }
+}

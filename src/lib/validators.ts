@@ -47,6 +47,7 @@ export const taskSchema = z.object({
   title: z.string().trim().min(2, "Введите название задачи").max(180).transform((value) => value.replace(/\s+/g, " ")),
   description: z.string().max(4000).default(""),
   columnId: z.string().min(1),
+  parentId: z.string().min(1).optional().nullable(),
   oilDepotId: z.string().optional().nullable(),
   priority: z.nativeEnum(Priority),
   startDate: taskDateSchema().optional().nullable(),

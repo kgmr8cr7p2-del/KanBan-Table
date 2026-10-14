@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Archive, BarChart3, Building2, Files, History, LayoutDashboard, MessageCircle, Monitor, Moon, MoreHorizontal, ScrollText, Settings, Shield, UserRound } from "lucide-react";
+import { Archive, BarChart3, Building2, Files, History, LayoutDashboard, MessageCircle, Monitor, Moon, MoreHorizontal, PanelLeftClose, PanelLeftOpen, ScrollText, Settings, Shield, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -40,6 +40,7 @@ export function AppNav({ user }: { user: CurrentUser }) {
   const canUseChats = hasPermission("USE_CHATS");
   const [unreadChats, setUnreadChats] = useState(0);
   const [profile, setProfile] = useState({ name: user.name, jobTitle: user.jobTitle, avatarUrl: user.avatarUrl });
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const accountLinks = links.filter(({ href }) => href === "/profile");
   const permittedLinks = links.filter(({ permission }) => !permission || hasPermission(permission));
   const visibleLinks = hasAccess
@@ -77,6 +78,29 @@ export function AppNav({ user }: { user: CurrentUser }) {
   }, [user.name, user.jobTitle, user.avatarUrl]);
 
   useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("taskora-board-panels") ?? "null");
+      const expanded = stored?.version === 2 ? stored.sidebar !== false : true;
+      setSidebarExpanded(expanded);
+      document.documentElement.dataset.boardSidebarHidden = expanded ? "false" : "true";
+    } catch { /* Keep navigation available if preferences are malformed. */ }
+    const sync = (event: Event) => setSidebarExpanded(Boolean((event as CustomEvent<boolean>).detail));
+    window.addEventListener("taskora-sidebar-change", sync);
+    return () => window.removeEventListener("taskora-sidebar-change", sync);
+  }, []);
+
+  function toggleSidebar() {
+    const next = !sidebarExpanded;
+    setSidebarExpanded(next);
+    document.documentElement.dataset.boardSidebarHidden = next ? "false" : "true";
+    try {
+      const stored = JSON.parse(localStorage.getItem("taskora-board-panels") ?? "null");
+      localStorage.setItem("taskora-board-panels", JSON.stringify({ version: 2, sidebar: next, topbar: stored?.topbar !== false }));
+    } catch { /* Preference storage is optional. */ }
+    window.dispatchEvent(new CustomEvent("taskora-sidebar-change", { detail: next }));
+  }
+
+  useEffect(() => {
     const updateProfile = (event: Event) => {
       const detail = (event as CustomEvent<Partial<typeof profile>>).detail;
       if (detail) setProfile((current) => ({ ...current, ...detail }));
@@ -88,6 +112,10 @@ export function AppNav({ user }: { user: CurrentUser }) {
   return (
     <>
       <nav className="nav nav-desktop" aria-label="Основная навигация">
+        <Link className="sidebar-profile-link sidebar-profile-top" aria-current={pathname === "/profile" ? "page" : undefined} href="/profile">
+          <ProfileAvatar name={profile.name} avatarUrl={profile.avatarUrl} size={54} />
+          <span className="sidebar-profile-copy"><strong>{profile.name}</strong><small>{profile.jobTitle || "Изменить профиль"}</small></span>
+        </Link>
         <div className="nav-links">
           {[
             { label: "Рабочее пространство", paths: ["/board", "/desktop", "/chats", "/oil-depots", "/files"] },
@@ -96,7 +124,7 @@ export function AppNav({ user }: { user: CurrentUser }) {
           ].map((group) => <div className="nav-section" key={group.label}>
             {desktopLinks.some(({ href }) => group.paths.includes(href)) ? <span className="nav-section-label">{group.label}</span> : null}
             {desktopLinks.filter(({ href }) => group.paths.includes(href)).map(({ href, label, icon: Icon }) => (
-            <Link className={href === "/chats" ? "nav-chat-link" : undefined} aria-current={pathname === href ? "page" : undefined} href={href} key={href}>
+            <Link className={href === "/chats" ? "nav-chat-link" : undefined} aria-current={pathname === href ? "page" : undefined} href={href} key={href} title={label} aria-label={label}>
               <Icon size={18} aria-hidden="true" /><span>{label}</span>
               {href === "/chats" && unreadChats ? <span className="nav-unread-badge" aria-label={`Непрочитанных сообщений: ${unreadChats}`}>{unreadChats > 99 ? "99+" : unreadChats}</span> : null}
             </Link>
@@ -104,10 +132,7 @@ export function AppNav({ user }: { user: CurrentUser }) {
           </div>)}
         </div>
         <div className="sidebar-account">
-          <Link className="sidebar-profile-link" aria-current={pathname === "/profile" ? "page" : undefined} href="/profile">
-            <ProfileAvatar name={profile.name} avatarUrl={profile.avatarUrl} size={40} />
-            <span className="sidebar-profile-copy"><strong>{profile.name}</strong><small>{profile.jobTitle || "Изменить профиль"}</small></span>
-          </Link>
+          <button className="sidebar-collapse-toggle" type="button" onClick={toggleSidebar} aria-label={sidebarExpanded ? "Свернуть навигацию" : "Развернуть навигацию"} title={sidebarExpanded ? "Свернуть навигацию" : "Развернуть навигацию"}>{sidebarExpanded ? <PanelLeftClose size={17} aria-hidden="true" /> : <PanelLeftOpen size={17} aria-hidden="true" />}<span>{sidebarExpanded ? "Свернуть" : "Развернуть"}</span></button>
           <div className="sidebar-account-actions"><ThemeToggle icon={<Moon size={18} aria-hidden="true" />} /><LogoutButton /></div>
         </div>
       </nav>

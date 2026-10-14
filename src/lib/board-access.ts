@@ -18,7 +18,7 @@ export async function getAccessibleColumn(user: CurrentUser, columnId: string) {
 export async function canAccessTask(user: CurrentUser, taskId: string) {
   const task = await prisma.task.findFirst({
     where: { id: taskId, column: { board: accessibleBoardWhere(user) } },
-    select: { id: true, column: { select: { boardId: true, board: { select: { ownerId: true } } } } },
+    select: { id: true, parentId: true, assigneeId: true, assignees: { select: { userId: true } }, column: { select: { boardId: true, board: { select: { ownerId: true } } } } },
   });
   return task;
 }

@@ -18,12 +18,16 @@ function MascotPreview() {
 }
 
 const view = structuredClone(fixture) as any;
+view.dependencies = [{ id: "preview-dependency", predecessorId: "t103", successorId: "t101" }];
+view.board.columns[0].tasks[1].parentId = "t101";
+view.board.columns[0].tasks[1].assigneeId = "preview-user";
 for (const task of view.board.columns[0].tasks) {
   task.activityLogs = [
     {id:`creation-${task.id}`,action:"TASK_CREATED",createdAt:task.createdAt,details:{column:"Новые",deadline:"2026-09-20T00:00:00Z"},user:view.users[0]},
     {id:`deadline-${task.id}`,action:"DEADLINE_CHANGED",createdAt:"2026-09-19T09:00:00Z",details:{oldValue:"2026-09-20T00:00:00Z",newValue:task.deadline,reason:"Ожидаем согласование окна работ"},user:view.users[0]},
   ];
 }
+view.mapTasks = view.board.columns.flatMap((column: any) => column.tasks.map((task: any) => ({ ...task, column: { name: column.name } })));
 const previewPath = window.location.pathname;
 const previewTitles: Record<string, string> = { '/settings': 'Настройки', '/desktop': 'Рабочий экран', '/chats': 'Чаты', '/files': 'Документы', '/reports': 'Отчёты', '/history': 'История', '/changelog': 'Что нового', '/archive': 'Архив', '/admin': 'Администрирование', '/profile': 'Профиль' };
 function PreviewUnavailable() {

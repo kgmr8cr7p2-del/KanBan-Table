@@ -27,6 +27,9 @@ export async function POST(request: Request) {
     const assigneeIds = Array.from(new Set(input.assigneeIds?.length ? input.assigneeIds : input.assigneeId ? [input.assigneeId] : []));
     const targetColumn = await getAccessibleColumn(user, input.columnId);
     if (!targetColumn) return fail("Колонка не найдена", 404);
+    const parent = input.parentId ? await prisma.task.findFirst({ where: { id: input.parentId, column: { boardId: targetColumn.boardId }, archivedAt: null }, select: { id: true, parentId: true } }) : null;
+    if (input.parentId && !parent) return fail("Родительская задача не найдена", 404);
+    if (parent?.parentId) return fail("Подзадача не может содержать другие задачи", 422);
     const isPersonalBoard = targetColumn.board.ownerId === user.id;
     if (!isPersonalBoard && !canCreateTask(user)) return fail("Недостаточно прав для создания задачи", 403);
     if (isPersonalBoard && assigneeIds.some((id) => id !== user.id)) return fail("На личной доске задачу можно назначить только себе", 403);
@@ -59,6 +62,7 @@ export async function POST(request: Request) {
         reminderDaysBefore,
         createdAt,
         columnId: input.columnId,
+        parentId: parent?.id ?? null,
         oilDepotId: input.oilDepotId || null,
         authorId: user.id,
         assigneeId: assigneeIds[0] || null,

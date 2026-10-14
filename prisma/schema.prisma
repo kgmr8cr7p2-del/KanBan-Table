@@ -78,6 +78,7 @@ model User {
   updatedAt           DateTime                 @updatedAt
   authoredTasks       Task[]                   @relation("TaskAuthor")
   assignedTasks       Task[]                   @relation("TaskAssignee")
+  taskMapPreference   String                   @default("board")
   taskAssignments     TaskAssignment[]
   sentMessages        DirectMessage[]          @relation("MessageSender")
   receivedMessages    DirectMessage[]          @relation("MessageRecipient")
@@ -155,6 +156,11 @@ model Task {
   reminderDaysBefore Int?
   priority           Priority         @default(MEDIUM)
   position           Int              @default(0)
+  parentId           String?
+  parent             Task?            @relation("TaskChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children           Task[]           @relation("TaskChildren")
+  prerequisites      TaskDependency[] @relation("TaskSuccessor")
+  dependents         TaskDependency[] @relation("TaskPredecessor")
   columnId           String
   column             Column           @relation(fields: [columnId], references: [id])
   oilDepotId         String?
@@ -174,6 +180,21 @@ model Task {
   archivedBy         User?            @relation("TaskArchivedBy", fields: [archivedById], references: [id])
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
+
+  @@index([parentId])
+}
+
+model TaskDependency {
+  id            String   @id @default(cuid())
+  predecessorId String
+  successorId   String
+  predecessor   Task     @relation("TaskPredecessor", fields: [predecessorId], references: [id], onDelete: Cascade)
+  successor     Task     @relation("TaskSuccessor", fields: [successorId], references: [id], onDelete: Cascade)
+  createdById   String
+  createdAt     DateTime @default(now())
+
+  @@unique([predecessorId, successorId])
+  @@index([successorId])
 }
 
 model TaskAssignment {

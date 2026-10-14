@@ -2,11 +2,12 @@
 
 import { TaskTiming } from "@/components/TaskTiming";
 
-import { SlidersHorizontal, Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelTopClose, PanelTopOpen, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
+import { SlidersHorizontal, Archive, ArrowRight, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, MapPin, Minimize2, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelTopClose, PanelTopOpen, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CreateTaskButton } from "@/components/CreateTaskButton";
 import { TaskTimeline } from "@/components/TaskTimeline";
+import { TaskMap } from "@/components/TaskMap";
 import { ProfileAvatar, UserProfileButton } from "@/components/ProfileCard/ProfileCard";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { isCompletedColumn, isOverdue, deadlineTone, deadlineText } from "@/lib/task-deadline";
@@ -49,7 +50,7 @@ type AiTaskRecommendation = {
 };
 const emptyFilters = { q: "", priority: "", assignee: "", deadline: "", oilDepot: "", withoutPlanned: "", sort: "priority-deadline" };
 type Filters = typeof emptyFilters;
-type ViewMode = "board" | "list" | "timeline" | "mine";
+type ViewMode = "overview" | "board" | "map" | "list" | "timeline" | "mine";
 type SortMode = "priority-deadline" | "deadline-priority" | "position";
 type AiAssistantMode = "draft" | "ask";
 
@@ -70,6 +71,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   const [returnToAi, setReturnToAi] = useState(false);
   const [taskFullscreen, setTaskFullscreen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [createParentId, setCreateParentId] = useState<string | null>(null);
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
   const [createDraft, setCreateDraft] = useState<AiTaskDraft | null>(null);
   const [commentComposerResetKey, setCommentComposerResetKey] = useState(0);
@@ -82,7 +84,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   // away from the buttons' labels and aria state.
   const [panelVisibility, setPanelVisibility] = useState<PanelVisibility>({ sidebar: true, topbar: true });
   const [panelPreferencesReady, setPanelPreferencesReady] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>("board");
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView?.mapPreference === "map" ? "map" : "board");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [toasts, setToasts] = useState<Array<{ id: string; text: string }>>([]);
   const [confirmation, setConfirmation] = useState<"archive" | "delete" | null>(null);
@@ -188,7 +190,13 @@ export function BoardClient({ initialView }: { initialView: View }) {
     setTaskFullscreen(false);
     setAiAssistantOpen(false);
     setCreateDraft(null);
+    setCreateParentId(null);
     setCreateOpen(true);
+  }
+
+  function openCreateChild(parentId: string) {
+    openCreateTask();
+    setCreateParentId(parentId);
   }
 
   function openAiAssistant() {
@@ -353,6 +361,12 @@ export function BoardClient({ initialView }: { initialView: View }) {
   }, [panelVisibility.sidebar, panelVisibility.topbar]);
 
   useEffect(() => {
+    const syncSidebar = (event: Event) => setPanelVisibility((current) => ({ ...current, sidebar: Boolean((event as CustomEvent<boolean>).detail) }));
+    window.addEventListener("taskora-sidebar-change", syncSidebar);
+    return () => window.removeEventListener("taskora-sidebar-change", syncSidebar);
+  }, []);
+
+  useEffect(() => {
     if (!panelPreferencesReady) return;
     try {
       window.localStorage.setItem(PANEL_STORAGE_KEY, JSON.stringify({ version: PANEL_STORAGE_VERSION, ...panelVisibility }));
@@ -380,7 +394,18 @@ export function BoardClient({ initialView }: { initialView: View }) {
   }
 
   function togglePanelVisibility(panel: keyof PanelVisibility) {
-    setPanelVisibility((current) => ({ ...current, [panel]: !current[panel] }));
+    setPanelVisibility((current) => {
+      const next = { ...current, [panel]: !current[panel] };
+      if (panel === "sidebar") window.dispatchEvent(new CustomEvent("taskora-sidebar-change", { detail: next.sidebar }));
+      return next;
+    });
+  }
+
+  function chooseViewMode(mode: ViewMode) {
+    setViewMode(mode);
+    if (mode === "map" || mode === "board") {
+      void fetch("/api/task-map", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "preference", mode }) }).catch(() => undefined);
+    }
   }
 
   function updateFilter(name: keyof Filters, value: string) {
@@ -426,6 +451,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   async function saveTask(formData: FormData) {
     if (!activeTask) return;
     const payload = taskPayload(formData);
+    if (!confirmDependencyWarning(activeTask.id, payload.columnId)) return;
     try {
       const response = await fetch(`/api/tasks/${activeTask.id}`, {
         method: "PATCH",
@@ -489,6 +515,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
   async function moveTask(columnId: string, taskId = draggingId) {
     if (!taskId) return;
     setDropColumn(null);
+    if (!confirmDependencyWarning(taskId, columnId)) { setDraggingId(null); return; }
     try {
       const response = await fetch(`/api/tasks/${taskId}/move`, {
         method: "POST",
@@ -505,6 +532,14 @@ export function BoardClient({ initialView }: { initialView: View }) {
       setDraggingId(null);
       setError("Не удалось переместить задачу. Проверьте соединение и повторите попытку.");
     }
+  }
+
+  function confirmDependencyWarning(taskId: string, columnId: string) {
+    const destination = view.board.columns.find((column: any) => column.id === columnId);
+    if (!destination || !isCompletedColumn(destination.name)) return true;
+    const incomplete = (view.dependencies ?? []).filter((link: any) => link.successorId === taskId).map((link: any) => tasks.find((task: Task) => task.id === link.predecessorId)).filter((task: Task | undefined) => task && !isCompletedColumn(task.column?.name ?? ""));
+    if (!incomplete.length) return true;
+    return window.confirm(`У этой задачи есть ${incomplete.length} незавершённые зависимости. Завершить её всё равно?`);
   }
 
   async function addComment(formData: FormData) {
@@ -787,17 +822,30 @@ export function BoardClient({ initialView }: { initialView: View }) {
       <div className={`content board-content workspace-content ${focusMode ? "focus-mode" : ""}`}>
         <div className="workspace-viewbar">
           <div className="board-view-tabs board-view-tabs-inline" role="group" aria-label="Режим отображения">
-            <button className={viewMode === "board" ? "active" : ""} type="button" aria-pressed={viewMode === "board"} onClick={() => setViewMode("board")}>Доска</button>
+            <button className={viewMode === "board" ? "active" : ""} type="button" aria-pressed={viewMode === "board"} onClick={() => chooseViewMode("board")}>Доска</button>
+            <button className={viewMode === "map" ? "active" : ""} type="button" aria-pressed={viewMode === "map"} onClick={() => chooseViewMode("map")}>Карта</button>
+            <button className={viewMode === "overview" ? "active" : ""} type="button" aria-pressed={viewMode === "overview"} onClick={() => chooseViewMode("overview")}>Обзор</button>
             <button className={viewMode === "list" ? "active" : ""} type="button" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}>Список</button>
             <button className={viewMode === "timeline" ? "active" : ""} type="button" aria-pressed={viewMode === "timeline"} onClick={() => setViewMode("timeline")}>Таймлайн</button>
             {!view.board.ownerId ? <button className={viewMode === "mine" ? "active" : ""} type="button" aria-pressed={viewMode === "mine"} onClick={() => setViewMode("mine")}>Моя работа</button> : null}
           </div>
         </div>
-        <div className="workspace-pulse" aria-label="Сводка показанных задач">
+        {viewMode !== "overview" && viewMode !== "map" ? <div className="workspace-pulse" aria-label="Сводка показанных задач">
           <div className="workspace-pulse-count"><strong>{newBoardStats.total}</strong><span>задач на доске</span></div>
           <div className="workspace-pulse-progress"><span><strong>{newBoardStats.completed}</strong> завершено <span>из {newBoardStats.total}</span></span><progress max={Math.max(1,newBoardStats.total)} value={newBoardStats.completed} aria-label="Завершённые задачи" /></div>
           {newBoardStats.overdue > 0 ? <button className="workspace-attention" type="button" onClick={() => updateFilter("deadline", filters.deadline === "overdue" ? "" : "overdue")} aria-pressed={filters.deadline === "overdue"}><strong>{newBoardStats.overdue}</strong> просрочено</button> : <span className="workspace-ontrack">Нет просроченных задач</span>}
-        </div>
+        </div> : null}
+        {viewMode === "overview" ? <TaskFlightOverview
+          tasks={visibleTasks}
+          columns={visibleColumns}
+          stats={newBoardStats}
+          onOpen={openTask}
+          onBoard={() => setViewMode("board")}
+          onLane={(id) => { setViewMode("board"); window.setTimeout(() => goToLane(id), 0); }}
+          onOverdue={() => updateFilter("deadline", filters.deadline === "overdue" ? "" : "overdue")}
+          overdueActive={filters.deadline === "overdue"}
+        /> : null}
+        {viewMode === "map" ? <TaskMap tasks={visibleTasks} allTasks={view.mapTasks ?? tasks} dependencies={view.dependencies ?? []} currentUserId={view.currentUser.id} boardId={view.board.id} personalBoard={view.board.ownerId === view.currentUser.id} onOpen={openTask} onRefresh={() => refresh()} onCreateChild={openCreateChild} /> : null}
         {(viewMode === "board" || viewMode === "mine") && <nav className="board-lane-nav" aria-label="Переход к статусу задачи">
           {visibleColumns.map((column: any, index: number) => <button key={column.id} type="button" data-lane-tone={isCompletedColumn(column.name) ? "done" : index % 5} aria-pressed={(activeLane || visibleColumns[0]?.id) === column.id} onClick={() => goToLane(column.id)} onDragOver={(event) => event.preventDefault()} onDragEnter={() => goToLane(column.id)} onDrop={(event) => { event.preventDefault(); void moveTask(column.id, event.dataTransfer.getData("text/plain") || draggingId); }}><i aria-hidden="true" />{column.name}<span>{column.tasks.length}</span></button>)}
         </nav>}
@@ -887,7 +935,7 @@ export function BoardClient({ initialView }: { initialView: View }) {
             {aiAssistantOpen ? (
               <AiTaskAssistant view={view} onClose={closeCreateFlow} onApplyDraft={applyAiDraft} onOpenTask={openTaskFromAi} />
             ) : (
-              <CreateTaskDialogV2 key={createDraft ? `ai-${createDraft.title}` : "manual"} view={view} draft={createDraft} error={error} onClose={closeCreateFlow} onCreate={createTask} />
+              <CreateTaskDialogV2 key={createDraft ? `ai-${createDraft.title}` : `manual-${createParentId ?? "root"}`} view={view} draft={createDraft} parentId={createParentId} error={error} onClose={closeCreateFlow} onCreate={createTask} />
             )}
           </div>
         </aside>
@@ -923,6 +971,68 @@ export function BoardClient({ initialView }: { initialView: View }) {
       </div>
     </>
   );
+}
+
+function TaskFlightOverview({ tasks, columns, stats, onOpen, onBoard, onLane, onOverdue, overdueActive }: {
+  tasks: Task[];
+  columns: any[];
+  stats: { total: number; active: number; completed: number; overdue: number };
+  onOpen: (task: Task) => void;
+  onBoard: () => void;
+  onLane: (id: string) => void;
+  onOverdue: () => void;
+  overdueActive: boolean;
+}) {
+  const preview: Task[] = [];
+  const longestLane = Math.max(0, ...columns.map((column) => column.tasks.length));
+  for (let row = 0; row < longestLane && preview.length < 8; row += 1) {
+    for (const column of columns) {
+      if (column.tasks[row] && preview.length < 8) preview.push(column.tasks[row]);
+    }
+  }
+  return <section className="flight-overview" aria-label="Обзор задач">
+    <div className="flight-results">
+      <header className="flight-results-head">
+        <div><h2>Задачи в работе</h2><p>Быстрый обзор текущей доски</p></div>
+        <span className="flight-result-count">{stats.total} задач</span>
+      </header>
+      <div className="flight-results-list">
+        {preview.length ? preview.map((task) => <article className="task-card overview-task" key={task.id}>
+          <span className="flight-task-symbol" aria-hidden="true"><Building2 size={22} strokeWidth={1.6} /></span>
+          <div className="flight-task-copy">
+            <span className="flight-task-number">#{task.taskNumber} · {task.oilDepot?.name ?? "Личная задача"}</span>
+            <h3>{task.title}</h3>
+            <span className="flight-task-state">{task.column?.name ?? "Без статуса"} <span aria-hidden="true">·</span> {priorityLabels[task.priority as keyof typeof priorityLabels]}</span>
+          </div>
+          <div className="flight-task-time"><Calendar size={14} aria-hidden="true" /><span className={deadlineTone(task)}>{task.deadline ? deadlineText(task) : "Без срока"}</span></div>
+          <button className="flight-task-open" type="button" onClick={() => onOpen(task)} aria-label={`Открыть задачу: ${task.title}`}>Открыть <ArrowRight size={14} aria-hidden="true" /></button>
+        </article>) : <div className="flight-results-empty">По этим фильтрам задач нет. Измените условия поиска.</div>}
+      </div>
+      {tasks.length > preview.length ? <button className="flight-all-tasks" type="button" onClick={onBoard}>Все задачи на доске <ArrowRight size={16} aria-hidden="true" /></button> : null}
+    </div>
+    <aside className="flight-route-panel" aria-label="Маршрут задач по статусам">
+      <div className="flight-route-top"><span>МАРШРУТ РАБОТЫ</span><strong>{stats.active} активных</strong></div>
+      <div className="flight-route-map" aria-hidden="true">
+        <svg viewBox="0 0 340 176" role="presentation" preserveAspectRatio="xMidYMid meet">
+          <defs><pattern id="flightDots" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="1.5" r="1" fill="currentColor" opacity=".25" /></pattern></defs>
+          <path d="M16 48C46 19 87 18 107 45s48 23 66-7 44-21 53 10 49 35 96-4v104H16Z" fill="url(#flightDots)" opacity=".55" />
+          <path className="flight-route-line" d="M42 128 C94 46 136 62 172 112 S250 150 304 45" fill="none" strokeWidth="2" strokeDasharray="4 5" />
+          <circle className="flight-route-node" cx="42" cy="128" r="5" /><circle className="flight-route-node" cx="172" cy="112" r="5" /><circle className="flight-route-node" cx="304" cy="45" r="5" />
+          <circle cx="42" cy="128" r="12" fill="none" stroke="currentColor" opacity=".3" /><circle cx="304" cy="45" r="12" fill="none" stroke="currentColor" opacity=".3" />
+        </svg>
+        <span className="flight-map-label flight-map-label-start">НОВЫЕ</span><span className="flight-map-label flight-map-label-end">ГОТОВО</span>
+      </div>
+      <p className="flight-route-description">Путь задачи от постановки до завершения. Выберите этап, чтобы открыть его на доске.</p>
+      <div className="flight-route-stages">
+        {columns.slice(0, 6).map((column, index) => <button type="button" key={column.id} onClick={() => onLane(column.id)}>
+          <span className="flight-stage-index">{String(index + 1).padStart(2, "0")}</span><span>{column.name}</span><strong>{column.tasks.length}</strong><ArrowRight size={14} aria-hidden="true" />
+        </button>)}
+      </div>
+      <button className={`flight-route-alert ${overdueActive ? "is-active" : ""}`} type="button" onClick={onOverdue} aria-pressed={overdueActive}>
+        <span><MapPin size={16} aria-hidden="true" /> Просроченные задачи</span><strong>{stats.overdue}</strong>
+      </button>
+    </aside>
+  </section>;
 }
 
 function TaskTable({ tasks, onOpen, personal }: { tasks: Task[]; onOpen: (task: Task) => void; personal: boolean }) {
@@ -1527,7 +1637,7 @@ function AiTaskAssistant(props: { view: View; onClose: () => void; onApplyDraft:
   );
 }
 
-function CreateTaskDialogV2(props: { view: View; draft?: AiTaskDraft | null; error?: string; onClose: () => void; onCreate: (formData: FormData) => void }) {
+function CreateTaskDialogV2(props: { view: View; draft?: AiTaskDraft | null; parentId?: string | null; error?: string; onClose: () => void; onCreate: (formData: FormData) => void }) {
   const firstColumn = props.view.board.columns[0];
   const isPersonalBoard = Boolean(props.view.board.ownerId);
   const draft = props.draft;
@@ -1550,6 +1660,7 @@ function CreateTaskDialogV2(props: { view: View; draft?: AiTaskDraft | null; err
       </header>
 
       <form className="task-modal-v2-form" action={props.onCreate}>
+        {props.parentId ? <input type="hidden" name="parentId" value={props.parentId} /> : null}
         {isPersonalBoard ? <><input type="hidden" name="oilDepotId" value="" /><input type="hidden" name="assigneeId" value="" /></> : null}
         <div className="task-modal-layout task-create-layout">
           <div className="task-modal-main">
@@ -2017,6 +2128,7 @@ function taskPayload(formData: FormData) {
     title: String(formData.get("title") ?? ""),
     description: String(formData.get("description") ?? ""),
     columnId: String(formData.get("columnId") ?? ""),
+    parentId: String(formData.get("parentId") ?? "") || null,
     oilDepotId: String(formData.get("oilDepotId") ?? ""),
     priority: String(formData.get("priority") ?? "MEDIUM"),
     startDate: String(formData.get("startDate") ?? "") || null,

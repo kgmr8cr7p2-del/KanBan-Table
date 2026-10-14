@@ -14,3 +14,4 @@ uploads
 
 *.tsbuildinfo
 .local/
+.impeccable/review/

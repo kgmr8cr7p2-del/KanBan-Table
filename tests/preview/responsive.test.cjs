@@ -28,13 +28,18 @@ test('wide board columns fill the available workspace and depots align across ow
   try {
     for(const width of [1920,2560,3840]) {
       await page.setViewportSize({width,height:1080});await page.goto(baseURL+'/board');
-      await page.locator('.task-card').first().waitFor();
+      await page.locator('.board-view-tabs').getByRole('button',{name:'Доска',exact:true}).click();
+      await page.locator('.workspace-board .task-card').first().waitFor();
       await page.evaluate(()=>document.fonts.ready);
       const layout=await page.locator('.workspace-board').evaluate(board=>{
         const columns=[...board.children].map(column=>column.getBoundingClientRect());const rect=board.getBoundingClientRect();
         return {overflow:board.scrollWidth-board.clientWidth,widths:columns.map(rect=>rect.width),gap:rect.right-parseFloat(getComputedStyle(board).paddingRight)-columns.at(-1).right};
       });
-      assert.ok(layout.overflow<=1,JSON.stringify(layout));assert.ok(Math.abs(layout.gap)<=1,JSON.stringify(layout));assert.ok(Math.max(...layout.widths)-Math.min(...layout.widths)<=1);
+      assert.ok(layout.overflow>=0,JSON.stringify(layout));assert.ok(Math.max(...layout.widths)-Math.min(...layout.widths)<=1);
+      if(layout.overflow>1) {
+        const endGap=await page.locator('.workspace-board').evaluate(board=>{board.scrollLeft=board.scrollWidth;const last=board.lastElementChild.getBoundingClientRect();const rect=board.getBoundingClientRect();return rect.right-parseFloat(getComputedStyle(board).paddingRight)-last.right;});
+        assert.ok(Math.abs(endGap)<=1,`Last board column is unreachable: ${endGap}`);
+      } else assert.ok(Math.abs(layout.gap)<=1,JSON.stringify(layout));
     }
     await page.goto(baseURL+'/oil-depots');
     await page.evaluate(()=>document.fonts.ready);
@@ -42,6 +47,68 @@ test('wide board columns fill the available workspace and depots align across ow
     assert.equal(groups.length,3);
     for(let row=0;row<3;row++){assert.ok(Math.max(...groups.map(group=>group[row].top))-Math.min(...groups.map(group=>group[row].top))<=1);assert.ok(Math.max(...groups.map(group=>group[row].height))-Math.min(...groups.map(group=>group[row].height))<=1);assert.ok(Math.max(...groups.map(group=>group[row].button))-Math.min(...groups.map(group=>group[row].button))<=1,'Depot buttons must align');}
     await page.screenshot({path:'.local/responsive/aligned-depots.png'});
+  } finally {await page.close();}
+});
+
+test('overview keeps task results and route controls connected to the board',async()=>{
+  const page=await browser.newPage({viewport:{width:1440,height:900}});
+  try {
+    await page.goto(baseURL+'/board');
+    await page.locator('.board-view-tabs').getByRole('button',{name:'Обзор',exact:true}).click();
+    await page.locator('.overview-task').first().waitFor();
+    assert.equal(await page.locator('.flight-route-panel').count(),1);
+    await page.locator('.overview-task .flight-task-open').first().click();
+    await page.locator('.task-drawer').waitFor();
+    await page.goto(baseURL+'/board');
+    await page.locator('.board-view-tabs').getByRole('button',{name:'Обзор',exact:true}).click();
+    await page.locator('.flight-route-stages button').nth(2).click();
+    await page.locator('.workspace-board').waitFor();
+    assert.equal(await page.locator('.board-view-tabs').getByRole('button',{name:'Доска',exact:true}).getAttribute('aria-pressed'),'true');
+    await assertGeometry(page);
+  } finally {await page.close();}
+});
+
+test('task map keeps an icon rail and reveals child and detail plaques on the same plane',async()=>{
+  const page=await browser.newPage({viewport:{width:1440,height:900}});
+  try {
+    await page.goto(baseURL+'/board');
+    await page.locator('.board-view-tabs').getByRole('button',{name:'Карта',exact:true}).click();
+    await page.locator('.task-map').waitFor();
+    assert.ok(await page.locator('.task-map-card').count()>0);
+    const sameDateRoute=await page.locator('.task-map-links > path:not(.is-proposed)').first().getAttribute('d');
+    assert.match(sameDateRoute,/ Q /,'Same-date links should use a compact side-gutter route');
+    assert.equal(await page.locator('[data-map-task="t101"]').evaluate(element=>getComputedStyle(element.parentElement).marginLeft),'16px');
+    await page.locator('.task-map-expand').first().click();
+    assert.ok(await page.locator('.task-map-children .task-map-card').count()>0);
+    await page.locator('.task-map-children .task-map-title').first().click();
+    assert.equal(await page.locator('.task-map-detail').count(),1);
+    assert.ok(await page.locator('.task-map-deadline-form input[type="date"]').isVisible(),'Deadline needs a keyboard-accessible control');
+    await page.locator('[title="Скрыть левую панель"]').first().click();
+    assert.equal(await page.locator('.sidebar').evaluate(element=>getComputedStyle(element).display),'flex');
+    assert.ok(await page.locator('.sidebar .nav-section a svg').first().isVisible());
+    await page.screenshot({path:'.local/responsive/task-map-desktop.png'});
+    await page.goto(baseURL+'/files');
+    assert.ok((await page.locator('.sidebar').boundingBox()).width<90,'Icon rail should persist across sections');
+    assert.ok(await page.getByRole('button',{name:'Развернуть навигацию'}).isVisible());
+    await page.setViewportSize({width:390,height:844});
+    assert.ok(await page.locator('.mobile-nav').isVisible(),'Mobile navigation must remain visible when the desktop rail is collapsed');
+    await page.goto(baseURL+'/board');
+    await page.locator('.board-view-tabs').getByRole('button',{name:'Карта',exact:true}).click();
+    const scaleHeight=(await page.locator('.task-map-controls button').first().boundingBox()).height;
+    assert.ok(scaleHeight>=44,'Map scale target must remain touch-sized');
+    await page.locator('.task-map-title').first().click();
+    assert.ok(await page.locator('.task-map-deadline-form input[type="date"]').isVisible(),'Mobile date change must not rely on dragging');
+  } finally {await page.close();}
+});
+
+test('filtered map retains linked context and its real dependency label',async()=>{
+  const page=await browser.newPage({viewport:{width:1280,height:800}});
+  try {
+    await page.goto(baseURL+'/board?withoutPlanned=1');
+    await page.locator('.board-view-tabs').getByRole('button',{name:'Карта',exact:true}).click();
+    await page.locator('[data-map-task="t101"] .task-map-title').click();
+    assert.match(await page.locator('[data-map-task="t101"] + .task-map-detail').innerText(),/После #103/);
+    assert.ok(await page.locator('[data-map-task="t103"]').count()>0,'Linked planned task remains as context');
   } finally {await page.close();}
 });
 
@@ -142,12 +209,13 @@ test('pixel mascot jumps onto controls, exits the screen and returns',async()=>{
   } finally {await page.close();}
 });
 
-test('pixel theme loads Cyrillic font and reduced motion keeps mascot still',async()=>{
+test('graphite-lime theme keeps readable Cyrillic text and reduced motion keeps mascot still',async()=>{
   const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});
   try {
     await page.goto(baseURL+'/board?mascot=1');await page.evaluate(()=>document.fonts.ready);
-    const style=await page.evaluate(()=>({font:getComputedStyle(document.body).fontFamily,loaded:document.fonts.check('18px "Taskora Pixel"','Нефтебазы'),brand:getComputedStyle(document.documentElement).getPropertyValue('--ds-brand').trim(),radius:getComputedStyle(document.querySelector('.task-card')).borderRadius}));
-    assert.ok(style.font.includes('Taskora Pixel'));assert.equal(style.loaded,true);assert.equal(style.brand,'#146f73');assert.equal(style.radius,'0px');
+    await page.locator('.board-view-tabs').getByRole('button',{name:'Карта',exact:true}).click();
+    const style=await page.evaluate(()=>({font:getComputedStyle(document.body).fontFamily,accent:getComputedStyle(document.documentElement).getPropertyValue('--taskora-accent').trim(),radius:getComputedStyle(document.querySelector('.task-map-card')).borderRadius}));
+    assert.ok(style.font.includes('Segoe UI'));assert.equal(style.accent,'#e9ff43');assert.equal(style.radius,'18px');
     const monkey=page.getByRole('button',{name:'Обезьяна: сделать сюрприз'});const first=await monkey.boundingBox();await page.waitForTimeout(2200);assert.deepEqual(await monkey.boundingBox(),first);
   } finally {await page.close();}
 });

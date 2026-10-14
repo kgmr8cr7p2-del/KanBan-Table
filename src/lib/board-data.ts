@@ -106,6 +106,14 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
     select: { id: true, name: true, ownerId: true, _count: { select: { columns: true } } },
     orderBy: [{ ownerId: "asc" }, { createdAt: "asc" }],
   });
+  const dependencies = await prisma.taskDependency.findMany({
+    where: {
+      predecessor: { column: { boardId: board.id }, archivedAt: null },
+      successor: { column: { boardId: board.id }, archivedAt: null },
+    },
+    select: { id: true, predecessorId: true, successorId: true },
+  });
+  const mapPreference = await prisma.user.findUnique({ where: { id: user.id }, select: { taskMapPreference: true } });
 
   const query = filters?.get("q")?.trim().toLowerCase();
   const priority = filters?.get("priority");
@@ -150,6 +158,15 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
   return {
     board: { ...board, columns: filteredColumns },
     availableBoards,
+    dependencies,
+    mapTasks: board.columns.flatMap((column) => column.tasks.map((task) => ({
+      id: task.id, taskNumber: task.taskNumber, title: task.title, description: task.description,
+      deadline: task.deadline, parentId: task.parentId, assigneeId: task.assigneeId,
+      assignees: task.assignees.map((item) => ({ userId: item.userId })),
+      column: { name: column.name },
+      checklists: task.checklists.map((list) => ({ id: list.id, title: list.title, items: list.items.map((item) => ({ id: item.id, text: item.text, completed: item.completed })) })),
+    }))),
+    mapPreference: mapPreference?.taskMapPreference === "map" ? "map" : "board",
     users,
     tags,
     oilDepots,
