@@ -1,6 +1,7 @@
 import { requireVerifiedUser } from "@/lib/auth";
 import { handleRouteError, ok } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
+import { soundPreferenceSchema } from "@/lib/sound-preferences";
 
 const preferenceSelect = {
   browserChat: true,
@@ -8,6 +9,7 @@ const preferenceSelect = {
   browserTasks: true,
   browserDeadlines: true,
   browserSystem: true,
+  soundPreferences: true,
 } as const;
 
 export async function GET() {
@@ -30,6 +32,7 @@ export async function PATCH(request: Request) {
       browserTasks: booleanOrUndefined(body.browserTasks),
       browserDeadlines: booleanOrUndefined(body.browserDeadlines),
       browserSystem: booleanOrUndefined(body.browserSystem),
+      soundPreferences: body.soundPreferences === undefined ? undefined : soundPreferenceSchema.parse(body.soundPreferences),
     };
     const preferences = await prisma.notificationPreference.upsert({
       where: { userId: user.id },

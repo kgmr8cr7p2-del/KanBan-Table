@@ -6,12 +6,20 @@ import { ChatHub } from "../../src/components/ChatHub";
 import { ImportantFilesClient } from "../../src/components/ImportantFilesClient";
 import { ArchiveBrowser } from "../../src/components/ArchiveBrowser";
 import fixture from "./fixture.json";
+import { NotificationSoundSettings } from "../../src/components/NotificationSoundSettings";
+import { buildTimeReport } from "../../src/lib/task-metrics";
 
 const view = fixture as any;
 const tasks = view.board.columns.flatMap((column: any) => column.tasks);
 const columns = view.board.columns.map((column: any) => column.name);
 const rows = view.oilDepots.map((depot: any) => ({ name: depot.name, total: tasks.filter((task: any) => task.oilDepot?.id === depot.id).length, statuses: view.board.columns.map((column: any) => ({name: column.name, count: column.tasks.filter((task: any) => task.oilDepot?.id === depot.id).length})) }));
 const reports = {
+  timeReport: buildTimeReport(tasks.map((task: any)=>({...task,createdAt:"2026-10-01T00:00:00Z",column:{name:"Готово"},activityLogs:[
+    {action:"TASK_CREATED",createdAt:"2026-10-01T00:00:00Z",details:{column:"Новые"}},
+    {action:"STATUS_CHANGED",createdAt:"2026-10-02T00:00:00Z",details:{previousColumn:"Новые",column:"В работе"}},
+    {action:"STATUS_CHANGED",createdAt:"2026-10-05T00:00:00Z",details:{previousColumn:"В работе",column:"На проверке"}},
+    {action:"STATUS_CHANGED",createdAt:"2026-10-06T00:00:00Z",details:{previousColumn:"На проверке",column:"Готово"}},
+  ]})), new Date("2026-01-01"),new Date("2026-12-31")),
   byOilDepotStatus: { columns, rows },
   period: { closedByOilDepot: rows.map((row: any) => ({name: row.name, count: 2})) },
   chart: Array.from({length:12}, (_, index) => ({label: `${index + 1}.2026`, created: index + 2, completed: index % 4, overdue: index % 3})),
@@ -24,6 +32,7 @@ export function PreviewSection({path}: {path: string}) {
   if(path === "/chats") return <div className="content chats-page"><header className="chats-page-head"><h1>Чаты</h1></header><ChatHub viewerId={view.currentUser.id}/></div>;
   if(path === "/files") return <ImportantFilesClient canManage={true}/>;
   return <div className="content settings-page"><header className="settings-page-head"><h1>Настройки Taskora</h1></header><SettingsHub panels={[
+    {id:"sounds",title:"Звуки уведомлений",description:"Личные настройки",icon:"volume",content:<NotificationSoundSettings/>},
     {id:"board", title:"Рабочая доска",description:"Колонки и параметры выбранной доски",icon:"database",wide:true,content:<BoardSettings columns={view.board.columns} boardId={view.board.id} boardName={view.board.name} boards={view.availableBoards} canManage={true}/>},
     {id:"depots",title:"Нефтебазы",description:"Справочник объектов рабочего пространства",icon:"building",content:<OilDepotSettings oilDepots={view.oilDepots} canManage={true}/>},
   ]}/></div>;

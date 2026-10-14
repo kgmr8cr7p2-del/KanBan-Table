@@ -388,6 +388,7 @@ model NotificationPreference {
   browserTasks     Boolean  @default(true)
   browserDeadlines Boolean  @default(true)
   browserSystem    Boolean  @default(true)
+  soundPreferences Json?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }

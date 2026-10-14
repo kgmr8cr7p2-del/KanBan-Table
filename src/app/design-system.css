@@ -112,6 +112,45 @@
 
 /* Shell --------------------------------------------------------------- */
 
+:root[data-interface-mode="new"] .personal-sound-settings { display: grid; gap: 16px; }
+:root[data-interface-mode="new"] .personal-sound-settings fieldset { display: grid; gap: 16px; border: 0; padding: 0; margin: 0; min-inline-size: 0; }
+:root[data-interface-mode="new"] .sound-toggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-block-size: 44px; line-height: 1.5; }
+:root[data-interface-mode="new"] .sound-toggle span { overflow-wrap: anywhere; }
+:root[data-interface-mode="new"] .sound-toggle input { flex: 0 0 20px; inline-size: 20px; block-size: 20px; accent-color: var(--ds-brand); }
+:root[data-interface-mode="new"] .sound-volume { display: grid; gap: 8px; }
+:root[data-interface-mode="new"] .sound-volume > span { display: flex; justify-content: space-between; }
+:root[data-interface-mode="new"] .sound-volume input { inline-size: 100%; min-block-size: 36px; accent-color: var(--ds-brand); }
+:root[data-interface-mode="new"] .sound-category-list { border-block: 1px solid var(--ds-line); padding-block: 8px; }
+:root[data-interface-mode="new"] .sound-quiet-times { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+:root[data-interface-mode="new"] .sound-settings-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+:root[data-interface-mode="new"] .task-timing { display: grid; gap: 16px; margin-block-start: 20px; }
+:root[data-interface-mode="new"] .task-timing details { border-block-start: 1px solid var(--ds-line); padding-block: 12px; }
+:root[data-interface-mode="new"] .task-timing summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; font-weight: 600; min-block-size: 36px; }
+:root[data-interface-mode="new"] .task-timing summary::after { content: "+"; margin-inline-start: auto; }
+:root[data-interface-mode="new"] .task-timing details[open] > summary::after { content: "-"; }
+:root[data-interface-mode="new"] .deadline-summary,
+:root[data-interface-mode="new"] .time-report-summary { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,140px),1fr)); gap: 16px; margin-block: 16px; }
+:root[data-interface-mode="new"] .deadline-summary > span,
+:root[data-interface-mode="new"] .time-report-summary > span { display: grid; align-content: start; gap: 8px; color: var(--ds-muted); font-size: 12px; line-height: 1.5; }
+:root[data-interface-mode="new"] .deadline-summary strong,
+:root[data-interface-mode="new"] .time-report-summary strong { color: var(--ds-ink); font-size: 16px; }
+:root[data-interface-mode="new"] .deadline-history { list-style: none; margin: 0; padding: 0; }
+:root[data-interface-mode="new"] .deadline-history li { display: grid; gap: 6px; padding-block: 12px; border-block-end: 1px solid var(--ds-line); font-size: 12px; overflow-wrap: anywhere; }
+:root[data-interface-mode="new"] .deadline-history small { color: var(--ds-muted); }
+:root[data-interface-mode="new"] .stage-time-list { margin-block: 12px; }
+:root[data-interface-mode="new"] .stage-time-list > div { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px; padding-block: 8px; font-size: 12px; }
+:root[data-interface-mode="new"] .stage-time-list dd { margin: 0; }
+:root[data-interface-mode="new"] .time-report { grid-column: 1 / -1; padding-block: 20px; border-block: 1px solid var(--ds-line); }
+:root[data-interface-mode="new"] .time-report h2 { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+:root[data-interface-mode="new"] .time-report header > span { display: block; font-size: 12px; margin-block-start: 8px; }
+:root[data-interface-mode="new"] .time-report-stages > div { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(30px,2fr) minmax(70px,1fr) minmax(45px,.5fr); gap: 12px; align-items: center; padding-block: 10px; font-size: 12px; }
+:root[data-interface-mode="new"] .time-report-stages small { display: block; color: var(--ds-muted); }
+:root[data-interface-mode="new"] .time-report-stages progress { inline-size: 100%; block-size: 8px; }
+@media (max-width: 600px) {
+  :root[data-interface-mode="new"] .time-report-stages > div { grid-template-columns: minmax(0,1fr) auto; }
+  :root[data-interface-mode="new"] .time-report-stages progress { grid-row: 2; }
+}
+
 :root[data-interface-mode="new"] .app {
   display: grid;
   grid-template-columns: minmax(224px, 256px) minmax(0, 1fr);

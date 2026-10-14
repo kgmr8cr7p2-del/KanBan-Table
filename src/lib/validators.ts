@@ -55,6 +55,7 @@ export const taskSchema = z.object({
   assigneeId: z.string().optional().nullable(),
   assigneeIds: z.array(z.string().min(1)).max(30).optional(),
   initialComment: z.string().max(2000).optional().nullable(),
+  deadlineChangeReason: z.string().trim().max(500).optional(),
   initialChecklist: z.array(z.string().max(240)).default([]),
   tags: z.array(z.string().min(1).max(32)).default([]),
 });

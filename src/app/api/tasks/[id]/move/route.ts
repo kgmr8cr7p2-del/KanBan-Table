@@ -3,7 +3,6 @@ import { requireVerifiedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { taskInclude } from "@/lib/board-data";
 import { canEditTask } from "@/lib/permissions";
-import { logActivity } from "@/lib/activity";
 import { notifySharedTelegram } from "@/lib/telegram";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { triggerTaskCompletionSoundEvent } from "@/lib/task-sound-event";
@@ -34,24 +33,13 @@ export async function POST(request: Request, { params }: Params) {
 
     const task = await prisma.task.update({
       where: { id },
-      data: { columnId, position, deadline: nextDeadline },
+      data: { columnId, position, deadline: nextDeadline, activityLogs: { create: [
+        ...(existing.columnId !== columnId ? [{action: ActivityAction.STATUS_CHANGED, userId:user.id, details:{previousColumn:existing.column.name,column:destinationColumn.name,returnedFromReviewToWork}}] : []),
+        ...(returnedFromReviewToWork && nextDeadline?.getTime() !== existing.deadline?.getTime() ? [{action:ActivityAction.DEADLINE_CHANGED,userId:user.id,details:{oldValue:existing.deadline?.toISOString() ?? null,newValue:nextDeadline?.toISOString() ?? null,reason:"returned_from_review"}}] : []),
+      ] } },
       include: taskInclude,
     });
 
-    await logActivity({
-      action: ActivityAction.STATUS_CHANGED,
-      userId: user.id,
-      taskId: task.id,
-      details: { previousColumn: existing.column.name, column: task.column.name, returnedFromReviewToWork },
-    });
-    if (returnedFromReviewToWork) {
-      await logActivity({
-        action: ActivityAction.DEADLINE_CHANGED,
-        userId: user.id,
-        taskId: task.id,
-        details: { deadline: nextDeadline?.toISOString(), reason: "returned_from_review" },
-      });
-    }
     if (!isPersonalBoard && task.priority !== "PLANNED") {
       const message = [
         `Задача: ${task.title}`,

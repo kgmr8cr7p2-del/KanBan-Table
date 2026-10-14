@@ -7,7 +7,13 @@ import { AppNav } from "../../src/components/AppNav";
 import fixture from "./fixture.json";
 import { PreviewSection } from "./sections";
 
-const view = fixture as any;
+const view = structuredClone(fixture) as any;
+for (const task of view.board.columns[0].tasks) {
+  task.activityLogs = [
+    {id:`creation-${task.id}`,action:"TASK_CREATED",createdAt:task.createdAt,details:{column:"Новые",deadline:"2026-09-20T00:00:00Z"},user:view.users[0]},
+    {id:`deadline-${task.id}`,action:"DEADLINE_CHANGED",createdAt:"2026-09-19T09:00:00Z",details:{oldValue:"2026-09-20T00:00:00Z",newValue:task.deadline,reason:"Ожидаем согласование окна работ"},user:view.users[0]},
+  ];
+}
 const previewPath = window.location.pathname;
 const previewTitles: Record<string, string> = { '/settings': 'Настройки', '/desktop': 'Рабочий экран', '/chats': 'Чаты', '/files': 'Документы', '/reports': 'Отчёты', '/history': 'История', '/changelog': 'Что нового', '/archive': 'Архив', '/admin': 'Администрирование', '/profile': 'Профиль' };
 function PreviewUnavailable() {

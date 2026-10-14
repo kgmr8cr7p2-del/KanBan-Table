@@ -80,6 +80,7 @@ export async function PATCH(request: Request, { params }: Params) {
     if (input.startDate !== undefined && dateKey(nextStartDate) !== dateKey(existing.startDate)) changes.push(ActivityAction.START_DATE_CHANGED);
     if (input.deadline !== undefined && dateKey(nextDeadline) !== (existing.deadline ? dateKey(existing.deadline) : null)) changes.push(ActivityAction.DEADLINE_CHANGED);
     if (input.columnId && input.columnId !== existing.columnId) changes.push(ActivityAction.STATUS_CHANGED);
+    if (changes.includes(ActivityAction.DEADLINE_CHANGED) && !input.deadlineChangeReason) return fail("Укажите причину изменения срока.", 422);
     const oilDepotChanged = input.oilDepotId !== undefined && (input.oilDepotId || null) !== existing.oilDepotId;
     if (assigneeIds && !sameIds(assigneeIds, existing.assignees.map((item) => item.userId))) changes.push(ActivityAction.ASSIGNEE_CHANGED);
 
@@ -100,12 +101,16 @@ export async function PATCH(request: Request, { params }: Params) {
         assigneeId: assigneeIds === undefined ? undefined : assigneeIds[0] || null,
         assignees: assigneeIds === undefined ? undefined : { deleteMany: {}, create: assigneeIds.map((userId) => ({ userId })) },
         tags: input.tags ? { create: await tagConnects(input.tags) } : undefined,
+        activityLogs: changes.includes(ActivityAction.DEADLINE_CHANGED) ? { create: {
+          action: ActivityAction.DEADLINE_CHANGED, userId: user.id,
+          details: { label: "Срок", oldValue: existing.deadline?.toISOString() ?? null, newValue: nextDeadline.toISOString(), reason: input.deadlineChangeReason! },
+        } } : undefined,
       },
       include: taskInclude,
     });
 
     await Promise.all(
-      changes.map((action) =>
+      changes.filter(action=>action !== ActivityAction.DEADLINE_CHANGED).map((action) =>
         logActivity({
           action,
           userId: user.id,

@@ -11,6 +11,7 @@ type TaskSoundEvent = {
   id: string;
   createdAt: string;
   soundUrl: string;
+  kind?: "created" | "completed" | "reminder";
 };
 
 type TaskSoundCursor = {
@@ -99,7 +100,7 @@ async function playWithCrossTabLock(event: TaskSoundEvent) {
   const play = async () => {
     const cursor = readCursor();
     if (isAtOrBeforeCursor(event, cursor)) return "skipped" as const;
-    const result = await playNotificationSoundFile(event.soundUrl);
+    const result = await playNotificationSoundFile(event.soundUrl, event.kind ?? "created");
     if (result === "played" || result === "disabled") saveCursor(event);
     return result;
   };

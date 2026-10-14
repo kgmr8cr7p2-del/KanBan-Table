@@ -15,6 +15,7 @@ import {
 import type { CSSProperties } from "react";
 import BorderGlow from "@/components/BorderGlow/BorderGlow";
 import { ReportLineChart } from "@/components/ReportLineChart";
+import { TimeReport } from "@/components/TaskTiming";
 
 export function ReportsPanel({ reports }: { reports: any }) {
   const statusCount = Math.max(1, reports?.byOilDepotStatus?.columns?.length ?? 1);
@@ -76,6 +77,7 @@ export function ReportsPanel({ reports }: { reports: any }) {
 
   return (
     <section className="reports-panel reports-page-grid reports-dashboard" aria-label="Дашборд отчетов">
+      <TimeReport report={reports.timeReport}/>
       <div className="report-kpi-grid">
         {summaryCards.map((card) => {
           const Icon = card.icon;
@@ -524,7 +526,7 @@ function activityDetails(log: any) {
   const details = log.details ?? {};
   if (details.previousColumn || details.column) return `Статус: ${details.previousColumn ?? "—"} → ${details.column ?? "—"}`;
   if (details.field === "oilDepot") return `Нефтебаза: ${details.oldValue ?? "без нефтебазы"} → ${details.newValue ?? "без нефтебазы"}`;
-  if (details.oldValue !== undefined || details.newValue !== undefined) return `${details.label ?? "Значение"}: ${displayHistoryValue(details.oldValue)} → ${displayHistoryValue(details.newValue)}`;
+  if (details.oldValue !== undefined || details.newValue !== undefined) return `${details.label ?? "Значение"}: ${displayHistoryValue(details.oldValue)} → ${displayHistoryValue(details.newValue)}${details.reason ? ` · ${details.reason === "returned_from_review" ? "Возврат с проверки в работу" : details.reason}` : ""}`;
   if (details.assigneesBefore || details.assigneesAfter) return `Исполнители: ${(details.assigneesBefore ?? []).join(", ") || "не назначены"} → ${(details.assigneesAfter ?? []).join(", ") || "не назначены"}`;
   if (details.action === "created" && details.item) return `Добавлен пункт: «${details.item}»`;
   if (details.action === "deleted" && details.item) return `Удалён пункт: «${details.item}»`;

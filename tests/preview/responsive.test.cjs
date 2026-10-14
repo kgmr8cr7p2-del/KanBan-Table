@@ -66,6 +66,9 @@ for(const theme of ['light','dark']) for(const [width,height] of sizes) {
       }
       await page.locator('.task-card').first().click();
       await assertGeometry(page,'.task-drawer');
+      await page.locator('.task-drawer input[name=deadline]').fill('2026-12-31');
+      assert.equal(await page.locator('[name=deadlineChangeReason]').count(),1);
+      assert.equal(await page.locator('[name=deadlineChangeReason]').getAttribute('required'),'');
       const description = await page.locator('.edit-description').evaluate(el=>parseFloat(getComputedStyle(el).paddingBottom));
       assert.ok(description>=28,'Description counter overlaps text');
       await page.locator('.assignee-select > summary').click();
@@ -85,6 +88,29 @@ for(const theme of ['light','dark']) for(const [width,height] of sizes) {
     } finally { await page.close(); }
   });
 }
+
+test('personal sound settings save independently and retain quiet hours', async () => {
+  const page=await browser.newPage({viewport:{width:390,height:844}});
+  let saved=null;
+  await page.route('**/api/notification-preferences',async route=>{
+    if(route.request().method()==='PATCH') saved=route.request().postDataJSON().soundPreferences;
+    await route.fulfill({json:{preferences:{soundPreferences:saved}}});
+  });
+  try {
+    await page.goto(baseURL+'/settings');
+    await page.getByRole('button',{name:'Звуки уведомлений'}).click();
+    await page.getByRole('switch',{name:'Создание задач',exact:true}).uncheck();
+    await page.getByRole('switch',{name:'Тихие часы · Москва'}).check();
+    await page.locator('input[type=time]').first().fill('21:30');
+    await page.getByRole('button',{name:'Сохранить',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Личные настройки сохранены'}).waitFor();
+    assert.equal(saved.created,false);
+    assert.equal(saved.completed,true);
+    assert.equal(saved.quietFrom,'21:30');
+    await assertGeometry(page,'.settings-dialog');
+    await page.screenshot({path:'.local/responsive/personal-sounds-390.png'});
+  } finally {await page.close();}
+});
 
 for(const [width,height] of [[320,568],[568,320],[768,1024],[1024,768],[1920,1080]]) {
   test(`workspace sections ${width}x${height}`, async () => {

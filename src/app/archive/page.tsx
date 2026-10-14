@@ -17,6 +17,7 @@ export default async function ArchivePage() {
       assignees: { include: { user: { select: { id: true, name: true, email: true } } }, orderBy: { assignedAt: "asc" } },
       author: { select: { id: true, name: true, email: true } },
       archivedBy: { select: { id: true, name: true, email: true } },
+      activityLogs: { include: { user: { select: { name: true } } }, orderBy: { createdAt: "asc" } },
       checklists: { include: { items: { orderBy: { createdAt: "asc" } } }, orderBy: { createdAt: "asc" } },
       comments: { include: { author: { select: { name: true } } }, orderBy: { createdAt: "asc" } },
       fileAttachments: { include: { uploader: { select: { name: true } } }, orderBy: { createdAt: "asc" } },

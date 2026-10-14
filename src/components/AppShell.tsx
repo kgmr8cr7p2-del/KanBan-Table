@@ -7,6 +7,7 @@ import { NotificationSoundNotifier } from "@/components/NotificationSoundNotifie
 import { WeeklyReportReminder } from "@/components/WeeklyReportReminder";
 import { PresenceTracker } from "@/components/PresenceTracker";
 import { InterfaceModeSync } from "@/components/InterfaceModeSync";
+import { SoundPreferenceSync } from "@/components/SoundPreferenceSync";
 
 export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
   return (
@@ -19,6 +20,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       <main className="main">{children}</main>
       {user.approvedAt ? (
         <>
+          <SoundPreferenceSync userId={user.id} />
           <TaskSoundNotifier />
           <NotificationSoundNotifier />
           <GoidaReminder />

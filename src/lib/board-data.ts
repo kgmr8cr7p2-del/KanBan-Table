@@ -6,6 +6,7 @@ import { accessibleBoardWhere } from "@/lib/board-access";
 import { isAiTaskDraftEnabled } from "@/lib/ai-task-draft";
 import { canCreateTask, canDeleteTask, canManageColumns, canViewTaskFiles } from "@/lib/permissions";
 import { hasPermission } from "@/lib/role-permissions";
+import { buildTimeReport } from "@/lib/task-metrics";
 
 const profileUserSelect = {
   id: true,
@@ -44,6 +45,7 @@ export const taskInclude = {
 export type TaskWithDetails = Prisma.TaskGetPayload<{ include: typeof taskInclude }>;
 
 const reportTaskInclude = {
+  activityLogs: { where: { action: { in: [ActivityAction.STATUS_CHANGED, ActivityAction.TASK_CREATED] } }, orderBy: { createdAt: "asc" as const } },
   column: true,
   oilDepot: true,
   assignee: { select: { id: true, name: true, email: true } },
@@ -280,6 +282,7 @@ export async function getReportsData(filters?: URLSearchParams) {
     },
     dashboard: buildDashboardReport(tasks, from, to),
     byOilDepotStatus: buildCurrentOilDepotStatus(activeTasks),
+    timeReport: buildTimeReport(tasks, from, to),
   };
 }
 

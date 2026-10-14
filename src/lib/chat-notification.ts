@@ -1,57 +1,55 @@
+import { defaultSoundPreferences, parseSoundPreferences, shouldPlaySound, type SoundCategory, type SoundPreferences } from "@/lib/sound-preferences";
+
+let preferenceUser = "";
+let preferencesReady = false;
+let memoryPreferences: SoundPreferences = { ...defaultSoundPreferences };
 let audioContext: AudioContext | null = null;
 const audioBufferCache = new Map<string, Promise<AudioBuffer>>();
-const SOUND_KEY = "taskora-notification-sound";
-const VOLUME_KEY = "taskora-notification-volume-v3";
+export function setSoundPreferenceUser(userId: string) {
+  preferenceUser = userId;
+  try { const stored = window.localStorage.getItem(`taskora-sounds:${userId}`); memoryPreferences = parseSoundPreferences(JSON.parse(stored || "null")); preferencesReady = Boolean(stored); }
+  catch { memoryPreferences = { ...defaultSoundPreferences }; preferencesReady = false; }
+}
+export function getSoundPreferences() { return { ...memoryPreferences }; }
+export function cacheSoundPreferences(value: unknown) {
+  memoryPreferences = parseSoundPreferences(value);
+  preferencesReady = true;
+  try { if (preferenceUser) window.localStorage.setItem(`taskora-sounds:${preferenceUser}`, JSON.stringify(memoryPreferences)); }
+  catch { /* Settings still apply in this tab. */ }
+  window.dispatchEvent(new Event("soundpreferenceschange"));
+}
 
 export type NotificationSoundResult = "played" | "disabled" | "blocked" | "failed";
 
 export function isNotificationSoundEnabled() {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(SOUND_KEY) !== "off";
-  } catch {
-    return true;
-  }
+  return typeof window !== "undefined" && memoryPreferences.enabled;
 }
 
 export function getNotificationSoundVolume() {
-  if (typeof window === "undefined") return 1;
-  let storedValue: string | null = null;
-  try {
-    storedValue = window.localStorage.getItem(VOLUME_KEY);
-  } catch {
-    return 1;
-  }
-  if (storedValue === null) return 1;
-  const value = Number(storedValue);
-  return Number.isFinite(value) && value >= 0 && value <= 1 ? value : 1;
+  return memoryPreferences.volume;
 }
 
 export function setNotificationSoundPreferences(enabled: boolean, volume: number) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(SOUND_KEY, enabled ? "on" : "off");
-    window.localStorage.setItem(VOLUME_KEY, String(Math.min(1, Math.max(0, volume))));
-  } catch {
-    // Audio preferences are optional and should not break the settings page.
-  }
+  cacheSoundPreferences({ ...memoryPreferences, enabled, volume });
 }
 
-export async function primeNotificationSound() {
-  if (typeof window === "undefined" || !isNotificationSoundEnabled()) return false;
+export async function primeNotificationSound(force = false) {
+  if (typeof window === "undefined" || (!force && !isNotificationSoundEnabled())) return false;
   audioContext ??= new AudioContext();
   if (audioContext.state === "suspended") await audioContext.resume().catch(() => undefined);
   return audioContext.state === "running";
 }
 
-export async function playChatNotification(kind: "chat" | "mention" = "chat"): Promise<NotificationSoundResult> {
+export async function playChatNotification(kind: "chat" | "mention" = "chat", preview?: SoundPreferences): Promise<NotificationSoundResult> {
   if (typeof window === "undefined") return "failed";
-  if (!isNotificationSoundEnabled()) return "disabled";
+  if (!preferencesReady && !preview) return "blocked";
+  const preferences = preview ?? memoryPreferences;
+  if (!shouldPlaySound(preferences, kind)) return "disabled";
   try {
-    const ready = await primeNotificationSound();
+    const ready = await primeNotificationSound(Boolean(preview));
     if (!ready || !audioContext) return "blocked";
     const start = audioContext.currentTime;
-    const volume = getNotificationSoundVolume();
+    const volume = preferences.volume;
     const first = kind === "mention" ? 880 : 660;
     const second = kind === "mention" ? 1046 : 880;
     playTone(audioContext, first, start, 0.08, volume);
@@ -62,15 +60,17 @@ export async function playChatNotification(kind: "chat" | "mention" = "chat"): P
   }
 }
 
-export async function playNotificationSoundFile(soundUrl: string): Promise<NotificationSoundResult> {
+export async function playNotificationSoundFile(soundUrl: string, category: SoundCategory = "created"): Promise<NotificationSoundResult> {
   if (typeof window === "undefined") return "failed";
-  if (!isNotificationSoundEnabled()) return "disabled";
+  if (!preferencesReady) return "blocked";
+  if (!shouldPlaySound(memoryPreferences, category)) return "disabled";
 
   try {
     const ready = await primeNotificationSound();
     if (!ready || !audioContext) return "blocked";
     const context = audioContext;
     const buffer = await loadAudioBuffer(context, soundUrl);
+    if (!shouldPlaySound(memoryPreferences, category)) return "disabled";
     const source = context.createBufferSource();
     const gain = context.createGain();
     source.buffer = buffer;

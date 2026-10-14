@@ -1,5 +1,7 @@
 "use client";
 
+import { TaskTiming } from "@/components/TaskTiming";
+
 import { SlidersHorizontal, Archive, Bell, Building2, Calendar, Check, CheckSquare, ChevronDown, Expand, Flag, History, ListChecks, Minimize2, MessageSquare, PanelLeftClose, PanelLeftOpen, PanelTopClose, PanelTopOpen, Paperclip, Plus, Save, Search, Send, Sparkles, Trash2, UploadCloud, UserRound, X } from "lucide-react";
 import { type DragEvent, type FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -1735,6 +1737,9 @@ function TaskDialogV2(props: {
   const isPersonalBoard = Boolean(props.view.board.ownerId);
   const taskDone = isCompletedColumn(props.task.column?.name ?? "");
   const [commentsExpanded, setCommentsExpanded] = useState(false);
+  const originalDeadline = props.task.deadline ? String(props.task.deadline).slice(0, 10) : "";
+  const [deadlineValue, setDeadlineValue] = useState(originalDeadline);
+  useEffect(() => { setDeadlineValue(originalDeadline); }, [props.task.id, originalDeadline]);
 
   return (
     <section className="task-modal-v2">
@@ -1923,6 +1928,7 @@ function TaskDialogV2(props: {
           <TaskActivityTimeline logs={props.task.activityLogs} />
         </article>
           </section>
+          <TaskTiming task={props.task}/>
         </div>
 
       <aside className="modal-properties modal-properties-aside">
@@ -1958,8 +1964,9 @@ function TaskDialogV2(props: {
           <label className="field modal-property-field">
             <span className="property-icon"><Calendar size={19} /></span>
             <span className="label">Дедлайн</span>
-            <input className="input" form={editFormId} type="date" name="deadline" required defaultValue={props.task.deadline ? String(props.task.deadline).slice(0, 10) : ""} />
+            <input className="input" form={editFormId} type="date" name="deadline" required value={deadlineValue} onChange={event=>setDeadlineValue(event.target.value)} />
           </label>
+          {deadlineValue !== originalDeadline ? <label className="field modal-property-field deadline-reason"><span className="label">Причина изменения срока</span><textarea className="textarea" form={editFormId} name="deadlineChangeReason" required maxLength={500} placeholder="Почему меняется срок?"/></label> : null}
           <ReminderFields personal={isPersonalBoard} formId={editFormId} defaultDays={props.task.reminderDaysBefore} />
           {!isPersonalBoard ? <label className="field modal-property-field">
             <span className="property-icon"><Building2 size={19} /></span>
@@ -2020,6 +2027,7 @@ function taskPayload(formData: FormData) {
     assigneeId: String(formData.get("assigneeId") ?? "") || null,
     assigneeIds: formData.getAll("assigneeIds").map((value) => String(value)).filter(Boolean),
     initialComment: String(formData.get("initialComment") ?? ""),
+    deadlineChangeReason: String(formData.get("deadlineChangeReason") ?? "").trim(),
     initialChecklist: formData
       .getAll("initialChecklist")
       .map((item) => String(item).trim())

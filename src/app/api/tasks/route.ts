@@ -3,7 +3,6 @@ import { requireVerifiedUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { taskInclude } from "@/lib/board-data";
 import { canCreateTask } from "@/lib/permissions";
-import { logActivity } from "@/lib/activity";
 import { notifySharedTelegram } from "@/lib/telegram";
 import { fail, handleRouteError, ok } from "@/lib/http";
 import { taskSchema } from "@/lib/validators";
@@ -66,6 +65,7 @@ export async function POST(request: Request) {
         assignees: assigneeIds.length ? { create: assigneeIds.map((userId) => ({ userId })) } : undefined,
         position: (maxPosition._max.position ?? -1) + 1,
         tags: { create: await tagConnects(input.tags) },
+        activityLogs: { create: { action:ActivityAction.TASK_CREATED, userId:user.id, createdAt, details:{title:input.title,deadline:deadline.toISOString(),column:targetColumn.name} } },
       },
       include: taskInclude,
     });
@@ -96,12 +96,6 @@ export async function POST(request: Request) {
       include: taskInclude,
     });
 
-    await logActivity({
-      action: ActivityAction.TASK_CREATED,
-      userId: user.id,
-      taskId: task.id,
-      details: { title: task.title },
-    });
     if (!isPersonalBoard && input.priority !== "PLANNED") {
       const message = formatTaskCreatedMessage(taskWithDetails, user, initialComment);
       await Promise.allSettled([

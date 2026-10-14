@@ -2,6 +2,7 @@
 
 import { Calendar, CheckSquare, Eye, FileText, Paperclip, UsersRound, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { TaskTiming } from "@/components/TaskTiming";
 
 type ArchiveTask = {
   id: string;
@@ -11,6 +12,9 @@ type ArchiveTask = {
   priority: "LOW" | "PLANNED" | "MEDIUM" | "HIGH" | "CRITICAL";
   deadline: string | null;
   archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  activityLogs?: Array<{ id: string; action: string; createdAt: string; details?: unknown; user: { name: string } }>;
   column: { name: string };
   oilDepot: { name: string } | null;
   assignee: { id: string; name: string; email: string } | null;
@@ -84,6 +88,7 @@ export function ArchiveBrowser({ tasks }: { tasks: ArchiveTask[] }) {
               <h3>Описание</h3>
               <p>{selected.description || "Описание не добавлено."}</p>
             </section>
+            <TaskTiming task={selected}/>
 
             <div className="archive-task-columns">
               <section className="archive-task-section">

@@ -28,7 +28,7 @@ export function GoidaReminder() {
       playingRef.current = true;
       try {
         for (const [eventKey, storageKey] of pendingRef.current) {
-          const result = await playNotificationSoundFile("/goida.mp3");
+          const result = await playNotificationSoundFile("/goida.mp3", "reminder");
           if (result === "blocked" || result === "failed") break;
           writeSessionFlag(storageKey, "played");
           completedRef.current.add(eventKey);
