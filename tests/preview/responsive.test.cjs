@@ -29,6 +29,7 @@ test('wide board columns fill the available workspace and depots align across ow
     for(const width of [1920,2560,3840]) {
       await page.setViewportSize({width,height:1080});await page.goto(baseURL+'/board');
       await page.locator('.task-card').first().waitFor();
+      await page.evaluate(()=>document.fonts.ready);
       const layout=await page.locator('.workspace-board').evaluate(board=>{
         const columns=[...board.children].map(column=>column.getBoundingClientRect());const rect=board.getBoundingClientRect();
         return {overflow:board.scrollWidth-board.clientWidth,widths:columns.map(rect=>rect.width),gap:rect.right-parseFloat(getComputedStyle(board).paddingRight)-columns.at(-1).right};
@@ -36,9 +37,10 @@ test('wide board columns fill the available workspace and depots align across ow
       assert.ok(layout.overflow<=1,JSON.stringify(layout));assert.ok(Math.abs(layout.gap)<=1,JSON.stringify(layout));assert.ok(Math.max(...layout.widths)-Math.min(...layout.widths)<=1);
     }
     await page.goto(baseURL+'/oil-depots');
-    const groups=await page.locator('.main section[aria-label]').evaluateAll(groups=>groups.map(group=>[...group.querySelectorAll('article')].map(card=>{const r=card.getBoundingClientRect();return {top:r.top,height:r.height};})));
+    await page.evaluate(()=>document.fonts.ready);
+    const groups=await page.locator('.main section[aria-label]').evaluateAll(groups=>groups.map(group=>[...group.querySelectorAll('article')].map(card=>{const r=card.getBoundingClientRect();return {top:r.top,height:r.height,button:card.querySelector('button').getBoundingClientRect().top};})));
     assert.equal(groups.length,3);
-    for(let row=0;row<3;row++){assert.ok(Math.max(...groups.map(group=>group[row].top))-Math.min(...groups.map(group=>group[row].top))<=1);assert.ok(Math.max(...groups.map(group=>group[row].height))-Math.min(...groups.map(group=>group[row].height))<=1);}
+    for(let row=0;row<3;row++){assert.ok(Math.max(...groups.map(group=>group[row].top))-Math.min(...groups.map(group=>group[row].top))<=1);assert.ok(Math.max(...groups.map(group=>group[row].height))-Math.min(...groups.map(group=>group[row].height))<=1);assert.ok(Math.max(...groups.map(group=>group[row].button))-Math.min(...groups.map(group=>group[row].button))<=1,'Depot buttons must align');}
     await page.screenshot({path:'.local/responsive/aligned-depots.png'});
   } finally {await page.close();}
 });
@@ -96,7 +98,7 @@ test('mascot runs, produces a projectile and sends only to the selected recipien
     const monkey=page.getByRole('button',{name:'Обезьяна: сделать сюрприз'});await monkey.waitFor();
     const first=await monkey.boundingBox();await page.waitForTimeout(2200);const next=await monkey.boundingBox();
     assert.ok(Math.hypot(next.x-first.x,next.y-first.y)>1,'Mascot must move');
-    const image=await page.evaluate(async()=>{const img=new Image();img.src='/mascot/monkey-atlas.png';await img.decode();return {width:img.naturalWidth,height:img.naturalHeight};});assert.ok(image.width>1000&&image.height>100);
+    const image=await page.evaluate(async()=>{const img=new Image();img.src='/mascot/monkey-pixel-atlas.png';await img.decode();return {width:img.naturalWidth,height:img.naturalHeight};});assert.ok(image.width>1000&&image.height>100);
     await page.mouse.move(next.x+next.width/2,next.y+next.height/2);await monkey.click();
     await page.getByRole('button',{name:'Выбрать, в кого кинуть'}).click();
     await page.getByRole('button',{name:'Тестовый коллега',exact:true}).click();
@@ -119,7 +121,39 @@ test('recipient gets a notice and supplied audio plays once across repeated poll
   } finally {await page.close();}
 });
 
+test('pixel mascot jumps onto controls, exits the screen and returns',async()=>{
+  const page=await browser.newPage({viewport:{width:1024,height:768}});
+  try {
+    await page.goto(baseURL+'/board?mascot=1');
+    await page.evaluate(()=>document.fonts.ready);
+    const runner=page.locator('[data-stage="running"]').first();
+    await page.waitForFunction(()=>document.querySelector('[data-stage="running"]')?.getAttribute('data-motion')==='perched');
+    const landing=await runner.evaluate(node=>{
+      const feet=node.getBoundingClientRect().top+125;
+      const tops=[...document.querySelectorAll('.button,.task-card,.column-head,.nav a,summary,[data-mascot-platform]')].map(node=>node.getBoundingClientRect()).filter(box=>box.width>=40&&box.height>=20).map(box=>box.top);
+      return tops.some(top=>Math.abs(top-feet)<=1);
+    });
+    assert.ok(landing,'Feet must land on a real UI element');
+    await page.screenshot({path:'.local/responsive/pixel-monkey-landing.png'});
+    await page.waitForFunction(()=>document.querySelector('[data-stage="running"]')?.getAttribute('data-motion')==='offscreen',{},{timeout:20000});
+    const outside=await runner.boundingBox();assert.ok(outside.x+outside.width<=0||outside.x>=1024);
+    await page.waitForFunction(()=>document.querySelector('[data-stage="running"]')?.getAttribute('data-motion')==='perched',{},{timeout:5000});
+    const back=await runner.boundingBox();assert.ok(back.x>=0&&back.x+back.width<=1024);
+  } finally {await page.close();}
+});
+
+test('pixel theme loads Cyrillic font and reduced motion keeps mascot still',async()=>{
+  const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});
+  try {
+    await page.goto(baseURL+'/board?mascot=1');await page.evaluate(()=>document.fonts.ready);
+    const style=await page.evaluate(()=>({font:getComputedStyle(document.body).fontFamily,loaded:document.fonts.check('18px "Taskora Pixel"','Нефтебазы'),brand:getComputedStyle(document.documentElement).getPropertyValue('--ds-brand').trim(),radius:getComputedStyle(document.querySelector('.task-card')).borderRadius}));
+    assert.ok(style.font.includes('Taskora Pixel'));assert.equal(style.loaded,true);assert.equal(style.brand,'#146f73');assert.equal(style.radius,'0px');
+    const monkey=page.getByRole('button',{name:'Обезьяна: сделать сюрприз'});const first=await monkey.boundingBox();await page.waitForTimeout(2200);assert.deepEqual(await monkey.boundingBox(),first);
+  } finally {await page.close();}
+});
+
 async function assertGeometry(page, selector='.main') {
+  await page.evaluate(()=>document.fonts.ready);
   const geometry = await page.locator(selector).first().evaluate(root => ({
     pageOverflow: document.documentElement.scrollWidth-innerWidth,
     overflow: root.scrollWidth-root.clientWidth,
@@ -213,16 +247,21 @@ for(const [width,height] of [[320,568],[568,320],[768,1024],[1024,768],[1920,108
     const page=await browser.newPage({viewport:{width,height}});
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     try {
-      for(const path of ['/oil-depots','/reports','/history','/archive','/chats','/files','/settings']) {
+      for(const path of ['/oil-depots','/reports','/history','/archive','/chats','/files','/settings','/profile','/admin','/desktop','/notifications','/login','/register','/changelog']) {
         await page.goto(baseURL+path);
         await page.locator('.main').waitFor();
         await page.waitForTimeout(100);
         assert.ok(await page.locator('.main').innerText(),`Empty page: ${path}`);
         await assertGeometry(page);
         if(path==='/settings') {await page.locator('.settings-choice').first().click();await assertGeometry(page,'.settings-dialog');}
+        if(path==='/admin') {await page.locator('.settings-choice').first().click();await assertGeometry(page,'.settings-dialog');}
         if(path==='/chats') {await page.locator('.chat-directory-item').first().click();await assertGeometry(page);}
         if(path==='/archive') {await page.locator('.archive-row-button').first().click();await assertGeometry(page,'dialog[open]');}
         if([320,1024].includes(width)) await page.screenshot({path:`.local/responsive/${path.slice(1)}-${width}.png`});
+        await page.evaluate(()=>{document.documentElement.dataset.theme='dark'});
+        await page.waitForTimeout(350);
+        await assertGeometry(page);
+        if([320,1024].includes(width)) await page.screenshot({path:`.local/responsive/${path.slice(1)}-${width}-dark.png`});
       }
       assert.deepEqual(errors,[]);
     } finally {await page.close();}

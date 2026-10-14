@@ -8,6 +8,7 @@ import {
 } from "@/lib/chat-notification";
 import { ProfileAvatar } from "@/components/ProfileCard/ProfileCard";
 import styles from "./MonkeyMascot.module.css";
+import { planMascotMotion } from "@/lib/mascot-motion";
 
 type Person = { id: string; name: string; avatarUrl?: string | null };
 type Notice = { id: string; title: string; body: string };
@@ -28,6 +29,7 @@ export function MonkeyMascot({ userId }: { userId: string }) {
   const animationRef = useRef<Animation | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const initialized = useRef(false);
+  const motionStep = useRef(0);
   const seen = useRef(new Set<string>());
 
   useEffect(() => {
@@ -107,27 +109,38 @@ export function MonkeyMascot({ userId }: { userId: string }) {
       element.style.transform = `translate(${Math.max(12, innerWidth - 140)}px,${Math.max(12, innerHeight - 240)}px)`;
       initialized.current = true;
     }
+    if (reduced) {
+      const rect = element.getBoundingClientRect();
+      element.style.transform = `translate(${Math.max(8, Math.min(innerWidth - 132, rect.left))}px,${Math.max(8, Math.min(innerHeight - 230, rect.top))}px)`;
+      element.dataset.motion = "perched";
+    }
     const freeze = () => {
       const rect = element.getBoundingClientRect();
       element.style.transform = `translate(${rect.left}px,${rect.top}px)`;
       animationRef.current?.cancel();
     };
     const move = () => {
-      if (!active || reduced) return;
+      if (!active || reduced || document.hidden) return;
+      if (document.querySelector("dialog[open], .task-drawer") ||
+        document.activeElement?.matches("input,textarea,select,[contenteditable=true]")) {
+        timer = setTimeout(move, 1000);
+        return;
+      }
       const rect = element.getBoundingClientRect();
-      const x = 12 + Math.random() * Math.max(0, innerWidth - 144);
-      const y = 16 + Math.random() * Math.max(0, innerHeight - 270);
+      const platforms = [...document.querySelectorAll<HTMLElement>(".button, .task-card, .column-head, .nav a, summary, [data-mascot-platform]")]
+        .filter(node => !element.contains(node) && !node.closest("dialog, .task-drawer") && node.getClientRects().length)
+        .map(node => node.getBoundingClientRect())
+        .filter(box => box.width >= 40 && box.height >= 20 && box.top >= 150 && box.top <= innerHeight - 100 && box.left >= 0 && box.right <= innerWidth)
+        .map(box => ({ x: box.left, y: box.top, width: box.width }));
+      const plan = planMascotMotion({ x: rect.left, y: rect.top }, { width: innerWidth, height: innerHeight }, platforms, ++motionStep.current);
+      const { x, y } = plan.target;
       setLeft(x < rect.left);
+      element.dataset.motion = plan.kind;
+      element.inert = plan.kind === "exit" || plan.kind === "return";
       animationRef.current = element.animate(
-        [
-          { transform: `translate(${rect.left}px,${rect.top}px)` },
-          { transform: `translate(${x}px,${y}px)` },
-        ],
+        plan.keyframes,
         {
-          duration: Math.max(
-            2400,
-            (Math.hypot(x - rect.left, y - rect.top) / 80) * 1000,
-          ),
+          duration: plan.duration,
           easing: "linear",
           fill: "forwards",
         },
@@ -135,7 +148,9 @@ export function MonkeyMascot({ userId }: { userId: string }) {
       animationRef.current.onfinish = () => {
         element.style.transform = `translate(${x}px,${y}px)`;
         animationRef.current?.cancel();
-        if (active) timer = setTimeout(move, 500);
+        element.dataset.motion = plan.kind === "exit" ? "offscreen" : "perched";
+        element.inert = plan.kind === "exit";
+        if (active) timer = setTimeout(move, plan.kind === "exit" ? 1200 : 650);
       };
     };
     const pause = () => {
@@ -159,15 +174,22 @@ export function MonkeyMascot({ userId }: { userId: string }) {
       if (document.hidden) pause();
       else resume();
     };
+    const scroll = () => {
+      freeze();
+      clearTimeout(timer);
+      timer = setTimeout(move, 250);
+    };
     element.addEventListener("pointerenter", pause);
     element.addEventListener("pointerleave", resume);
     element.addEventListener("focusin", pause);
     element.addEventListener("focusout", resume);
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", visibility);
+    document.addEventListener("scroll", scroll, true);
     timer = setTimeout(move, 1000);
     return () => {
       active = false;
+      element.inert = false;
       clearTimeout(timer);
       freeze();
       element.removeEventListener("pointerenter", pause);
@@ -176,6 +198,7 @@ export function MonkeyMascot({ userId }: { userId: string }) {
       element.removeEventListener("focusout", resume);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", visibility);
+      document.removeEventListener("scroll", scroll, true);
     };
   }, [visible, stage, reduced]);
 

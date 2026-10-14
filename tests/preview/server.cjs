@@ -20,6 +20,7 @@ async function build() {
         if(args.kind==='url-token' && spec.startsWith('/')) return {path:spec,external:true};
         if(spec==='next/navigation') spec=path.join(__dirname,'navigation.ts');
         if(spec==='next/link') spec=path.join(__dirname,'link.tsx');
+        if(spec==='next/image') spec=path.join(__dirname,'image.tsx');
         if(spec.startsWith('@/')) spec=path.join(root,'src',spec.slice(2));
         const from=args.importer || path.join(root,'package.json');
         let resolved;
@@ -63,6 +64,8 @@ build().then(() => {
     }
     const files = {'/board.css':[path.join(output,'board.css'),'text/css'],'/board.js':[path.join(output,'board.js'),'text/javascript'], '/globals.css':[path.join(root,'src/app/globals.css'),'text/css'], '/redesign.css':[path.join(root,'src/app/redesign.css'),'text/css'], '/design-system.css':[path.join(root,'src/app/design-system.css'),'text/css'], '/taskora-icon-v2.png':[path.join(root,'public/taskora-icon-v2.png'),'image/png']};
     if(url.pathname==='/mascot/monkey-atlas.png') files[url.pathname]=[path.join(root,'public/mascot/monkey-atlas.png'),'image/png'];
+    if(url.pathname==='/mascot/monkey-pixel-atlas.png') files[url.pathname]=[path.join(root,'public/mascot/monkey-pixel-atlas.png'),'image/png'];
+    if(url.pathname==='/fonts/Tiny5-Regular.ttf') files[url.pathname]=[path.join(root,'public/fonts/Tiny5-Regular.ttf'),'font/ttf'];
     if(url.pathname==='/mascot/prank.mp3') files[url.pathname]=[path.join(root,'public/mascot/prank.mp3'),'audio/mpeg'];
     if(files[url.pathname]) { const [file,type]=files[url.pathname]; res.setHeader('Content-Type',type); return fs.createReadStream(file).pipe(res); }
     res.setHeader('Content-Type','text/html; charset=utf-8');

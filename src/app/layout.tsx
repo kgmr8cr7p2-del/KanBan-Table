@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import { ButtonBorderGlow } from "@/components/ButtonBorderGlow";
 import { INTERFACE_MODE_COOKIE, normalizeInterfaceMode } from "@/lib/interface-mode";
 import "./globals.css";
 import "./redesign.css";
@@ -42,7 +41,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: `try{const theme=localStorage.getItem("theme");if(theme==="dark")document.documentElement.dataset.theme="dark";}catch{}`,
           }}
         />
-        <ButtonBorderGlow />
         {children}
       </body>
     </html>

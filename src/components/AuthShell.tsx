@@ -18,15 +18,7 @@ export function AuthShell({ mode, nextPath }: { mode: "login" | "register"; next
             <h1>{isLogin ? "Вход" : "Регистрация"}</h1>
             <p>{isLogin ? "С возвращением. Войдите в аккаунт, чтобы продолжить работу." : "Создайте аккаунт, чтобы начать работать с командой в Taskora."}</p>
           </div>
-          <Image
-            className="auth-illustration"
-            src="/taskora-auth-illustration.png"
-            width={480}
-            height={360}
-            sizes="(max-width: 640px) 240px, 360px"
-            alt=""
-            priority
-          />
+          <div className="auth-pixel-art" aria-hidden="true"><span /></div>
         </div>
 
         <AuthForm mode={mode} nextPath={nextPath} />

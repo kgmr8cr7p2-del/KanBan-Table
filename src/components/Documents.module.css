@@ -245,6 +245,8 @@
   max-height: 65dvh;
   overscroll-behavior: contain;
 }
+.library :is(strong,span,small),
+.preview :is(strong,span,small) { font-size: 16px; }
 .tableScroll table {
   border-collapse: collapse;
   min-width: 100%;

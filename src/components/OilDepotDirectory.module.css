@@ -61,11 +61,17 @@
 .taskList a:hover { color: var(--ds-brand); }
 .taskList a > span { display: grid; gap: 4px; overflow-wrap: anywhere; min-width: 0; }
 .taskList svg { flex-shrink: 0; }
-.checkButton { width: 100%; margin-top: 10px; min-height: 34px; font-size: 11px; }
+.checkButton { width: 100%; margin-top: auto; min-height: 40px; font-size: 14px; }
+.depot:has(.checkButton) > .details:last-of-type { margin-bottom: 14px; }
 .empty { padding: 24px 10px; font-size: 12px; }
 .note { max-width: 760px; font-size: 11px; color: var(--ds-muted); }
 .note summary { cursor: pointer; font-weight: 550; }
 .note p { margin-top: 8px; line-height: 1.6; }
+.directory :is(.overview span,.metrics span,.activity,.personHeading p,.checkedBy,.checkNotice,.fresh,.unmatched,.note,.empty) { font-size: 16px; }
+.directory .os { font-size: 14px; }
+.directory .metrics strong { font-size: 24px; }
+.activity { flex-wrap: wrap; }
+.activity time { margin-left: auto; }
 :global(:root[data-theme="dark"]) .person0,
 :global(:root[data-theme="dark"]) .person1,
 :global(:root[data-theme="dark"]) .person2 { color: var(--ds-ink); background: var(--ds-surface-raised); }
