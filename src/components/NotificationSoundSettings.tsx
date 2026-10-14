@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { cacheSoundPreferences, getSoundPreferences, playChatNotification } from "@/lib/chat-notification";
 import { defaultSoundPreferences, parseSoundPreferences, type SoundPreferences, type SoundCategory } from "@/lib/sound-preferences";
 
-const categories: [SoundCategory, string][] = [["chat", "Сообщения в чатах"], ["mention", "Упоминания"], ["created", "Создание задач"], ["completed", "Завершение задач"], ["reminder", "Вечернее уведомление"]];
+const categories: [SoundCategory, string][] = [["chat", "Сообщения в чатах"], ["mention", "Упоминания"], ["created", "Создание задач"], ["completed", "Завершение задач"], ["reminder", "Напоминания и вечерний звук"]];
 
 export function NotificationSoundSettings() {
   const [value, setValue] = useState<SoundPreferences>(defaultSoundPreferences);
