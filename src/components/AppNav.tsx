@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Archive, BarChart3, Building2, Files, History, LayoutDashboard, MessageCircle, Monitor, Moon, MoreHorizontal, ScrollText, Settings, Shield, UserRound } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LogoutButton } from "@/components/LogoutButton";
 import { ProfileAvatar } from "@/components/ProfileCard/ProfileCard";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -25,6 +25,15 @@ const links = [
 ];
 
 export function AppNav({ user }: { user: CurrentUser }) {
+  const mobileMenuRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    const closeOutside = (event: PointerEvent) => {
+      const menu = mobileMenuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, []);
   const pathname = usePathname();
   const hasAccess = Boolean(user.approvedAt);
   const hasPermission = (permission: string) => user.role.systemKey === "ADMIN" || user.role.permissions.some((item) => item === permission);
@@ -110,7 +119,12 @@ export function AppNav({ user }: { user: CurrentUser }) {
             {href === "/chats" && unreadChats ? <span className="nav-unread-badge" aria-label={`Непрочитанных сообщений: ${unreadChats}`}>{unreadChats > 99 ? "99+" : unreadChats}</span> : null}
           </Link>
         ))}
-        <details className="mobile-nav-more">
+        <details ref={mobileMenuRef} className="mobile-nav-more" onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.currentTarget.open = false;
+            event.currentTarget.querySelector("summary")?.focus();
+          }
+        }}>
           <summary aria-label="Открыть дополнительную навигацию" className={secondaryActive ? "is-active" : undefined}>
             <MoreHorizontal size={21} aria-hidden="true" /><span>Ещё</span>
           </summary>

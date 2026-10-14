@@ -52,6 +52,11 @@ build().then(() => {
     if (url.pathname.startsWith('/api/')) {
       res.setHeader('Content-Type','application/json');
       if(req.method !== 'GET') { res.statusCode=405; return res.end('{"error":"Демонстрация: сохранение изменений отключено. Рабочие данные не изменены."}'); }
+      const view = readFixture();
+      if(url.pathname === '/api/messages/conversations') return res.end(JSON.stringify({conversations:view.users.map(user=>({user, unreadCount:0, latest:{id:'demo-message',text:'Синтетическое сообщение для проверки интерфейса.',createdAt:'2026-10-14T09:00:00Z',senderId:user.id,recipientId:view.currentUser.id}})),unreadTotal:0}));
+      if(url.pathname === '/api/messages') return res.end(JSON.stringify({messages:[{id:'demo-message',text:'Синтетическое сообщение для проверки переноса длинного текста: https://example.com/very-long-path-without-spaces-for-responsive-layout-check',createdAt:'2026-10-14T09:00:00Z',senderId:view.users[0].id,recipientId:view.currentUser.id,readAt:null}]}));
+      if(url.pathname === '/api/important-files') return res.end(JSON.stringify({files:[{id:'demo-document',title:'Документация по настройке резервного копирования',description:'Синтетический документ для проверки интерфейса.',category:'Документация',originalName:'documentation-responsive-preview.txt',size:1024,mimeType:'text/plain',createdAt:'2026-10-14T09:00:00Z',uploadedBy:view.users[0]}],categories:['Документация']}));
+      if(url.pathname.endsWith('/preview')) return res.end(JSON.stringify({preview:{type:'text',text:'Синтетическое содержимое документа для проверки интерфейса.'}}));
       return res.end('{"notifications":[],"unreadCount":0,"unreadTotal":0,"conversations":[]}');
     }
     const files = {'/board.css':[path.join(output,'board.css'),'text/css'],'/board.js':[path.join(output,'board.js'),'text/javascript'], '/globals.css':[path.join(root,'src/app/globals.css'),'text/css'], '/redesign.css':[path.join(root,'src/app/redesign.css'),'text/css'], '/design-system.css':[path.join(root,'src/app/design-system.css'),'text/css'], '/taskora-icon-v2.png':[path.join(root,'public/taskora-icon-v2.png'),'image/png']};

@@ -5,6 +5,7 @@ import { BoardClient } from "../../src/components/BoardClient";
 import { WorkspaceBrand } from "../../src/components/WorkspaceBrand";
 import { AppNav } from "../../src/components/AppNav";
 import fixture from "./fixture.json";
+import { PreviewSection } from "./sections";
 
 const view = fixture as any;
 const previewPath = window.location.pathname;
@@ -26,6 +27,6 @@ createRoot(document.getElementById("root")!).render(
       <WorkspaceBrand /><p style={{fontSize:10,color:"#c2bbeb",padding:"0 16px 12px",lineHeight:1.5}}>Демо · тестовые данные<br />Без сохранения изменений</p>
       <AppNav user={view.currentUser} />
     </aside>
-    <main className="main">{window.location.pathname === "/oil-depots" ? <OilDepotDirectory depots={demoDepots} canCheck={false} /> : previewPath === "/board" || previewPath === "/" ? <BoardClient initialView={view} /> : <PreviewUnavailable />}</main>
+    <main className="main">{window.location.pathname === "/oil-depots" ? <OilDepotDirectory depots={demoDepots} canCheck={false} /> : previewPath === "/board" || previewPath === "/" ? <BoardClient initialView={view} /> : ["/reports","/history","/archive","/chats","/files","/settings"].includes(previewPath) ? <PreviewSection path={previewPath}/> : <PreviewUnavailable />}</main>
   </div>,
 );

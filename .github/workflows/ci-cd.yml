@@ -41,6 +41,12 @@ jobs:
       - name: Check depot mapping and task deadlines
         run: node --test tests/oil-depot-dashboard.test.cjs tests/task-deadline.test.cjs
 
+      - name: Install browser for responsive checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Check responsive workspace
+        run: npm run test:responsive
+
   deploy:
     name: Deploy to production
     if: github.event_name != 'pull_request'

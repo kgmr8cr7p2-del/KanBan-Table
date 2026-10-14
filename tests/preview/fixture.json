@@ -1508,7 +1508,7 @@
   "activityLogs": [],
   "permissions": {
     "canCreateTask": true,
-    "canDeleteTask": false
+    "canDeleteTask": true
   },
   "ai": {
     "taskDraftEnabled": false

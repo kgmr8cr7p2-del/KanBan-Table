@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "health": "node scripts/health-check.mjs",
     "test:e2e": "playwright test",
+    "test:responsive": "node --test tests/preview/responsive.test.cjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

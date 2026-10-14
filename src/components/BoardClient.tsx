@@ -2078,9 +2078,18 @@ function ReminderFields({ personal, formId, defaultDays }: { personal: boolean; 
 
 function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defaultIds?: string[]; formId?: string }) {
   const pickerId = useId();
+  const menuRef = useRef<HTMLDetailsElement>(null);
   const labelId = `${pickerId}-label`;
   const [selectedIds, setSelectedIds] = useState(() => [...new Set(defaultIds)]);
   const [query, setQuery] = useState("");
+  useEffect(() => {
+    const closeOutside = (event: PointerEvent) => {
+      const menu = menuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, []);
   const selectedUsers = users.filter((user) => selectedIds.includes(user.id));
   const normalizedQuery = query.trim().toLocaleLowerCase("ru-RU");
   const visibleUsers = normalizedQuery
@@ -2099,8 +2108,15 @@ function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defa
       <span className="property-icon"><UserRound size={19} /></span>
       <span className="label" id={labelId}>Исполнители</span>
       {selectedIds.map((userId) => <input key={userId} type="hidden" form={formId} name="assigneeIds" value={userId} />)}
-      <details className="assignee-select">
-        <summary>
+      <details ref={menuRef} className="assignee-select" onKeyDown={(event) => {
+        if (event.key === "Escape" && event.currentTarget.open) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.currentTarget.open = false;
+          event.currentTarget.querySelector("summary")?.focus();
+        }
+      }}>
+        <summary title={summary}>
           <span className="assignee-summary-value">{summary}</span>
           <span className="assignee-summary-meta">
             {selectedIds.length ? <span className="assignee-picker-count" aria-label={`Выбрано: ${selectedIds.length}`}>{selectedIds.length}</span> : null}
@@ -2109,7 +2125,7 @@ function AssigneePicker({ users, defaultIds = [], formId }: { users: any[]; defa
         </summary>
         <div className="assignee-search">
           <Search size={16} aria-hidden="true" />
-          <input type="search" placeholder="Найти по имени" value={query} onChange={(event) => setQuery(event.currentTarget.value)} />
+          <input type="search" aria-label="Найти исполнителя" placeholder="Найти по имени" value={query} onChange={(event) => setQuery(event.currentTarget.value)} />
           {query ? <button type="button" aria-label="Очистить поиск" onClick={() => setQuery("")}><X size={15} aria-hidden="true" /></button> : null}
         </div>
         <div className="assignee-picker-list" role="listbox" aria-multiselectable="true">
