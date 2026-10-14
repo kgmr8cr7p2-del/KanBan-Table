@@ -17,6 +17,7 @@ async function build() {
     name:'workspace-files',setup(build){
       build.onResolve({filter:/.*/},args=>{
         let spec=args.path;
+        if(args.kind==='url-token' && spec.startsWith('/')) return {path:spec,external:true};
         if(spec==='next/navigation') spec=path.join(__dirname,'navigation.ts');
         if(spec==='next/link') spec=path.join(__dirname,'link.tsx');
         if(spec.startsWith('@/')) spec=path.join(root,'src',spec.slice(2));
@@ -53,6 +54,7 @@ build().then(() => {
       res.setHeader('Content-Type','application/json');
       if(req.method !== 'GET') { res.statusCode=405; return res.end('{"error":"Демонстрация: сохранение изменений отключено. Рабочие данные не изменены."}'); }
       const view = readFixture();
+      if(url.pathname === '/api/monkey') return res.end(JSON.stringify({users:view.users.filter(user=>user.id!==view.currentUser.id),notices:[]}));
       if(url.pathname === '/api/messages/conversations') return res.end(JSON.stringify({conversations:view.users.map(user=>({user, unreadCount:0, latest:{id:'demo-message',text:'Синтетическое сообщение для проверки интерфейса.',createdAt:'2026-10-14T09:00:00Z',senderId:user.id,recipientId:view.currentUser.id}})),unreadTotal:0}));
       if(url.pathname === '/api/messages') return res.end(JSON.stringify({messages:[{id:'demo-message',text:'Синтетическое сообщение для проверки переноса длинного текста: https://example.com/very-long-path-without-spaces-for-responsive-layout-check',createdAt:'2026-10-14T09:00:00Z',senderId:view.users[0].id,recipientId:view.currentUser.id,readAt:null}]}));
       if(url.pathname === '/api/important-files') return res.end(JSON.stringify({files:[{id:'demo-document',title:'Документация по настройке резервного копирования',description:'Синтетический документ для проверки интерфейса.',category:'Документация',originalName:'documentation-responsive-preview.txt',size:1024,mimeType:'text/plain',createdAt:'2026-10-14T09:00:00Z',uploadedBy:view.users[0]}],categories:['Документация']}));
@@ -60,6 +62,8 @@ build().then(() => {
       return res.end('{"notifications":[],"unreadCount":0,"unreadTotal":0,"conversations":[]}');
     }
     const files = {'/board.css':[path.join(output,'board.css'),'text/css'],'/board.js':[path.join(output,'board.js'),'text/javascript'], '/globals.css':[path.join(root,'src/app/globals.css'),'text/css'], '/redesign.css':[path.join(root,'src/app/redesign.css'),'text/css'], '/design-system.css':[path.join(root,'src/app/design-system.css'),'text/css'], '/taskora-icon-v2.png':[path.join(root,'public/taskora-icon-v2.png'),'image/png']};
+    if(url.pathname==='/mascot/monkey-atlas.png') files[url.pathname]=[path.join(root,'public/mascot/monkey-atlas.png'),'image/png'];
+    if(url.pathname==='/mascot/prank.mp3') files[url.pathname]=[path.join(root,'public/mascot/prank.mp3'),'audio/mpeg'];
     if(files[url.pathname]) { const [file,type]=files[url.pathname]; res.setHeader('Content-Type',type); return fs.createReadStream(file).pipe(res); }
     res.setHeader('Content-Type','text/html; charset=utf-8');
     res.end('<!doctype html><html lang="ru" data-interface-mode="new"><head><meta name="viewport" content="width=device-width, initial-scale=1"><title>TASKora · UI preview</title><link rel="stylesheet" href="/board.css"><link rel="stylesheet" href="/globals.css"><link rel="stylesheet" href="/redesign.css"><link rel="stylesheet" href="/design-system.css"></head><body><div id="root"></div><script src="/board.js"></script></body></html>');

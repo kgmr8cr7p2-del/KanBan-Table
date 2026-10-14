@@ -23,6 +23,102 @@ before(async () => {
 });
 after(async () => { await browser?.close(); server?.kill(); });
 
+test('wide board columns fill the available workspace and depots align across owners',async()=>{
+  const page=await browser.newPage();
+  try {
+    for(const width of [1920,2560,3840]) {
+      await page.setViewportSize({width,height:1080});await page.goto(baseURL+'/board');
+      await page.locator('.task-card').first().waitFor();
+      const layout=await page.locator('.workspace-board').evaluate(board=>{
+        const columns=[...board.children].map(column=>column.getBoundingClientRect());const rect=board.getBoundingClientRect();
+        return {overflow:board.scrollWidth-board.clientWidth,widths:columns.map(rect=>rect.width),gap:rect.right-parseFloat(getComputedStyle(board).paddingRight)-columns.at(-1).right};
+      });
+      assert.ok(layout.overflow<=1,JSON.stringify(layout));assert.ok(Math.abs(layout.gap)<=1,JSON.stringify(layout));assert.ok(Math.max(...layout.widths)-Math.min(...layout.widths)<=1);
+    }
+    await page.goto(baseURL+'/oil-depots');
+    const groups=await page.locator('.main section[aria-label]').evaluateAll(groups=>groups.map(group=>[...group.querySelectorAll('article')].map(card=>{const r=card.getBoundingClientRect();return {top:r.top,height:r.height};})));
+    assert.equal(groups.length,3);
+    for(let row=0;row<3;row++){assert.ok(Math.max(...groups.map(group=>group[row].top))-Math.min(...groups.map(group=>group[row].top))<=1);assert.ok(Math.max(...groups.map(group=>group[row].height))-Math.min(...groups.map(group=>group[row].height))<=1);}
+    await page.screenshot({path:'.local/responsive/aligned-depots.png'});
+  } finally {await page.close();}
+});
+
+for(const width of [390,1440]) test(`document library, upload, race-safe preview and Excel sheets ${width}`,async()=>{
+  const page=await browser.newPage({viewport:{width,height:900}});
+  const entry=(id,title,originalName)=>({id,title,originalName,description:'Описание документа',category:'Регламенты',size:100,mimeType:'text/plain',createdAt:'2026-10-14T09:00:00Z',uploadedBy:{name:'Тестовый пользователь'}});
+  let files=[entry('first','Первый документ','first.txt'),entry('second','Второй документ','second.txt'),entry('sheets','Таблица','book.xlsx'),entry('pdf','PDF-документ','document.pdf')];
+  let uploaded=null;
+  await page.route('**/api/important-files**',async route=>{
+    const request=route.request(),url=new URL(request.url());
+    if(request.method()==='POST') {
+      const data=await new Request('http://preview',{method:'POST',headers:{'content-type':request.headers()['content-type']},body:request.postDataBuffer()}).formData();
+      uploaded={name:data.get('file').name,title:data.get('title'),description:data.get('description')};
+      const file=entry('uploaded',uploaded.title,uploaded.name);files=[file,...files];
+      await new Promise(resolve=>setTimeout(resolve,150));return route.fulfill({status:201,json:{file}});
+    }
+    if(url.pathname==='/api/important-files') return route.fulfill({json:{files,categories:['Регламенты']}});
+    if(url.pathname.includes('/sheets/preview')) return route.fulfill({json:{preview:{type:'sheet',sheetName:'Первый',sheets:[{index:0,name:'Первый'},{index:1,name:'Второй'}],rows:[[url.searchParams.get('sheet')==='1'?'Второй лист':'Первый лист']]}}});
+    if(url.pathname.includes('/pdf/preview')) return route.fulfill({json:{preview:{type:'pdf',url:'/api/important-files/pdf/content'}}});
+    if(url.pathname.endsWith('/content')) return route.fulfill({contentType:'application/pdf',body:'%PDF-1.7\n%%EOF'});
+    if(url.pathname.includes('/first/preview')) await new Promise(resolve=>setTimeout(resolve,200));
+    return route.fulfill({json:{preview:{type:'text',text:url.pathname.includes('/first/')?'Содержимое первого':'Содержимое второго'}}});
+  });
+  try {
+    await page.goto(baseURL+'/files');
+    await page.getByRole('button',{name:/Второй документ/}).click();
+    const preview=page.getByRole('region',{name:'Предпросмотр документа'});
+    await preview.getByText('Содержимое второго',{exact:true}).waitFor();await page.waitForTimeout(250);
+    assert.equal(await preview.getByText('Содержимое первого',{exact:true}).count(),0);
+    if(width<850) await page.getByRole('button',{name:'Назад к библиотеке'}).click();
+    await page.getByRole('button',{name:/Таблица/}).click();
+    await page.getByRole('combobox',{name:'Лист Excel'}).selectOption('1');await page.getByText('Второй лист',{exact:true}).waitFor();
+    if(width<850) await page.getByRole('button',{name:'Назад к библиотеке'}).click();
+    await page.getByRole('button',{name:/PDF-документ/}).click();
+    await page.locator('iframe[title="PDF: document.pdf"]').waitFor();
+    await page.getByRole('button',{name:'Добавить документ',exact:true}).click();
+    await page.locator('dialog[open] input[type=file]').setInputFiles({name:'regulation.txt',mimeType:'text/plain',buffer:Buffer.from('Тестовый регламент')});
+    await page.locator('dialog[open] input[name=title]').fill('Новый регламент');await page.locator('dialog[open] textarea').fill('Описание загрузки');
+    await page.getByRole('button',{name:'Добавить',exact:true}).click();
+    await page.getByRole('heading',{name:'Новый регламент',exact:true}).waitFor();
+    assert.deepEqual(uploaded,{name:'regulation.txt',title:'Новый регламент',description:'Описание загрузки'});
+    await assertGeometry(page);await page.screenshot({path:`.local/responsive/documents-${width}.png`});
+  } finally {await page.close();}
+});
+
+test('mascot runs, produces a projectile and sends only to the selected recipient',async()=>{
+  const page=await browser.newPage({viewport:{width:1024,height:768}});let recipient=null;
+  await page.route('**/api/monkey',async route=>{
+    if(route.request().method()==='POST'){recipient=route.request().postDataJSON().recipientId;return route.fulfill({json:{sent:true}});}
+    return route.fulfill({json:{users:[{id:'other-user',name:'Тестовый коллега'}],notices:[]}});
+  });
+  try {
+    await page.goto(baseURL+'/board?mascot=1');
+    const monkey=page.getByRole('button',{name:'Обезьяна: сделать сюрприз'});await monkey.waitFor();
+    const first=await monkey.boundingBox();await page.waitForTimeout(2200);const next=await monkey.boundingBox();
+    assert.ok(Math.hypot(next.x-first.x,next.y-first.y)>1,'Mascot must move');
+    const image=await page.evaluate(async()=>{const img=new Image();img.src='/mascot/monkey-atlas.png';await img.decode();return {width:img.naturalWidth,height:img.naturalHeight};});assert.ok(image.width>1000&&image.height>100);
+    await page.mouse.move(next.x+next.width/2,next.y+next.height/2);await monkey.click();
+    await page.getByRole('button',{name:'Выбрать, в кого кинуть'}).click();
+    await page.getByRole('button',{name:'Тестовый коллега',exact:true}).click();
+    await page.getByRole('status').filter({hasText:'Сюрприз отправлен'}).waitFor();assert.equal(recipient,'other-user');
+    await page.screenshot({path:'.local/responsive/monkey.png'});
+  } finally {await page.close();}
+});
+
+test('recipient gets a notice and supplied audio plays once across repeated polling',async()=>{
+  const page=await browser.newPage({viewport:{width:390,height:844}});
+  const event={id:'test-prank-sound',kind:'prank',soundUrl:'/mascot/prank.mp3',createdAt:new Date().toISOString()};
+  await page.addInitScript(()=>{window.__soundStarts=0;const original=AudioContext.prototype.createBufferSource;AudioContext.prototype.createBufferSource=function(){const source=original.call(this);const start=source.start.bind(source);source.start=(...args)=>{window.__soundStarts++;return start(...args);};return source;};});
+  await page.route('**/api/task-sound',route=>route.fulfill({json:{events:[event]}}));
+  await page.route('**/api/monkey',route=>route.fulfill({json:{users:[],notices:[{id:'notice-1',title:'Обезьяний сюрприз',body:'Тестовый отправитель кинул в вас какашку.'}]}}));
+  try {
+    await page.goto(baseURL+'/board?mascot=1');await page.mouse.click(8,8);
+    await page.getByRole('status').filter({hasText:'Тестовый отправитель'}).waitFor();
+    await page.waitForFunction(()=>window.__soundStarts===1);await page.waitForTimeout(2300);assert.equal(await page.evaluate(()=>window.__soundStarts),1);
+    await assertGeometry(page);
+  } finally {await page.close();}
+});
+
 async function assertGeometry(page, selector='.main') {
   const geometry = await page.locator(selector).first().evaluate(root => ({
     pageOverflow: document.documentElement.scrollWidth-innerWidth,

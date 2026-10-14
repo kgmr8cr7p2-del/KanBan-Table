@@ -6,6 +6,7 @@ import { PermissionKey } from "@prisma/client";
 import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { fail, handleRouteError, ok } from "@/lib/http";
+import { csvPreview, decodeDocumentText, inlineDocumentMime } from "@/lib/document-preview";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -18,7 +19,7 @@ const maxTextPreviewChars = 200_000;
 const maxSheetRows = 200;
 const maxSheetColumns = 40;
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   try {
     await requirePermission(PermissionKey.VIEW_FILES);
     const { id } = await params;
@@ -30,6 +31,8 @@ export async function GET(_: Request, { params }: Params) {
 
     const body = await readFile(path.join(process.cwd(), "uploads", "important-files", file.id, file.storedFileName));
     const extension = path.extname(file.originalName).toLowerCase();
+    const mime=inlineDocumentMime(file.originalName,body);
+    if(mime) return ok({preview:{type:mime==="application/pdf"?"pdf":"image",url:`/api/important-files/${file.id}/content`}});
 
     if (extension === ".docx") {
       const result = await mammoth.extractRawText({ buffer: body });
@@ -46,7 +49,8 @@ export async function GET(_: Request, { params }: Params) {
     if (extension === ".xlsx") {
       const workbook = new ExcelJS.Workbook();
       await (workbook.xlsx.load as (data: unknown) => Promise<unknown>)(body);
-      const worksheet = workbook.worksheets[0];
+      const requestedSheet=Number(new URL(request.url).searchParams.get("sheet") || 0);
+      const worksheet = workbook.worksheets[Number.isInteger(requestedSheet) && requestedSheet>=0 ? requestedSheet : 0];
       if (!worksheet) return ok({ preview: { type: "empty", message: "В книге нет листов" } });
       const rows: string[][] = [];
       const rowLimit = Math.min(worksheet.rowCount, maxSheetRows);
@@ -63,6 +67,7 @@ export async function GET(_: Request, { params }: Params) {
         preview: {
           type: "sheet",
           sheetName: worksheet.name,
+          sheets:workbook.worksheets.map((sheet,index)=>({index,name:sheet.name})),
           rows,
           truncated: worksheet.rowCount > maxSheetRows || worksheet.columnCount > maxSheetColumns,
           totalRows: worksheet.rowCount,
@@ -72,14 +77,14 @@ export async function GET(_: Request, { params }: Params) {
     }
 
     if (textExtensions.has(extension) || file.mimeType.startsWith("text/")) {
-      const text = body.toString("utf8");
+      const text = decodeDocumentText(body);
+      if(extension===".csv") return ok({preview:{type:"csv",...(await csvPreview(text))}});
       return ok({
         preview: {
           type: extension === ".csv" ? "csv" : "code",
           language: languageFor(extension),
           truncated: text.length > maxTextPreviewChars,
           text: limitText(text),
-          rows: extension === ".csv" ? parseCsvPreview(text) : undefined,
         },
       });
     }
@@ -108,13 +113,6 @@ function formatCell(value: ExcelJS.CellValue) {
     if ("richText" in value && Array.isArray(value.richText)) return value.richText.map((item) => item.text).join("");
   }
   return String(value);
-}
-
-function parseCsvPreview(text: string) {
-  return text
-    .split(/\r?\n/)
-    .slice(0, maxSheetRows)
-    .map((line) => line.split(/;|,/).slice(0, maxSheetColumns));
 }
 
 function languageFor(extension: string) {

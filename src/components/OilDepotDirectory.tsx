@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
@@ -59,7 +59,7 @@ export function OilDepotDirectory({ depots, canCheck }: { depots: DepotSummary[]
       {(query || onlyAttention) && <span className="muted" role="status">Найдено: {shown.length}</span>}
     </div>
     {feedback && <p role={feedback.error ? "alert" : "status"} className={feedback.error ? styles.danger : styles.success}>{feedback.text}</p>}
-    <div className={styles.people}>
+    <div className={styles.people} style={{"--depot-rows":Math.max(1,...DEPOT_OWNERS.map(owner=>shown.filter(depot=>depot.owner===owner).length))} as CSSProperties}>
       {DEPOT_OWNERS.map((owner, index) => {
         const all = depots.filter(d => d.owner === owner);
         const rows = shown.filter(d => d.owner === owner).sort((a, b) => Number(b.needsCheck || b.overdue > 0) - Number(a.needsCheck || a.overdue > 0) || a.name.localeCompare(b.name, "ru"));

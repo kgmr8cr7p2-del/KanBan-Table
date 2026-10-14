@@ -8,14 +8,17 @@ export const soundPreferenceSchema = z.object({
   created: z.boolean(),
   completed: z.boolean(),
   reminder: z.boolean(),
+  prank: z.boolean().default(true),
+  mascotEnabled: z.boolean().default(true),
   quietEnabled: z.boolean(),
   quietFrom: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   quietTo: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
 });
 export type SoundPreferences = z.infer<typeof soundPreferenceSchema>;
-export type SoundCategory = "chat" | "mention" | "created" | "completed" | "reminder";
+export type SoundCategory = "chat" | "mention" | "created" | "completed" | "reminder" | "prank";
 export const defaultSoundPreferences: SoundPreferences = {
   enabled: true, volume: 1, chat: true, mention: true, created: true, completed: true, reminder: true,
+  prank: true, mascotEnabled: true,
   quietEnabled: false, quietFrom: "22:00", quietTo: "08:00",
 };
 export function parseSoundPreferences(value: unknown): SoundPreferences {

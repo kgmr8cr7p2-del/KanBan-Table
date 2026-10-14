@@ -11,7 +11,7 @@ type TaskSoundEvent = {
   id: string;
   createdAt: string;
   soundUrl: string;
-  kind?: "created" | "completed" | "reminder";
+  kind?: "created" | "completed" | "reminder" | "prank";
 };
 
 type TaskSoundCursor = {

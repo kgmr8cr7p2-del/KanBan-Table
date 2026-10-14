@@ -1674,7 +1674,7 @@
 :root[data-interface-mode="new"] .board-lane-nav button { padding: 7px 11px; border: 1px solid var(--ds-line); border-radius: 999px; background: color-mix(in srgb,var(--ds-surface) 65%,transparent); }
 :root[data-interface-mode="new"] .board-lane-nav button[aria-pressed="true"] { color: var(--taskora-accent-ink); border-color: var(--taskora-accent); background: var(--taskora-accent); }
 :root[data-interface-mode="new"] .board-lane-nav button[aria-pressed="true"] i { background: currentColor; }
-:root[data-interface-mode="new"] .board.workspace-board { grid-auto-columns: 300px; gap: 14px; padding: 0 28px 22px; background: transparent; scrollbar-color: color-mix(in srgb,var(--ds-muted) 45%,transparent) transparent; }
+:root[data-interface-mode="new"] .board.workspace-board { grid-auto-columns: minmax(220px,1fr); gap: 14px; padding: 0 28px 22px; background: transparent; scrollbar-color: color-mix(in srgb,var(--ds-muted) 45%,transparent) transparent; }
 :root[data-interface-mode="new"] .workspace-board > .column { padding: 12px; border: 1px solid color-mix(in srgb,var(--ds-line) 72%,transparent); border-radius: 22px; background: color-mix(in srgb,var(--ds-surface-subtle) 78%,transparent); }
 :root[data-interface-mode="new"] .workspace-board .column-head { min-block-size: 38px; margin-bottom: 8px; padding: 0 4px 10px; border-bottom: 0; }
 :root[data-interface-mode="new"] .workspace-board .column-head::before { border-radius: 50%; box-shadow: 0 0 0 5px color-mix(in srgb,var(--lane-color) 15%,transparent); }
@@ -1717,7 +1717,7 @@
   :root[data-interface-mode="new"] .workspace-viewbar .board-view-tabs button { padding-inline: 11px; }
   :root[data-interface-mode="new"] .workspace-pulse { margin: 0 12px 8px; border-radius: 16px; }
   :root[data-interface-mode="new"] .board-lane-nav { margin-inline: 12px; }
-  :root[data-interface-mode="new"] .board.workspace-board { grid-auto-columns: minmax(272px,calc(100vw - 42px)); padding-inline: 12px; }
+  :root[data-interface-mode="new"] .board.workspace-board { grid-auto-columns: calc(100% - 24px); padding-inline: 12px; }
   :root[data-interface-mode="new"] .workspace-board > .column { border-radius: 18px; padding: 9px; }
   :root[data-interface-mode="new"] .workspace-board .task-card { border-radius: 16px; }
 }

@@ -6,6 +6,16 @@ import { WorkspaceBrand } from "../../src/components/WorkspaceBrand";
 import { AppNav } from "../../src/components/AppNav";
 import fixture from "./fixture.json";
 import { PreviewSection } from "./sections";
+import { MonkeyMascot } from "../../src/components/MonkeyMascot";
+import { TaskSoundNotifier } from "../../src/components/TaskSoundNotifier";
+import { cacheSoundPreferences } from "../../src/lib/chat-notification";
+import { defaultSoundPreferences } from "../../src/lib/sound-preferences";
+import { useEffect } from "react";
+
+function MascotPreview() {
+  useEffect(()=>{cacheSoundPreferences(defaultSoundPreferences);},[]);
+  return <><MonkeyMascot userId="preview-user"/><TaskSoundNotifier/></>;
+}
 
 const view = structuredClone(fixture) as any;
 for (const task of view.board.columns[0].tasks) {
@@ -29,6 +39,7 @@ const demoDepots: DepotSummary[] = ["Нижний Тагил", "Омская", "
 
 createRoot(document.getElementById("root")!).render(
   <div className="app">
+    {new URLSearchParams(window.location.search).has("mascot")?<MascotPreview/>:null}
     <aside className="sidebar">
       <WorkspaceBrand /><p style={{fontSize:10,color:"#c2bbeb",padding:"0 16px 12px",lineHeight:1.5}}>Демо · тестовые данные<br />Без сохранения изменений</p>
       <AppNav user={view.currentUser} />

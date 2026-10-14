@@ -23,8 +23,8 @@
 .searchInput:focus-visible { outline: 2px solid var(--ds-brand); outline-offset: 2px; }
 .toolbar > button { min-height: 38px; font-size: 11px; }
 .toolbar > span { margin-left: auto; }
-.people { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 22px; align-items: start; }
-.person { min-width: 0; }
+.people { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 22px; align-items: stretch; }
+.person { min-width: 0; display: grid; grid-template-rows: subgrid; grid-row: span calc(var(--depot-rows) + 1); }
 .personHeading { display: flex; align-items: center; gap: 10px; padding: 0 3px 14px; }
 .personHeading h2 { font-size: 14px; font-weight: 600; color: var(--ds-ink); }
 .personHeading p { font-size: 10px; margin-top: 5px; color: var(--ds-muted); }
@@ -32,7 +32,7 @@
 .person0 { color: #7c64be; background: #f0ebfc; }
 .person1 { color: #398b8b; background: #e7f3f1; }
 .person2 { color: #b1834b; background: #f8efdf; }
-.depots { display: grid; gap: 12px; }
+.depots { display: contents; }
 .depot { display: flex; flex-direction: column; min-width: 0; padding: 18px; border-radius: 16px; border: 1px solid transparent; background: var(--ds-surface-subtle); box-shadow: none; }
 .depot:hover { border-color: color-mix(in srgb,var(--ds-brand) 30%,var(--ds-line)); }
 .needsCheck { border-color: color-mix(in srgb,var(--ds-warning) 28%,var(--ds-line)); }
@@ -69,5 +69,5 @@
 :global(:root[data-theme="dark"]) .person0,
 :global(:root[data-theme="dark"]) .person1,
 :global(:root[data-theme="dark"]) .person2 { color: var(--ds-ink); background: var(--ds-surface-raised); }
-@container depot-directory (max-width: 850px) { .people { grid-template-columns: 1fr; gap: 28px; } .depots { grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; } .overview > div { gap: 8px; padding-inline: 12px; } .overview svg { display: none; } }
+@container depot-directory (max-width: 850px) { .people { grid-template-columns: 1fr; gap: 28px; } .person { display: block; grid-row: auto; } .depots { display: grid; gap: 12px; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: stretch; } .overview > div { gap: 8px; padding-inline: 12px; } .overview svg { display: none; } }
 @container depot-directory (max-width: 480px) { .overview { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px 0; } .overview > div:nth-child(2) { border: 0; } .depots { grid-template-columns: 1fr; } .search { flex-basis: 100%; } .heading h1 { font-size: 23px; } .heading p { font-size: 11px; } .toolbar > span { margin-left: 0; } }

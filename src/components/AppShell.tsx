@@ -8,6 +8,7 @@ import { WeeklyReportReminder } from "@/components/WeeklyReportReminder";
 import { PresenceTracker } from "@/components/PresenceTracker";
 import { InterfaceModeSync } from "@/components/InterfaceModeSync";
 import { SoundPreferenceSync } from "@/components/SoundPreferenceSync";
+import { MonkeyMascot } from "@/components/MonkeyMascot";
 
 export function AppShell({ user, children }: { user: CurrentUser; children: React.ReactNode }) {
   return (
@@ -21,6 +22,7 @@ export function AppShell({ user, children }: { user: CurrentUser; children: Reac
       {user.approvedAt ? (
         <>
           <SoundPreferenceSync userId={user.id} />
+          <MonkeyMascot userId={user.id}/>
           <TaskSoundNotifier />
           <NotificationSoundNotifier />
           <GoidaReminder />

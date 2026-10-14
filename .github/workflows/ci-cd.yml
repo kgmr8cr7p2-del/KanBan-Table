@@ -42,7 +42,7 @@ jobs:
         run: node --test tests/oil-depot-dashboard.test.cjs tests/task-deadline.test.cjs
 
       - name: Check task timing and personal sounds
-        run: node --import tsx --test tests/task-metrics.test.ts
+        run: node --import tsx --test tests/task-metrics.test.ts tests/document-preview.test.ts
 
       - name: Install browser for responsive checks
         run: npx playwright install --with-deps chromium

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { cacheSoundPreferences, getSoundPreferences, playChatNotification } from "@/lib/chat-notification";
 import { defaultSoundPreferences, parseSoundPreferences, type SoundPreferences, type SoundCategory } from "@/lib/sound-preferences";
 
-const categories: [SoundCategory, string][] = [["chat", "Сообщения в чатах"], ["mention", "Упоминания"], ["created", "Создание задач"], ["completed", "Завершение задач"], ["reminder", "Напоминания и вечерний звук"]];
+const categories: [SoundCategory, string][] = [["chat", "Сообщения в чатах"], ["mention", "Упоминания"], ["created", "Создание задач"], ["completed", "Завершение задач"], ["reminder", "Напоминания и вечерний звук"], ["prank", "Шутки от обезьяны"]];
 
 export function NotificationSoundSettings() {
   const [value, setValue] = useState<SoundPreferences>(defaultSoundPreferences);
@@ -42,6 +42,7 @@ export function NotificationSoundSettings() {
       <label className="sound-toggle"><span>Звуки включены</span><input type="checkbox" role="switch" checked={value.enabled} onChange={event=>change({enabled:event.target.checked})}/></label>
       <label className="sound-volume"><span>Громкость <output>{Math.round(value.volume*100)}%</output></span><input type="range" min="0" max="1" step="0.01" aria-valuetext={`${Math.round(value.volume*100)}%`} value={value.volume} onChange={event=>change({volume:Number(event.target.value)})}/></label>
       <div className="sound-category-list">{categories.map(([key,label])=><label className="sound-toggle" key={key}><span>{label}</span><input type="checkbox" role="switch" checked={value[key]} onChange={event=>change({[key]:event.target.checked})}/></label>)}</div>
+      <label className="sound-toggle"><span>Обезьяна на экране</span><input type="checkbox" role="switch" checked={value.mascotEnabled} onChange={event=>change({mascotEnabled:event.target.checked})}/></label>
       <label className="sound-toggle"><span>Тихие часы · Москва</span><input type="checkbox" role="switch" checked={value.quietEnabled} onChange={event=>change({quietEnabled:event.target.checked})}/></label>
       {value.quietEnabled ? <div className="sound-quiet-times"><label className="field"><span className="label">С</span><input className="input" type="time" value={value.quietFrom} onChange={event=>change({quietFrom:event.target.value})}/></label><label className="field"><span className="label">До</span><input className="input" type="time" value={value.quietTo} onChange={event=>change({quietTo:event.target.value})}/></label></div> : null}
     </fieldset>
