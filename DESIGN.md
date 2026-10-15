@@ -1,5 +1,5 @@
 ---
-name: Taskora
+name: Taskoral
 description: Graphite frame, light work planes, one electric lime signal.
 colors:
   canvas: "#e9e9e5"
@@ -74,13 +74,13 @@ components:
     padding: "{spacing.map-card-padding}"
 ---
 
-# Design System: Taskora
+# Design System: Taskoral
 
 ## Overview
 
 **Creative North Star: "The Connected Work Plane"**
 
-Taskora places dense work on calm paper surfaces inside a graphite frame. Electric lime is a precise signal for selection, primary action, and a few points of attention. The interface stays compact enough for a working board while preserving hierarchy.
+Taskoral places dense work on calm paper surfaces inside a graphite frame. Electric lime is a precise signal for selection, primary action, and a few points of attention. The interface stays compact enough for a working board while preserving hierarchy. Text and its surface must maintain at least 4.5:1 contrast (3:1 for large text) in both themes and on hover.
 
 The personal task map extends this language into a scrollable time plane: cards sit near dates, relationships remain visible, and details open beside their parent. The same visual roles apply in light and dark themes.
 

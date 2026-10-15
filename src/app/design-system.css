@@ -2436,8 +2436,8 @@
 :root:root[data-interface-mode="new"] .button {
   --action-bg: var(--taskora-accent);
   --action-ink: var(--taskora-accent-ink);
-  background: var(--action-bg);
-  color: var(--action-ink);
+  background: var(--action-bg) !important;
+  color: var(--action-ink) !important;
 }
 :root:root[data-interface-mode="new"] .button:is(.secondary,.ghost) { --action-bg: var(--ds-surface); --action-ink: var(--ds-ink); }
 :root:root[data-interface-mode="new"] .button.danger { --action-bg: var(--action-danger-bg); --action-ink: var(--action-danger-ink); }
@@ -2459,3 +2459,4 @@
 :root:root[data-interface-mode="new"] .report-kpi-blue :is(small,.mini-sparkline) { color: var(--ds-brand-strong); }
 :root:root[data-interface-mode="new"] .report-kpi-red :is(small,.mini-sparkline) { color: var(--ds-danger); }
 :root:root[data-interface-mode="new"] .chat-directory-status { color: var(--ds-muted); }
+:root:root[data-interface-mode="new"] .chat-directory-item.is-active :is(time,.chat-directory-preview,.chat-directory-status) { color: var(--ds-ink); }
