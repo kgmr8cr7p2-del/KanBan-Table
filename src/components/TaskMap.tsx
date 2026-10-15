@@ -2,6 +2,7 @@
 
 import { ArrowRight, CalendarDays, Check, ChevronDown, ChevronRight, Link2, Plus, RotateCcw, Settings2, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isCompletedColumn } from "@/lib/task-deadline";
 
 type MapTask = {
   id: string; taskNumber: number; title: string; description: string; deadline: string | null; parentId: string | null;
@@ -83,18 +84,29 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
   const [order, setOrder] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [moveDraft, setMoveDraft] = useState<{ taskId: string; date: string } | null>(null);
   const [moveReason, setMoveReason] = useState("");
   const [proposedHidden, setProposedHidden] = useState<string[]>([]);
   const [paths, setPaths] = useState<Array<{ key: string; d: string; proposed: boolean }>>([]);
   const canvasRef = useRef<HTMLDivElement>(null);
   const nodesRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+  const positionsRef = useRef(positions);
+  const cardDragRef = useRef<{ id: string; startX: number; startY: number; x: number; y: number } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [linkDraft, setLinkDraft] = useState<{ from: string; to: string } | null>(null);
   const [dragKind, setDragKind] = useState<"order" | "link" | null>(null);
   const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const positionsKey = `${STORAGE_PREFIX}positions:${currentUserId}:${boardId}:${scale}`;
+
+  useEffect(() => {
+    try {
+      const loaded = JSON.parse(localStorage.getItem(positionsKey) ?? "{}");
+      positionsRef.current = loaded;
+      setPositions(loaded);
+    } catch { positionsRef.current = {}; setPositions({}); }
+  }, [positionsKey]);
 
   useEffect(() => {
     const key = `taskora-map-zoom:${currentUserId}:${boardId}`;
@@ -110,8 +122,13 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     if (!canvas) return;
     const onWheel = (event: WheelEvent) => {
       if (event.target instanceof Element && event.target.closest(".task-map-tools")) return;
-      event.preventDefault();
-      changeZoom(zoom + (event.deltaY < 0 ? .1 : -.1));
+      if (event.ctrlKey) {
+        event.preventDefault();
+        changeZoom(zoom + (event.deltaY < 0 ? .1 : -.1));
+      } else if (event.shiftKey) {
+        event.preventDefault();
+        canvas.scrollLeft += event.deltaY || event.deltaX;
+      }
     };
     canvas.addEventListener("wheel", onWheel, { passive: false });
     return () => canvas.removeEventListener("wheel", onWheel);
@@ -123,13 +140,16 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
   }, [currentUserId, boardId]);
 
   const visible = useMemo(() => {
-    const ids = new Set(tasks.filter((task) => mine(task, currentUserId, personalBoard)).map((task) => task.id));
+    const activeTasks = allTasks.filter((task) => !isCompletedColumn(task.column?.name ?? ""));
+    const activeIds = new Set(activeTasks.map((task) => task.id));
+    const ids = new Set(tasks.filter((task) => activeIds.has(task.id) && mine(task, currentUserId, personalBoard)).map((task) => task.id));
     for (const link of dependencies) {
+      if (!activeIds.has(link.predecessorId) || !activeIds.has(link.successorId)) continue;
       if (ids.has(link.predecessorId)) ids.add(link.successorId);
       if (ids.has(link.successorId)) ids.add(link.predecessorId);
     }
-    for (const task of allTasks) if (ids.has(task.id) && task.parentId) ids.add(task.parentId);
-    return allTasks.filter((task) => ids.has(task.id));
+    for (const task of activeTasks) if (ids.has(task.id) && task.parentId && activeIds.has(task.parentId)) ids.add(task.parentId);
+    return activeTasks.filter((task) => ids.has(task.id));
   }, [tasks, allTasks, dependencies, currentUserId, personalBoard]);
   const proposals = useMemo(() => suggest(visible, dependencies, currentUserId, personalBoard).filter((item) => !proposedHidden.includes(`${item.predecessorId}:${item.successorId}`)), [visible, dependencies, currentUserId, personalBoard, proposedHidden]);
   const roots = useMemo(() => visible.filter((task) => !task.parentId || !visible.some((candidate) => candidate.id === task.parentId)), [visible]);
@@ -203,19 +223,7 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     if (nodesRef.current) observer.observe(nodesRef.current);
     window.addEventListener("resize", measure);
     return () => { cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener("resize", measure); };
-  }, [measure, expanded, detailId, scale, visible, order, zoom]);
-
-  useEffect(() => {
-    if (!moveDraft) return;
-    const frame = requestAnimationFrame(() => {
-      const card = [...(nodesRef.current?.querySelectorAll<HTMLElement>("[data-map-task]") ?? [])].find((element) => element.dataset.mapTask === moveDraft.taskId);
-      const input = card?.parentElement?.querySelector<HTMLInputElement>(".task-map-deadline-form input[type='date']");
-      if (!input) return;
-      input.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "nearest", inline: "nearest" });
-      input.focus({ preventScroll: true });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [moveDraft]);
+  }, [measure, expanded, detailId, scale, visible, order, zoom, positions]);
 
   async function command(payload: object) {
     setBusy(true); setError("");
@@ -228,16 +236,24 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     finally { setBusy(false); }
   }
 
-  function reorder(sourceId: string, targetId: string) {
-    if (sourceId === targetId) return;
-    const next = [...new Set([...order, ...roots.map((task) => task.id)])];
-    const sourceIndex = next.indexOf(sourceId);
-    const targetIndex = next.indexOf(targetId);
-    if (sourceIndex < 0 || targetIndex < 0) return;
-    next.splice(sourceIndex, 1);
-    next.splice(next.indexOf(targetId), 0, sourceId);
-    setOrder(next);
-    localStorage.setItem(STORAGE_PREFIX + currentUserId + ":" + boardId, JSON.stringify(next));
+  function placement(taskId: string, bucketTasks: MapTask[]) {
+    return positions[taskId] ?? { x: Math.max(0, bucketTasks.findIndex((task) => task.id === taskId)) * 286, y: 0 };
+  }
+
+  function savePlacement(taskId: string, next: { x: number; y: number }) {
+    const updated = { ...positionsRef.current, [taskId]: { x: Math.round(Math.max(0, Math.min(4000, next.x))), y: Math.round(Math.max(0, Math.min(2500, next.y))) } };
+    positionsRef.current = updated;
+    setPositions(updated);
+    localStorage.setItem(positionsKey, JSON.stringify(updated));
+  }
+
+  function bucketSpace(bucketTasks: MapTask[]) {
+    const extents = bucketTasks.map((task) => {
+      const point = placement(task.id, bucketTasks);
+      const childCount = expanded.includes(task.id) ? visible.filter((item) => item.parentId === task.id).length : 0;
+      return { right: point.x + 252 + (detailId === task.id ? 296 : 0) + childCount * 247 + (childCount && mine(task, currentUserId, personalBoard) && onCreateChild ? 172 : 0), bottom: point.y + (detailId === task.id ? 540 : 180) };
+    });
+    return { width: Math.max(252, ...extents.map((item) => item.right)), height: Math.max(250, ...extents.map((item) => item.bottom)) };
   }
 
   async function saveDeadline(taskId: string, date: string, reason: string) {
@@ -247,7 +263,7 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
       const response = await fetch(`/api/tasks/${taskId}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ deadline: date, deadlineChangeReason: reason.trim() }) });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error ?? "Не удалось перенести срок");
-      setMoveDraft(null); setMoveReason("");
+      setMoveReason("");
       await onRefresh();
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Не удалось перенести срок"); }
     finally { setBusy(false); }
@@ -262,27 +278,22 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     const done = items.filter((item) => item.completed).length;
     const sameDateDependency = !child && dependencies.some((link) => link.successorId === task.id && visible.some((candidate) => candidate.id === link.predecessorId && keyFor(candidate.deadline, scale) === keyFor(task.deadline, scale)));
     const bucketTasks = buckets.find((bucket) => bucket.key === keyFor(task.deadline, scale))?.tasks ?? [];
-    const ownPosition = bucketTasks.filter((candidate) => mine(candidate, currentUserId, personalBoard)).findIndex((candidate) => candidate.id === task.id);
-    const ownBucketTasks = bucketTasks.filter((candidate) => mine(candidate, currentUserId, personalBoard));
     return <div className={`task-map-branch ${child ? "is-child" : ""} ${sameDateDependency ? "is-same-date-dependent" : ""}`} key={task.id}>
       <article className={`task-map-card ${own ? "is-own" : "is-context"} ${detail ? "is-selected" : ""}`} data-map-task={task.id}
-        draggable={own && !child}
-        onDragStart={(event) => { if (event.target instanceof Element && event.target.closest(".task-map-link-handle")) return; setDragKind("order"); event.dataTransfer.setData("text/plain", `order:${task.id}`); event.dataTransfer.effectAllowed = "move"; }}
-        onDragEnd={() => setDragKind(null)}
+        onPointerDown={(event) => { if (!own || child || event.button !== 0 || (event.target instanceof Element && event.target.closest("button,input,select,.task-map-link-handle"))) return; const point = placement(task.id, bucketTasks); cardDragRef.current = { id: task.id, startX: event.clientX, startY: event.clientY, x: point.x, y: point.y }; event.currentTarget.setPointerCapture(event.pointerId); }}
+        onPointerMove={(event) => { const drag = cardDragRef.current; if (!drag || drag.id !== task.id) return; const next = { x: Math.round(Math.max(0, Math.min(4000, drag.x + (event.clientX - drag.startX) / zoom))), y: Math.round(Math.max(0, Math.min(2500, drag.y + (event.clientY - drag.startY) / zoom))) }; positionsRef.current = { ...positionsRef.current, [task.id]: next }; setPositions(positionsRef.current); }}
+        onPointerUp={() => { const point = positionsRef.current[task.id]; if (cardDragRef.current?.id === task.id && point) savePlacement(task.id, point); cardDragRef.current = null; }}
+        onPointerCancel={() => { cardDragRef.current = null; }}
         onDragOver={(event) => { if (event.dataTransfer.types.includes("text/plain")) event.preventDefault(); }}
         onDrop={(event) => {
           const payload = event.dataTransfer.getData("text/plain");
           if (payload.startsWith("link:")) { const predecessorId = payload.slice(5); event.preventDefault(); event.stopPropagation(); setDragKind(null); if (predecessorId !== task.id && !dependencies.some((link) => link.predecessorId === predecessorId && link.successorId === task.id) && own) setLinkDraft({ from: predecessorId, to: task.id }); return; }
-          if (!own || child) return;
-          event.preventDefault(); event.stopPropagation(); setDragKind(null);
-          const source = payload.startsWith("order:") ? payload.slice(6) : "";
-          if (source && keyFor(allTasks.find((item) => item.id === source)?.deadline ?? null, scale) === keyFor(task.deadline, scale)) reorder(source, task.id);
         }}>
         <span className="task-map-card-top"><span>#{task.taskNumber} · {task.column?.name ?? "Задача"}</span><span>{own ? "Моя задача" : "Не моя"}</span></span>
         {own ? <span className="task-map-link-handle" draggable title="Потяните к задаче, которая зависит от этой" aria-label={`Создать зависимость от задачи ${task.title}`} onDragStart={(event) => { event.stopPropagation(); setDragKind("link"); event.dataTransfer.setData("text/plain", `link:${task.id}`); event.dataTransfer.effectAllowed = "link"; }} onDragEnd={() => setDragKind(null)}><Link2 size={15} /></span> : null}
         <button type="button" className="task-map-title" onClick={() => { setDetailId(detail ? null : task.id); requestAnimationFrame(measure); }} aria-expanded={detail}>{task.title}<ChevronRight size={16} aria-hidden="true" /></button>
         <span className="task-map-meta"><CalendarDays size={14} aria-hidden="true" />{task.deadline ? formatter.format(new Date(task.deadline)) : "Без срока"}{items.length ? <span>{done}/{items.length} пунктов</span> : null}</span>
-        {own && !child && detail && ownBucketTasks.length > 1 ? <div className="task-map-order-controls"><button type="button" disabled={ownPosition <= 0} onClick={() => reorder(task.id, ownBucketTasks[ownPosition - 1].id)} aria-label={`Поднять задачу ${task.title}`}>↑</button><button type="button" disabled={ownPosition < 0 || ownPosition >= ownBucketTasks.length - 1} onClick={() => reorder(task.id, ownBucketTasks[ownPosition + 1].id)} aria-label={`Опустить задачу ${task.title}`}>↓</button></div> : null}
+        {own && !child && detail ? <div className="task-map-order-controls" aria-label="Переместить задачу на карте">{([{ icon: "←", x: -32, y: 0, name: "влево" }, { icon: "↑", x: 0, y: -32, name: "вверх" }, { icon: "↓", x: 0, y: 32, name: "вниз" }, { icon: "→", x: 32, y: 0, name: "вправо" }] as const).map((step) => <button key={step.name} type="button" onClick={() => { const point = placement(task.id, bucketTasks); savePlacement(task.id, { x: point.x + step.x, y: point.y + step.y }); }} aria-label={`Переместить задачу ${task.title} ${step.name}`}>{step.icon}</button>)}</div> : null}
         {children.length ? <button type="button" className="task-map-expand" onClick={() => setExpanded((current) => open ? current.filter((id) => id !== task.id) : [...current, task.id])} aria-expanded={open}>{open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}{children.filter((item) => /готово|заверш|выполн/i.test(item.column?.name ?? "")).length}/{children.length} подзадач</button> : null}
       </article>
       {detail ? <div className="task-map-detail" aria-label={`Детали задачи ${task.title}`}>
@@ -290,11 +301,11 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
         {items.length ? <ul>{items.map((item) => <li key={item.id}><Check size={14} className={item.completed ? "is-done" : ""} aria-hidden="true" />{item.text}</li>)}</ul> : <span className="task-map-muted">Чек-лист пуст</span>}
         {own ? <button type="button" onClick={() => onOpen(task)}>Открыть задачу <ArrowRight size={14} /></button> : null}
         {own ? <form className="task-map-deadline-form" onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); void saveDeadline(task.id, String(data.get("deadline") ?? ""), String(data.get("reason") ?? "")); }}>
-          <strong>Перенести срок</strong><label htmlFor={`map-deadline-${task.id}`}>Новая дата</label><input id={`map-deadline-${task.id}`} name="deadline" type="date" required defaultValue={moveDraft?.taskId === task.id ? moveDraft.date : task.deadline?.slice(0, 10) ?? ""} key={`${task.id}:${moveDraft?.date ?? ""}`} />
+          <strong>Перенести срок</strong><label htmlFor={`map-deadline-${task.id}`}>Новая дата</label><input id={`map-deadline-${task.id}`} name="deadline" type="date" required defaultValue={task.deadline?.slice(0, 10) ?? ""} />
           <label htmlFor={`map-reason-${task.id}`}>Причина</label><input id={`map-reason-${task.id}`} name="reason" required value={moveReason} onChange={(event) => setMoveReason(event.target.value)} placeholder="Почему меняется срок" />
           <button type="submit" disabled={busy}>Сохранить дату</button>
         </form> : null}
-        {dependencies.filter((link) => link.successorId === task.id).length ? <div className="task-map-dependency-list"><strong>Подтверждённые связи</strong>{dependencies.filter((link) => link.successorId === task.id).map((link) => { const before = allTasks.find((candidate) => candidate.id === link.predecessorId); return <span key={link.id ?? link.predecessorId}><Link2 size={13} /> После #{before?.taskNumber ?? "?"} {before?.title ?? "Задача"}{own ? <button type="button" disabled={busy} onClick={() => void command({ action: "disconnect", predecessorId: link.predecessorId, successorId: task.id })} aria-label="Удалить зависимость">×</button> : null}</span>; })}</div> : null}
+        {dependencies.filter((link) => link.successorId === task.id && visible.some((candidate) => candidate.id === link.predecessorId)).length ? <div className="task-map-dependency-list"><strong>Подтверждённые связи</strong>{dependencies.filter((link) => link.successorId === task.id && visible.some((candidate) => candidate.id === link.predecessorId)).map((link) => { const before = visible.find((candidate) => candidate.id === link.predecessorId); return <span key={link.id ?? link.predecessorId}><Link2 size={13} /> После #{before?.taskNumber ?? "?"} {before?.title ?? "Задача"}{own ? <button type="button" disabled={busy} onClick={() => void command({ action: "disconnect", predecessorId: link.predecessorId, successorId: task.id })} aria-label="Удалить зависимость">×</button> : null}</span>; })}</div> : null}
         {own ? <div className="task-map-dependency-control"><label htmlFor={`dependency-${task.id}`}>Зависит от</label><select id={`dependency-${task.id}`} defaultValue="" onChange={(event) => { if (event.target.value) void command({ action: "connect", predecessorId: event.target.value, successorId: task.id }); event.target.value = ""; }} disabled={busy}><option value="">Выбрать задачу…</option>{visible.filter((candidate) => candidate.id !== task.id && !dependencies.some((link) => link.predecessorId === candidate.id && link.successorId === task.id)).map((candidate) => <option key={candidate.id} value={candidate.id}>#{candidate.taskNumber} {candidate.title}</option>)}</select></div> : null}
         {own && !task.parentId && onCreateChild ? <div className="task-map-dependency-control"><button type="button" className="task-map-inline-add" onClick={() => onCreateChild(task.id)}><Plus size={14} /> Создать подзадачу</button><label htmlFor={`parent-${task.id}`}>Или добавить существующую</label><select id={`parent-${task.id}`} defaultValue="" onChange={(event) => { if (event.target.value) void command({ action: "parent", taskId: event.target.value, parentId: task.id }); event.target.value = ""; }} disabled={busy}><option value="">Выбрать задачу…</option>{visible.filter((candidate) => candidate.id !== task.id && !candidate.parentId && mine(candidate, currentUserId, personalBoard) && !visible.some((item) => item.parentId === candidate.id)).map((candidate) => <option key={candidate.id} value={candidate.id}>#{candidate.taskNumber} {candidate.title}</option>)}</select></div> : null}
         {own && task.parentId ? <button type="button" className="task-map-detach" disabled={busy} onClick={() => void command({ action: "parent", taskId: task.id, parentId: null })}>Убрать из большой задачи</button> : null}
@@ -304,23 +315,17 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
   }
 
   return <section className="task-map" aria-label="Карта задач">
-    <header className="task-map-header"><h2>Карта задач</h2><span>Потяните карточку для порядка, связь — за значок <Link2 size={13} aria-hidden="true" /></span></header>
+    <header className="task-map-header"><h2>Карта задач</h2><span>Расставляйте задачи внутри дня свободно · связь — за значок <Link2 size={13} aria-hidden="true" /></span></header>
     {error ? <p className="task-map-error" role="alert">{error}</p> : null}
     <div className="task-map-tools"><button type="button" className="task-map-tools-toggle" onClick={() => setToolsOpen(!toolsOpen)} aria-expanded={toolsOpen} aria-label={toolsOpen ? "Скрыть настройки карты" : "Показать настройки карты"}><Settings2 size={17} /> <span>Вид</span>{proposals.length ? <b>{proposals.length}</b> : null}</button>{toolsOpen ? <div className="task-map-tools-panel"><div className="task-map-controls" aria-label="Масштаб времени">{(["day", "week", "month"] as Scale[]).map((item) => <button key={item} type="button" aria-pressed={scale === item} onClick={() => setScale(item)}>{item === "day" ? "Дни" : item === "week" ? "Недели" : "Месяцы"}</button>)}</div><div className="task-map-legend"><span><i className="solid" /> Связь</span><span><i className="dashed" /> Предложение</span><span><i className="context" /> Чужая задача</span></div>{proposals.length ? <div className="task-map-suggestions"><strong>Возможные зависимости</strong>{proposals.slice(0, 3).map((item) => { const before = visible.find((task) => task.id === item.predecessorId)!; const after = visible.find((task) => task.id === item.successorId)!; return <div key={`${before.id}:${after.id}`} className="task-map-suggestion"><span>#{before.taskNumber} → #{after.taskNumber}<small>{item.reason}</small></span><button type="button" disabled={busy} onClick={() => void command({ action: "connect", predecessorId: before.id, successorId: after.id })}>Принять</button><button type="button" onClick={() => { const next = [...proposedHidden, `${before.id}:${after.id}`]; setProposedHidden(next); localStorage.setItem(`taskora-map-dismissed:${currentUserId}:${boardId}`, JSON.stringify(next)); }} aria-label="Отклонить предложение">×</button></div>; })}</div> : null}</div> : null}</div>
     {linkDraft ? <div className="task-map-link-confirm" role="dialog" aria-label="Подтвердить зависимость"><span>#{allTasks.find((task) => task.id === linkDraft.from)?.taskNumber} → #{allTasks.find((task) => task.id === linkDraft.to)?.taskNumber}<small>Вторая задача зависит от первой</small></span><button type="button" disabled={busy} onClick={() => { void command({ action: "connect", predecessorId: linkDraft.from, successorId: linkDraft.to }); setLinkDraft(null); }}>Создать связь</button><button type="button" onClick={() => setLinkDraft(null)}>Отмена</button></div> : null}
-    <div className={`task-map-scroll ${dragKind === "link" ? "is-linking" : ""}`} ref={canvasRef} tabIndex={0} aria-label="Карта задач: колесо меняет масштаб, пустое место перемещает карту" onPointerDown={(event) => { if (event.button !== 0 || !(event.target instanceof Element) || event.target.closest(".task-map-card,button,input,select,.task-map-detail")) return; const canvas = canvasRef.current; if (!canvas) return; panRef.current = { x: event.clientX, y: event.clientY, left: canvas.scrollLeft, top: canvas.scrollTop }; canvas.setPointerCapture(event.pointerId); canvas.classList.add("is-panning"); }} onPointerMove={(event) => { const pan = panRef.current; const canvas = canvasRef.current; if (!pan || !canvas) return; canvas.scrollLeft = pan.left - (event.clientX - pan.x); canvas.scrollTop = pan.top - (event.clientY - pan.y); }} onPointerUp={() => { panRef.current = null; canvasRef.current?.classList.remove("is-panning"); }} onPointerCancel={() => { panRef.current = null; canvasRef.current?.classList.remove("is-panning"); }}><div className="task-map-plane" ref={nodesRef} style={{ zoom }}>
+    <div className={`task-map-scroll ${dragKind === "link" ? "is-linking" : ""}`} ref={canvasRef} tabIndex={0} aria-label="Карта задач: колесо — вертикальная прокрутка, Shift — горизонтальная, Ctrl — масштаб" onPointerDown={(event) => { if (event.button !== 0 || !(event.target instanceof Element) || event.target.closest(".task-map-card,button,input,select,.task-map-detail")) return; const canvas = canvasRef.current; if (!canvas) return; panRef.current = { x: event.clientX, y: event.clientY, left: canvas.scrollLeft, top: canvas.scrollTop }; canvas.setPointerCapture(event.pointerId); canvas.classList.add("is-panning"); }} onPointerMove={(event) => { const pan = panRef.current; const canvas = canvasRef.current; if (!pan || !canvas) return; canvas.scrollLeft = pan.left - (event.clientX - pan.x); canvas.scrollTop = pan.top - (event.clientY - pan.y); }} onPointerUp={() => { panRef.current = null; canvasRef.current?.classList.remove("is-panning"); }} onPointerCancel={() => { panRef.current = null; canvasRef.current?.classList.remove("is-panning"); }}><div className="task-map-plane" ref={nodesRef} style={{ zoom }}>
       <svg className="task-map-links" aria-hidden="true" width={viewport.width} height={viewport.height}><defs><marker id="task-map-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6" /></marker></defs>{paths.map((path) => <path key={path.key} d={path.d} className={path.proposed ? "is-proposed" : ""} markerEnd="url(#task-map-arrow)" />)}</svg>
-      {buckets.length ? buckets.map((bucket, index) => <div className="task-map-bucket" key={bucket.key} data-map-date={bucket.key} onDragOver={(event) => { if (event.dataTransfer.types.includes("text/plain")) event.preventDefault(); }} onDrop={(event) => {
-        const payload = event.dataTransfer.getData("text/plain"); if (!payload.startsWith("order:")) return;
-        event.preventDefault(); setDragKind(null); const id = payload.slice(6); const task = allTasks.find((item) => item.id === id);
-        if (!task || !mine(task, currentUserId, personalBoard) || bucket.key === "unscheduled" || keyFor(task.deadline, scale) === bucket.key) return;
-        const suggestedDate = scale === "month" ? `${bucket.key}-01` : bucket.key;
-        setMoveDraft({ taskId: id, date: suggestedDate }); setMoveReason(""); setDetailId(id);
-      }}>
+      {buckets.length ? buckets.map((bucket, index) => <div className="task-map-bucket" key={bucket.key} data-map-date={bucket.key}>
         {index && buckets[index - 1].key !== "unscheduled" && bucket.key !== "unscheduled" && gapLabel(buckets[index - 1].key, bucket.key, scale) ? <span className="task-map-gap">{gapLabel(buckets[index - 1].key, bucket.key, scale)}</span> : null}
         <div className="task-map-date"><span>{bucketLabel(bucket.key, scale)}</span><small>{bucket.tasks.length}</small></div>
-        <div className="task-map-stack">{bucket.tasks.map((task) => renderTask(task))}</div>
-      </div>) : <div className="task-map-empty"><Link2 size={32} /><h3>Пока нет задач для карты</h3><p>Назначенные вам задачи появятся здесь вместе со связанными задачами коллег.</p></div>}
+        <div className="task-map-stack" style={bucketSpace(bucket.tasks)}>{bucket.tasks.map((task) => { const point = placement(task.id, bucket.tasks); return <div className="task-map-node" key={task.id} style={{ transform: `translate(${point.x}px, ${point.y}px)` }}>{renderTask(task)}</div>; })}</div>
+      </div>) : <div className="task-map-empty"><Link2 size={32} /><h3>Активных задач пока нет</h3><p>Завершённые задачи остаются на доске, но не занимают место на карте.</p></div>}
     </div></div>
     <footer className="task-map-footer"><button type="button" onClick={() => changeZoom(zoom - .1)} aria-label="Уменьшить масштаб"><ZoomOut size={16} /></button><output aria-label="Масштаб карты">{Math.round(zoom * 100)}%</output><button type="button" onClick={() => changeZoom(zoom + .1)} aria-label="Увеличить масштаб"><ZoomIn size={16} /></button><button type="button" onClick={() => { const canvas = canvasRef.current; if (canvas && nodesRef.current) changeZoom(Math.max(.5, Math.min(1.5, canvas.clientWidth / nodesRef.current.scrollWidth))); }} >Уместить всё</button><button type="button" onClick={() => { setExpanded([]); setDetailId(null); changeZoom(1); canvasRef.current?.scrollTo({ left: 0, top: 0, behavior: "smooth" }); }}><RotateCcw size={15} /> Сбросить вид</button></footer>
   </section>;

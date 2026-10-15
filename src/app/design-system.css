@@ -2407,3 +2407,14 @@
 @media (max-width: 960px) { .task-map { margin: 5px 10px calc(80px + env(safe-area-inset-bottom)); min-block-size: 0; } .task-map-header > span { display: none; } }
 @media (max-width: 600px) { .task-map-header { display: flex; min-block-size: 38px; padding: 7px 12px; } .task-map-header h2 { font-size: 16px; } .task-map-bucket { min-inline-size: 224px; flex-basis: auto; } .task-map-plane { gap: 28px; padding: 18px 18px 90px; } .task-map-card { inline-size: 224px; flex-basis: 224px; } .task-map-detail { inline-size: 260px; flex-basis: 260px; } .task-map-footer button:last-child { font-size: 0; } .task-map-footer button:last-child svg { inline-size: 16px; } }
 @media (prefers-reduced-motion: reduce) { .task-map :is(.task-map-detail,.task-map-children) { animation: none; } .task-map-plane { transition: none; } }
+
+/* Free placement stays inside its date plane; expanding a branch grows that plane. */
+.task-map-stack { position: relative; display: block; min-inline-size: 252px; min-block-size: 250px; }
+.task-map-node { position: absolute; inset-block-start: 0; inset-inline-start: 0; z-index: 1; }
+.task-map-node:has(.task-map-card.is-selected) { z-index: 3; }
+.task-map-card.is-own { cursor: grab; }
+.task-map-card.is-own:active { cursor: grabbing; }
+.task-map-card.is-own :is(.task-map-card-top,.task-map-meta) { touch-action: none; }
+.task-map-order-controls { justify-content: flex-start; }
+.task-map-order-controls button { flex: 1 1 0; min-inline-size: 40px; }
+@media (prefers-reduced-motion: no-preference) { .task-map-node { transition: transform 180ms cubic-bezier(.16,1,.3,1); } }
