@@ -17,9 +17,9 @@ export async function sendVerificationCodeEmail(email: string, code: string) {
   await sendAuthEmail({
     email,
     code,
-    subject: "Код подтверждения почты — Taskora",
+    subject: "Код подтверждения почты — Taskoral",
     heading: "Подтвердите почту",
-    description: "Введите этот код на странице регистрации Taskora.",
+    description: "Введите этот код на странице регистрации Taskoral.",
   });
 }
 
@@ -27,9 +27,9 @@ export async function sendPasswordResetCodeEmail(email: string, code: string) {
   await sendAuthEmail({
     email,
     code,
-    subject: "Восстановление пароля — Taskora",
+    subject: "Восстановление пароля — Taskoral",
     heading: "Восстановление пароля",
-    description: "Введите этот код в Taskora, чтобы установить новый пароль.",
+    description: "Введите этот код в Taskoral, чтобы установить новый пароль.",
     warning: "Если вы не запрашивали восстановление, просто проигнорируйте письмо.",
   });
 }
@@ -37,11 +37,11 @@ export async function sendPasswordResetCodeEmail(email: string, code: string) {
 export async function sendPasswordChangedEmail(email: string) {
   await sendMail({
     to: email,
-    subject: "Пароль изменён — Taskora",
-    text: "Пароль вашей учётной записи Taskora был изменён. Если это сделали не вы, обратитесь к администратору.",
+    subject: "Пароль изменён — Taskoral",
+    text: "Пароль вашей учётной записи Taskoral был изменён. Если это сделали не вы, обратитесь к администратору.",
     html: emailLayout(
       "Пароль изменён",
-      "Пароль вашей учётной записи Taskora был изменён.",
+      "Пароль вашей учётной записи Taskoral был изменён.",
       "Если это сделали не вы, немедленно обратитесь к администратору.",
     ),
   });
@@ -91,7 +91,7 @@ async function sendMail(message: { to: string; subject: string; text: string; ht
   try {
     await transporter.sendMail({
       ...message,
-      from: process.env.SMTP_FROM ?? "Taskora <noreply@region-free.online>",
+      from: process.env.SMTP_FROM ?? "Taskoral <noreply@region-free.online>",
     });
   } catch (error) {
     console.error("SMTP delivery failed", error);
@@ -109,7 +109,7 @@ async function sendWithResend(message: { to: string; subject: string; text: stri
       },
       body: JSON.stringify({
         ...message,
-        from: process.env.MAIL_FROM ?? process.env.SMTP_FROM ?? "Taskora <noreply@region-free.online>",
+        from: process.env.MAIL_FROM ?? process.env.SMTP_FROM ?? "Taskoral <noreply@region-free.online>",
       }),
       signal: AbortSignal.timeout(15_000),
     });
@@ -127,5 +127,5 @@ async function sendWithResend(message: { to: string; subject: string; text: stri
 }
 
 function emailLayout(heading: string, description: string, content: string) {
-  return `<!doctype html><html lang="ru"><body style="margin:0;background:#f1f4ff;padding:24px;font-family:Arial,sans-serif;color:#111827"><div style="max-width:520px;margin:0 auto;border:1px solid #d9dfeb;border-radius:18px;background:#fff;padding:30px"><div style="margin-bottom:26px;color:#244ac8;font-size:18px;font-weight:800">Taskora</div><h1 style="margin:0 0 12px;font-size:25px;line-height:1.2">${heading}</h1><p style="margin:0 0 18px;color:#475467;line-height:1.6">${description}</p>${content}</div></body></html>`;
+  return `<!doctype html><html lang="ru"><body style="margin:0;background:#f1f4ff;padding:24px;font-family:Arial,sans-serif;color:#111827"><div style="max-width:520px;margin:0 auto;border:1px solid #d9dfeb;border-radius:18px;background:#fff;padding:30px"><div style="margin-bottom:26px;color:#244ac8;font-size:18px;font-weight:800">Taskoral</div><h1 style="margin:0 0 12px;font-size:25px;line-height:1.2">${heading}</h1><p style="margin:0 0 18px;color:#475467;line-height:1.6">${description}</p>${content}</div></body></html>`;
 }

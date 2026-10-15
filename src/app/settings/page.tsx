@@ -32,7 +32,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       <div className="content settings-page">
         <header className="settings-page-head">
           <span className="settings-page-kicker"><Settings2 size={17} /> Настройки рабочего пространства</span>
-          <h1>Настройки Taskora</h1>
+          <h1>Настройки Taskoral</h1>
           <p>Управляйте досками, справочниками и подключением личных Telegram-уведомлений.</p>
         </header>
         <SettingsHub panels={[

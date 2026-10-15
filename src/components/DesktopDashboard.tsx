@@ -106,7 +106,7 @@ export function DesktopDashboard({ initialView, userName }: { initialView: Deskt
     <main className={styles.shell}>
       <header className={styles.header}>
         <div>
-          <p className={styles.eyebrow}>TASKORA · РАБОЧИЙ ЭКРАН</p>
+          <p className={styles.eyebrow}>TASKORAL · РАБОЧИЙ ЭКРАН</p>
           <h1>Рабочий центр</h1>
           <p className={styles.muted}>Привет, {userName}. Обновлено в {lastSync.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</p>
         </div>

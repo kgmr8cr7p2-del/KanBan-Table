@@ -74,8 +74,8 @@ export async function sendTelegramStartMessage(chatId: string, state: TelegramSt
   const text = state === "connected"
     ? "✅ <b>Личный чат подключён</b>\n\nТеперь бот сможет присылать сюда напоминания с ваших личных досок."
     : state === "invalid"
-      ? "⚠️ <b>Код не принят</b>\n\nКод истёк, уже использован или введён неверно. Получите новый код в настройках Taskora и отправьте команду ещё раз."
-      : "👋 <b>Подключение уведомлений Taskora</b>\n\nОткройте настройки Taskora, нажмите «Получить код подключения» и отправьте боту команду <code>/connect КОД</code>.";
+      ? "⚠️ <b>Код не принят</b>\n\nКод истёк, уже использован или введён неверно. Получите новый код в настройках Taskoral и отправьте команду ещё раз."
+      : "👋 <b>Подключение уведомлений Taskoral</b>\n\nОткройте настройки Taskoral, нажмите «Получить код подключения» и отправьте боту команду <code>/connect КОД</code>.";
 
   return sendToChats(token, [chatId], text, "Telegram command response failed", false);
 }
@@ -136,9 +136,9 @@ function formatTelegramMessage(event: TelegramEvent, message: string) {
     return [
       `${icons[event]} <b>${escapeHtml(titles[event])}</b>`,
       "",
-      "Детали скрыты политикой безопасности. Откройте Taskora, чтобы посмотреть событие.",
+      "Детали скрыты политикой безопасности. Откройте Taskoral, чтобы посмотреть событие.",
       "",
-      `🕒 <i>${new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Moscow" }).format(new Date())} · Taskora</i>`,
+      `🕒 <i>${new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Moscow" }).format(new Date())} · Taskoral</i>`,
     ].join("\n");
   }
   const { taskTitle, body } = taskEvents.has(event) ? extractTaskTitle(message) : { taskTitle: "", body: message };
@@ -148,7 +148,7 @@ function formatTelegramMessage(event: TelegramEvent, message: string) {
     taskTitle ? `\n<b>${escapeHtml(taskTitle)}</b>` : null,
     details ? `\n${details}` : null,
     "",
-    `🕒 <i>${new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Moscow" }).format(new Date())} · Taskora</i>`,
+    `🕒 <i>${new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Moscow" }).format(new Date())} · Taskoral</i>`,
   ].filter((line) => line !== null).join("\n");
 }
 

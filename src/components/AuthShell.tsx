@@ -7,16 +7,16 @@ export function AuthShell({ mode, nextPath }: { mode: "login" | "register"; next
 
   return (
     <main className={`auth-page auth-page-${mode}`}>
-      <section className="auth-shell" aria-label={isLogin ? "Вход в Taskora" : "Регистрация в Taskora"}>
+      <section className="auth-shell" aria-label={isLogin ? "Вход в Taskoral" : "Регистрация в Taskoral"}>
         <header className="auth-brand">
           <Image className="auth-brand-mark" src="/taskora-icon-v2.png" width={42} height={42} alt="" priority />
-          <span className="auth-brand-name">Taskora</span>
+          <span className="auth-brand-name">Taskoral</span>
         </header>
 
         <div className="auth-intro">
           <div className="auth-card-head">
             <h1>{isLogin ? "Вход" : "Регистрация"}</h1>
-            <p>{isLogin ? "С возвращением. Войдите в аккаунт, чтобы продолжить работу." : "Создайте аккаунт, чтобы начать работать с командой в Taskora."}</p>
+            <p>{isLogin ? "С возвращением. Войдите в аккаунт, чтобы продолжить работу." : "Создайте аккаунт, чтобы начать работать с командой в Taskoral."}</p>
           </div>
           <div className="auth-pixel-art" aria-hidden="true"><span /></div>
         </div>

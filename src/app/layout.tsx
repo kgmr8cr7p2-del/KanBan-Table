@@ -6,7 +6,7 @@ import "./redesign.css";
 import "./design-system.css";
 
 export const metadata: Metadata = {
-  title: "Taskora — управление работой команды",
+  title: "Taskoral — управление работой команды",
   description: "Задачи, чаты, статусы и отчёты команды в одном рабочем пространстве.",
   icons: {
     icon: "/taskora-icon-v2.png",
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: "Taskora",
+    title: "Taskoral",
     statusBarStyle: "black-translucent",
   },
 };

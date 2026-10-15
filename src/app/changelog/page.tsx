@@ -11,7 +11,7 @@ export default async function ChangelogPage() {
       <div className="content changelog-page">
         <header className="changelog-head">
           <span className="settings-page-kicker"><Sparkles size={17} aria-hidden="true" /> Мемо обновлений</span>
-          <h1>Что нового в Taskora</h1>
+          <h1>Что нового в Taskoral</h1>
           <p>Здесь собраны заметные изменения продукта — от новых функций до улучшений рабочих сценариев.</p>
         </header>
         <ol className="changelog-list">

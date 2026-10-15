@@ -17,7 +17,7 @@ const icons = { bell: Bell, building: Building2, database: Database, layout: Lay
 export function SettingsHub({
   panels,
   ariaLabel = "Разделы настроек",
-  dialogKicker = "Настройка Taskora",
+  dialogKicker = "Настройка Taskoral",
   storageKey = "settings",
 }: {
   panels: SettingsPanel[];

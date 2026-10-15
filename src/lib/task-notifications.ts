@@ -55,7 +55,7 @@ export async function notifySharedTaskEvent(input: {
       userId: recipient.id,
       type: "SYSTEM" as const,
       category: "task" as const,
-      title: `Taskora · ${taskEventTitles[input.event]} · ${taskNumber}`,
+      title: `Taskoral · ${taskEventTitles[input.event]} · ${taskNumber}`,
       body: `${input.taskTitle} · ${compactNotificationBody(input.body)}`,
       href: `/board?task=${encodeURIComponent(input.taskId)}`,
     })));

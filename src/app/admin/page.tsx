@@ -21,13 +21,13 @@ export default async function AdminPage() {
     <AppShell user={user}>
       <div className="content settings-page admin-settings-page">
         <header className="settings-page-head">
-          <span className="settings-page-kicker"><ShieldCheck size={17} /> Администрирование Taskora</span>
+          <span className="settings-page-kicker"><ShieldCheck size={17} /> Администрирование Taskoral</span>
           <h1>Админ-панель</h1>
           <p>Управляйте пользователями, приглашениями, ролями и правами через отдельные рабочие окна.</p>
         </header>
         <SettingsHub
           ariaLabel="Разделы администрирования"
-          dialogKicker="Админ-панель Taskora"
+          dialogKicker="Админ-панель Taskoral"
           storageKey="admin"
           panels={[
             {

@@ -7,7 +7,7 @@ export async function POST() {
     const user = await requireVerifiedUser();
     const result = await sendWebPushNotification(user.id, {
       id: `test-${Date.now()}`,
-      title: "Taskora · Проверка уведомлений",
+      title: "Taskoral · Проверка уведомлений",
       body: "Системные уведомления работают. Новые сообщения и упоминания будут появляться здесь.",
       href: "/notifications",
     });

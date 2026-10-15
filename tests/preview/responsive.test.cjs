@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { spawn } = require('node:child_process');
 const { chromium } = require('@playwright/test');
 const fs = require('node:fs');
+const { contrastIssues } = require('./contrast.cjs');
 
 const baseURL = 'http://127.0.0.1:3017';
 const sizes = [[320,568],[390,844],[568,320],[600,700],[768,1024],[960,640],[1024,768],[1280,720],[1440,900],[1920,1080],[2560,1440],[3840,2160]];
@@ -44,6 +45,27 @@ test('desktop app shell fills the browser viewport',async()=>{
     await page.getByRole('button',{name:'Свернуть навигацию'}).click();
     const rail=await page.locator('.sidebar').boundingBox();
     assert.ok(rail.width<90&&rail.x===0&&rail.y===0&&Math.abs(rail.height-900)<=1,'Collapsed icon rail must still touch viewport edges');
+  } finally {await page.close();}
+});
+
+for(const theme of ['light','dark']) test(`report values and button variants have readable contrast ${theme}`,async()=>{
+  const page=await browser.newPage({viewport:{width:631,height:884}});
+  try {
+    for(const path of ['/reports','/contrast']) {
+      await page.goto(baseURL+path);await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
+      await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(400);
+      assert.deepEqual(await contrastIssues(page),[],`${path} ${theme}`);
+      if(path==='/reports') {
+        assert.equal(await page.locator('.report-kpi-primary > strong').innerText(),'121');
+        await page.locator('.report-kpi-primary').scrollIntoViewIfNeeded();
+        await page.screenshot({path:`.local/responsive/report-contrast-${theme}.png`});
+      } else {
+        for(const button of await page.locator('.content .button').all()) {
+          await button.hover();await page.waitForTimeout(200);
+          assert.deepEqual(await contrastIssues(page),[],`hover ${theme}`);
+        }
+      }
+    }
   } finally {await page.close();}
 });
 
@@ -392,10 +414,12 @@ for(const [width,height] of [[320,568],[568,320],[768,1024],[1024,768],[1920,108
         if(path==='/admin') {await page.locator('.settings-choice').first().click();await assertGeometry(page,'.settings-dialog');}
         if(path==='/chats') {await page.locator('.chat-directory-item').first().click();await assertGeometry(page);}
         if(path==='/archive') {await page.locator('.archive-row-button').first().click();await assertGeometry(page,'dialog[open]');}
+        assert.deepEqual(await contrastIssues(page),[],`contrast ${path} light ${width}`);
         if([320,1024].includes(width)) await page.screenshot({path:`.local/responsive/${path.slice(1)}-${width}.png`});
         await page.evaluate(()=>{document.documentElement.dataset.theme='dark'});
         await page.waitForTimeout(350);
         await assertGeometry(page);
+        assert.deepEqual(await contrastIssues(page),[],`contrast ${path} dark ${width}`);
         if([320,1024].includes(width)) await page.screenshot({path:`.local/responsive/${path.slice(1)}-${width}-dark.png`});
       }
       assert.deepEqual(errors,[]);

@@ -24,7 +24,7 @@ const options = [
   { key: "browserMentions", title: "Упоминания", description: "Комментарии, где вас отметили через @.", icon: MessageCircle },
   { key: "browserTasks", title: "Задачи", description: "Создание, комментарии, смена статуса и исполнителей.", icon: CheckCircle2 },
   { key: "browserDeadlines", title: "Дедлайны", description: "Напоминания по срокам задач.", icon: CalendarClock },
-  { key: "browserSystem", title: "Системные", description: "Тестовые и служебные уведомления Taskora.", icon: Bell },
+  { key: "browserSystem", title: "Системные", description: "Тестовые и служебные уведомления Taskoral.", icon: Bell },
 ] as const;
 
 export function NotificationPreferenceSettings() {

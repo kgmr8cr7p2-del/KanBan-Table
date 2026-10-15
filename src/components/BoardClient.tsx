@@ -1447,7 +1447,7 @@ function TaskActivityTimeline({ logs }: { logs: any[] }) {
           <div>
             <strong>{activityLabel(log.action)}</strong>
             <p>{activityDetails(log)}</p>
-            <small>{log.user?.name ?? "Taskora"} · {dateTime(log.createdAt)}</small>
+            <small>{log.user?.name ?? "Taskoral"} · {dateTime(log.createdAt)}</small>
           </div>
         </li>
       ))}

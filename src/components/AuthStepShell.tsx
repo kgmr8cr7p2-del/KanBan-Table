@@ -17,7 +17,7 @@ export function AuthStepShell({
       <section className="auth-shell" aria-labelledby="auth-step-title">
         <header className="auth-brand">
           <Image className="auth-brand-mark" src="/taskora-icon-v2.png" width={42} height={42} alt="" priority />
-          <span className="auth-brand-name">Taskora</span>
+          <span className="auth-brand-name">Taskoral</span>
         </header>
         <div className="auth-step-intro">
           <h1 id="auth-step-title">{title}</h1>

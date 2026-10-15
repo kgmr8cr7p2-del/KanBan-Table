@@ -49,6 +49,6 @@ createRoot(document.getElementById("root")!).render(
       <WorkspaceBrand /><p style={{fontSize:10,color:"#c2bbeb",padding:"0 16px 12px",lineHeight:1.5}}>Демо · тестовые данные<br />Без сохранения изменений</p>
       <AppNav user={view.currentUser} />
     </aside>
-    <main className="main">{window.location.pathname === "/oil-depots" ? <OilDepotDirectory depots={demoDepots} canCheck={true} /> : previewPath === "/board" || previewPath === "/" ? <BoardClient initialView={view} /> : ["/reports","/history","/archive","/chats","/files","/settings","/profile","/admin","/desktop","/notifications","/login","/register","/changelog"].includes(previewPath) ? <PreviewSection path={previewPath}/> : <PreviewUnavailable />}</main>
+    <main className="main">{window.location.pathname === "/oil-depots" ? <OilDepotDirectory depots={demoDepots} canCheck={true} /> : previewPath === "/board" || previewPath === "/" ? <BoardClient initialView={view} /> : ["/reports","/history","/archive","/chats","/files","/settings","/profile","/admin","/desktop","/notifications","/login","/register","/changelog","/contrast"].includes(previewPath) ? <PreviewSection path={previewPath}/> : <PreviewUnavailable />}</main>
   </div>,
 );

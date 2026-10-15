@@ -8,7 +8,7 @@ export const permissionOptions = [
   { key: "VIEW_HISTORY", label: "История изменений", description: "Просматривать историю действий по задачам." },
   { key: "VIEW_FILES", label: "Общие файлы", description: "Открывать защищённое хранилище общих важных файлов." },
   { key: "MANAGE_FILES", label: "Управление файлами", description: "Загружать и удалять файлы в общем защищённом хранилище." },
-  { key: "USE_CHATS", label: "Личные чаты", description: "Переписываться с другими участниками внутри Taskora." },
+  { key: "USE_CHATS", label: "Личные чаты", description: "Переписываться с другими участниками внутри Taskoral." },
   { key: "USE_TELEGRAM", label: "Telegram-уведомления", description: "Подключать личный чат с ботом и получать напоминания." },
   { key: "MANAGE_WORKSPACE", label: "Настройки пространства", description: "Управлять нефтебазами и общими настройками рабочего пространства." },
   { key: "MANAGE_USERS", label: "Пользователи и роли", description: "Одобрять пользователей, назначать роли и настраивать права." },
