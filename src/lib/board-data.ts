@@ -7,6 +7,7 @@ import { isAiTaskDraftEnabled } from "@/lib/ai-task-draft";
 import { canCreateTask, canDeleteTask, canManageColumns, canViewTaskFiles } from "@/lib/permissions";
 import { hasPermission } from "@/lib/role-permissions";
 import { buildTimeReport } from "@/lib/task-metrics";
+import { projectTaskForMap } from "@/lib/task-map-projection";
 
 const profileUserSelect = {
   id: true,
@@ -159,13 +160,7 @@ export async function getBoardView(user: CurrentUser, filters?: URLSearchParams)
     board: { ...board, columns: filteredColumns },
     availableBoards,
     dependencies,
-    mapTasks: board.columns.flatMap((column) => column.tasks.map((task) => ({
-      id: task.id, taskNumber: task.taskNumber, title: task.title, description: task.description,
-      deadline: task.deadline, parentId: task.parentId, assigneeId: task.assigneeId,
-      assignees: task.assignees.map((item) => ({ userId: item.userId })),
-      column: { name: column.name },
-      checklists: task.checklists.map((list) => ({ id: list.id, title: list.title, items: list.items.map((item) => ({ id: item.id, text: item.text, completed: item.completed })) })),
-    }))),
+    mapTasks: board.columns.flatMap((column) => column.tasks.map((task) => projectTaskForMap(task, column.name))),
     mapPreference: mapPreference?.taskMapPreference === "map" ? "map" : "board",
     users,
     tags,

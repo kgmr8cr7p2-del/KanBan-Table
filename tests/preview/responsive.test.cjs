@@ -103,6 +103,9 @@ test('task map keeps an icon rail and reveals child and detail plaques on the sa
     assert.equal(await page.locator('[data-map-task="t114"]').count(),0,'Completed context tasks must also be absent');
     assert.ok(await page.locator('.task-map-lane-label').count()>1,'Active oil depots have separate vertical lanes');
     assert.equal(await page.locator('.task-map-lane').count(),await page.locator('.task-map-lane-label').count()*await page.locator('.task-map-bucket').count(),'Every date shares the same depot lanes');
+    assert.equal(await page.locator('[data-map-task="t101"]').evaluate((element)=>element.closest('[data-map-lane]')?.getAttribute('data-map-lane')),'d1','A task must use its saved oil depot on the map');
+    assert.ok((await page.locator('.task-map-lane-rail').innerText()).includes('Нижний Тагил'),'The lane displays the saved depot name');
+    assert.ok(!(await page.locator('.task-map-lane-rail').innerText()).includes('Без нефтебазы'),'Assigned depots must not fall into an unassigned lane');
     const sameDateRoute=await page.locator('.task-map-links > path:not(.is-proposed)').first().getAttribute('d');
     assert.match(sameDateRoute,/ C | Q /,'Dependencies should stay connected on the expanded day');
     assert.equal(await page.locator('[data-map-task="t101"]').evaluate(element=>getComputedStyle(element.parentElement).marginLeft),'0px');
