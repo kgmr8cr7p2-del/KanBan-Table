@@ -100,10 +100,20 @@ test('task map keeps an icon rail and reveals child and detail plaques on the sa
     await page.locator('.task-map').waitFor();
     assert.ok(await page.locator('.task-map-card').count()>0);
     const sameDateRoute=await page.locator('.task-map-links > path:not(.is-proposed)').first().getAttribute('d');
-    assert.match(sameDateRoute,/ Q /,'Same-date links should use a compact side-gutter route');
-    assert.equal(await page.locator('[data-map-task="t101"]').evaluate(element=>getComputedStyle(element.parentElement).marginLeft),'16px');
+    assert.match(sameDateRoute,/ C | Q /,'Dependencies should stay connected on the expanded day');
+    assert.equal(await page.locator('[data-map-task="t101"]').evaluate(element=>getComputedStyle(element.parentElement).marginLeft),'0px');
+    assert.equal(await page.locator('.task-map-stack').first().evaluate(element=>getComputedStyle(element).display),'flex');
+    const browserScale=await page.evaluate(()=>window.devicePixelRatio);
+    const mapBox=await page.locator('.task-map-scroll').boundingBox();
+    await page.mouse.move(mapBox.x+mapBox.width/2,mapBox.y+mapBox.height/2);
+    await page.mouse.wheel(0,-200);
+    assert.equal(await page.locator('.task-map-footer output').innerText(),'110%');
+    assert.equal(await page.evaluate(()=>window.devicePixelRatio),browserScale,'Map wheel must not zoom the browser');
     await page.locator('.task-map-expand').first().click();
     assert.ok(await page.locator('.task-map-children .task-map-card').count()>0);
+    await page.locator('[data-map-task="t101"] .task-map-link-handle').dragTo(page.locator('[data-map-task="t103"]'));
+    assert.ok(await page.getByRole('dialog',{name:'Подтвердить зависимость'}).isVisible());
+    await page.getByRole('button',{name:'Отмена'}).click();
     await page.locator('.task-map-children .task-map-title').first().click();
     assert.equal(await page.locator('.task-map-detail').count(),1);
     assert.ok(await page.locator('.task-map-deadline-form input[type="date"]').isVisible(),'Deadline needs a keyboard-accessible control');
@@ -118,8 +128,10 @@ test('task map keeps an icon rail and reveals child and detail plaques on the sa
     assert.ok(await page.locator('.mobile-nav').isVisible(),'Mobile navigation must remain visible when the desktop rail is collapsed');
     await page.goto(baseURL+'/board');
     await page.locator('.board-view-tabs').getByRole('button',{name:'Карта',exact:true}).click();
+    await page.getByRole('button',{name:'Показать настройки карты'}).click();
     const scaleHeight=(await page.locator('.task-map-controls button').first().boundingBox()).height;
-    assert.ok(scaleHeight>=44,'Map scale target must remain touch-sized');
+    assert.ok(scaleHeight>=36,'Compact scale target must remain usable');
+    await page.getByRole('button',{name:'Скрыть настройки карты'}).click();
     await page.locator('.task-map-title').first().click();
     assert.ok(await page.locator('.task-map-deadline-form input[type="date"]').isVisible(),'Mobile date change must not rely on dragging');
   } finally {await page.close();}

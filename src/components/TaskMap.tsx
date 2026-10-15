@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, CalendarDays, Check, ChevronDown, ChevronRight, Link2, Plus, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, ChevronDown, ChevronRight, Link2, Plus, RotateCcw, Settings2, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type MapTask = {
@@ -90,6 +90,32 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
   const canvasRef = useRef<HTMLDivElement>(null);
   const nodesRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [linkDraft, setLinkDraft] = useState<{ from: string; to: string } | null>(null);
+  const [dragKind, setDragKind] = useState<"order" | "link" | null>(null);
+  const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+
+  useEffect(() => {
+    const key = `taskora-map-zoom:${currentUserId}:${boardId}`;
+    const stored = Number(localStorage.getItem(key));
+    setZoom(Number.isFinite(stored) && stored >= .5 && stored <= 2 ? stored : 1);
+  }, [currentUserId, boardId]);
+  const changeZoom = useCallback((next: number) => {
+    setZoom(Math.max(.5, Math.min(2, Math.round(next * 10) / 10)));
+  }, []);
+  useEffect(() => { localStorage.setItem(`taskora-map-zoom:${currentUserId}:${boardId}`, String(zoom)); }, [zoom, currentUserId, boardId]);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const onWheel = (event: WheelEvent) => {
+      if (event.target instanceof Element && event.target.closest(".task-map-tools")) return;
+      event.preventDefault();
+      changeZoom(zoom + (event.deltaY < 0 ? .1 : -.1));
+    };
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", onWheel);
+  }, [zoom, changeZoom]);
 
   useEffect(() => {
     try { setOrder(JSON.parse(localStorage.getItem(STORAGE_PREFIX + currentUserId + ":" + boardId) ?? "[]")); } catch { setOrder([]); }
@@ -116,18 +142,22 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     return [...map].sort(([a], [b]) => a === "unscheduled" ? 1 : b === "unscheduled" ? -1 : a.localeCompare(b))
       .map(([key, value]) => ({ key, tasks: value.sort((a, b) => (order.indexOf(a.id) < 0 ? 99999 : order.indexOf(a.id)) - (order.indexOf(b.id) < 0 ? 99999 : order.indexOf(b.id))) }));
   }, [roots, scale, order]);
+  const bucketKeys = buckets.map((bucket) => bucket.key).join("|");
+  const bucketsRef = useRef(buckets);
+  bucketsRef.current = buckets;
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       const today = keyFor(new Date().toISOString(), scale);
-      const target = buckets.find((bucket) => bucket.key !== "unscheduled" && bucket.key >= today) ?? [...buckets].reverse().find((bucket) => bucket.key !== "unscheduled");
+      const currentBuckets = bucketsRef.current;
+      const target = currentBuckets.find((bucket) => bucket.key !== "unscheduled" && bucket.key >= today) ?? [...currentBuckets].reverse().find((bucket) => bucket.key !== "unscheduled");
       const element = target ? [...canvas.querySelectorAll<HTMLElement>("[data-map-date]")].find((item) => item.dataset.mapDate === target.key) : null;
       if (element) canvas.scrollLeft = Math.max(0, element.offsetLeft - 28);
     });
     return () => cancelAnimationFrame(frame);
-  }, [boardId, scale, buckets]);
+  }, [boardId, scale, bucketKeys]);
 
   const measure = useCallback(() => {
     const plane = nodesRef.current;
@@ -146,40 +176,40 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
       const from = rects.get(link.predecessorId)!;
       const to = rects.get(link.successorId)!;
       let d: string;
-      if (from.bucket === to.bucket) {
-        const x1 = from.rect.right - box.left;
-        const y1 = from.rect.top + from.rect.height / 2 - box.top;
-        const x2 = to.rect.right - box.left;
-        const y2 = to.rect.top + to.rect.height / 2 - box.top;
+      if (from.bucket === to.bucket && to.rect.left <= from.rect.left + 8) {
+        const x1 = (from.rect.right - box.left) / zoom;
+        const y1 = (from.rect.top + from.rect.height / 2 - box.top) / zoom;
+        const x2 = (to.rect.right - box.left) / zoom;
+        const y2 = (to.rect.top + to.rect.height / 2 - box.top) / zoom;
         const lane = Math.max(x1, x2) + 14 + (index % 2) * 5;
         const direction = y2 >= y1 ? 1 : -1;
         const radius = Math.min(8, Math.abs(y2 - y1) / 4, lane - x1, lane - x2);
         d = `M ${x1} ${y1} H ${lane - radius} Q ${lane} ${y1} ${lane} ${y1 + radius * direction} V ${y2 - radius * direction} Q ${lane} ${y2} ${lane - radius} ${y2} H ${x2}`;
       } else {
-        const x1 = from.rect.right - box.left;
-        const y1 = from.rect.top + from.rect.height / 2 - box.top;
-        const x2 = to.rect.left - box.left;
-        const y2 = to.rect.top + to.rect.height / 2 - box.top;
+        const x1 = (from.rect.right - box.left) / zoom;
+        const y1 = (from.rect.top + from.rect.height / 2 - box.top) / zoom;
+        const x2 = (to.rect.left - box.left) / zoom;
+        const y2 = (to.rect.top + to.rect.height / 2 - box.top) / zoom;
         const reach = Math.min(48, Math.max(18, Math.abs(x2 - x1) / 3));
         const direction = x2 >= x1 ? 1 : -1;
         d = `M ${x1} ${y1} C ${x1 + reach * direction} ${y1}, ${x2 - reach * direction} ${y2}, ${x2} ${y2}`;
       }
       return { key: `${link.predecessorId}:${link.successorId}:${link.proposed}`, d, proposed: link.proposed };
     }));
-  }, [dependencies, proposals]);
+  }, [dependencies, proposals, zoom]);
   useEffect(() => {
     const frame = requestAnimationFrame(measure);
     const observer = new ResizeObserver(measure);
     if (nodesRef.current) observer.observe(nodesRef.current);
     window.addEventListener("resize", measure);
     return () => { cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener("resize", measure); };
-  }, [measure, expanded, detailId, scale, visible]);
+  }, [measure, expanded, detailId, scale, visible, order, zoom]);
 
   useEffect(() => {
     if (!moveDraft) return;
     const frame = requestAnimationFrame(() => {
       const card = [...(nodesRef.current?.querySelectorAll<HTMLElement>("[data-map-task]") ?? [])].find((element) => element.dataset.mapTask === moveDraft.taskId);
-      const input = card?.nextElementSibling?.querySelector<HTMLInputElement>(".task-map-deadline-form input[type='date']");
+      const input = card?.parentElement?.querySelector<HTMLInputElement>(".task-map-deadline-form input[type='date']");
       if (!input) return;
       input.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "nearest", inline: "nearest" });
       input.focus({ preventScroll: true });
@@ -204,7 +234,8 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     const sourceIndex = next.indexOf(sourceId);
     const targetIndex = next.indexOf(targetId);
     if (sourceIndex < 0 || targetIndex < 0) return;
-    [next[sourceIndex], next[targetIndex]] = [next[targetIndex], next[sourceIndex]];
+    next.splice(sourceIndex, 1);
+    next.splice(next.indexOf(targetId), 0, sourceId);
     setOrder(next);
     localStorage.setItem(STORAGE_PREFIX + currentUserId + ":" + boardId, JSON.stringify(next));
   }
@@ -236,10 +267,19 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     return <div className={`task-map-branch ${child ? "is-child" : ""} ${sameDateDependency ? "is-same-date-dependent" : ""}`} key={task.id}>
       <article className={`task-map-card ${own ? "is-own" : "is-context"} ${detail ? "is-selected" : ""}`} data-map-task={task.id}
         draggable={own && !child}
-        onDragStart={(event) => { event.dataTransfer.setData("text/plain", task.id); event.dataTransfer.effectAllowed = "move"; }}
-        onDragOver={(event) => { if (own && !child && event.dataTransfer.types.includes("text/plain")) event.preventDefault(); }}
-        onDrop={(event) => { if (!own || child) return; event.preventDefault(); const source = event.dataTransfer.getData("text/plain"); if (source && keyFor(allTasks.find((item) => item.id === source)?.deadline ?? null, scale) === keyFor(task.deadline, scale)) reorder(source, task.id); }}>
+        onDragStart={(event) => { if (event.target instanceof Element && event.target.closest(".task-map-link-handle")) return; setDragKind("order"); event.dataTransfer.setData("text/plain", `order:${task.id}`); event.dataTransfer.effectAllowed = "move"; }}
+        onDragEnd={() => setDragKind(null)}
+        onDragOver={(event) => { if (event.dataTransfer.types.includes("text/plain")) event.preventDefault(); }}
+        onDrop={(event) => {
+          const payload = event.dataTransfer.getData("text/plain");
+          if (payload.startsWith("link:")) { const predecessorId = payload.slice(5); event.preventDefault(); event.stopPropagation(); setDragKind(null); if (predecessorId !== task.id && !dependencies.some((link) => link.predecessorId === predecessorId && link.successorId === task.id) && own) setLinkDraft({ from: predecessorId, to: task.id }); return; }
+          if (!own || child) return;
+          event.preventDefault(); event.stopPropagation(); setDragKind(null);
+          const source = payload.startsWith("order:") ? payload.slice(6) : "";
+          if (source && keyFor(allTasks.find((item) => item.id === source)?.deadline ?? null, scale) === keyFor(task.deadline, scale)) reorder(source, task.id);
+        }}>
         <span className="task-map-card-top"><span>#{task.taskNumber} · {task.column?.name ?? "Задача"}</span><span>{own ? "Моя задача" : "Не моя"}</span></span>
+        {own ? <span className="task-map-link-handle" draggable title="Потяните к задаче, которая зависит от этой" aria-label={`Создать зависимость от задачи ${task.title}`} onDragStart={(event) => { event.stopPropagation(); setDragKind("link"); event.dataTransfer.setData("text/plain", `link:${task.id}`); event.dataTransfer.effectAllowed = "link"; }} onDragEnd={() => setDragKind(null)}><Link2 size={15} /></span> : null}
         <button type="button" className="task-map-title" onClick={() => { setDetailId(detail ? null : task.id); requestAnimationFrame(measure); }} aria-expanded={detail}>{task.title}<ChevronRight size={16} aria-hidden="true" /></button>
         <span className="task-map-meta"><CalendarDays size={14} aria-hidden="true" />{task.deadline ? formatter.format(new Date(task.deadline)) : "Без срока"}{items.length ? <span>{done}/{items.length} пунктов</span> : null}</span>
         {own && !child && detail && ownBucketTasks.length > 1 ? <div className="task-map-order-controls"><button type="button" disabled={ownPosition <= 0} onClick={() => reorder(task.id, ownBucketTasks[ownPosition - 1].id)} aria-label={`Поднять задачу ${task.title}`}>↑</button><button type="button" disabled={ownPosition < 0 || ownPosition >= ownBucketTasks.length - 1} onClick={() => reorder(task.id, ownBucketTasks[ownPosition + 1].id)} aria-label={`Опустить задачу ${task.title}`}>↓</button></div> : null}
@@ -264,14 +304,15 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
   }
 
   return <section className="task-map" aria-label="Карта задач">
-    <header className="task-map-header"><div><h2>Карта задач</h2><p>Ваши задачи, сроки и реальные зависимости на одной плоскости</p></div><div className="task-map-controls" aria-label="Масштаб карты">{(["day", "week", "month"] as Scale[]).map((item) => <button key={item} type="button" aria-pressed={scale === item} onClick={() => setScale(item)}>{item === "day" ? "Дни" : item === "week" ? "Недели" : "Месяцы"}</button>)}</div></header>
-    <div className="task-map-legend"><span><i className="solid" /> Подтверждённая связь</span><span><i className="dashed" /> Предложение</span><span><i className="context" /> Чужая задача — контекст</span></div>
+    <header className="task-map-header"><h2>Карта задач</h2><span>Потяните карточку для порядка, связь — за значок <Link2 size={13} aria-hidden="true" /></span></header>
     {error ? <p className="task-map-error" role="alert">{error}</p> : null}
-    {proposals.length ? <div className="task-map-suggestions"><strong>Возможные зависимости</strong>{proposals.slice(0, 3).map((item) => { const before = visible.find((task) => task.id === item.predecessorId)!; const after = visible.find((task) => task.id === item.successorId)!; return <div key={`${before.id}:${after.id}`} className="task-map-suggestion"><span>#{before.taskNumber} → #{after.taskNumber}<small>{item.reason}</small></span><button type="button" disabled={busy} onClick={() => void command({ action: "connect", predecessorId: before.id, successorId: after.id })}>Принять</button><button type="button" onClick={() => { const next = [...proposedHidden, `${before.id}:${after.id}`]; setProposedHidden(next); localStorage.setItem(`taskora-map-dismissed:${currentUserId}:${boardId}`, JSON.stringify(next)); }} aria-label="Отклонить предложение">×</button></div>; })}</div> : null}
-    <div className="task-map-scroll" ref={canvasRef} tabIndex={0} aria-label="Прокручиваемая временная шкала"><div className="task-map-plane" ref={nodesRef}>
+    <div className="task-map-tools"><button type="button" className="task-map-tools-toggle" onClick={() => setToolsOpen(!toolsOpen)} aria-expanded={toolsOpen} aria-label={toolsOpen ? "Скрыть настройки карты" : "Показать настройки карты"}><Settings2 size={17} /> <span>Вид</span>{proposals.length ? <b>{proposals.length}</b> : null}</button>{toolsOpen ? <div className="task-map-tools-panel"><div className="task-map-controls" aria-label="Масштаб времени">{(["day", "week", "month"] as Scale[]).map((item) => <button key={item} type="button" aria-pressed={scale === item} onClick={() => setScale(item)}>{item === "day" ? "Дни" : item === "week" ? "Недели" : "Месяцы"}</button>)}</div><div className="task-map-legend"><span><i className="solid" /> Связь</span><span><i className="dashed" /> Предложение</span><span><i className="context" /> Чужая задача</span></div>{proposals.length ? <div className="task-map-suggestions"><strong>Возможные зависимости</strong>{proposals.slice(0, 3).map((item) => { const before = visible.find((task) => task.id === item.predecessorId)!; const after = visible.find((task) => task.id === item.successorId)!; return <div key={`${before.id}:${after.id}`} className="task-map-suggestion"><span>#{before.taskNumber} → #{after.taskNumber}<small>{item.reason}</small></span><button type="button" disabled={busy} onClick={() => void command({ action: "connect", predecessorId: before.id, successorId: after.id })}>Принять</button><button type="button" onClick={() => { const next = [...proposedHidden, `${before.id}:${after.id}`]; setProposedHidden(next); localStorage.setItem(`taskora-map-dismissed:${currentUserId}:${boardId}`, JSON.stringify(next)); }} aria-label="Отклонить предложение">×</button></div>; })}</div> : null}</div> : null}</div>
+    {linkDraft ? <div className="task-map-link-confirm" role="dialog" aria-label="Подтвердить зависимость"><span>#{allTasks.find((task) => task.id === linkDraft.from)?.taskNumber} → #{allTasks.find((task) => task.id === linkDraft.to)?.taskNumber}<small>Вторая задача зависит от первой</small></span><button type="button" disabled={busy} onClick={() => { void command({ action: "connect", predecessorId: linkDraft.from, successorId: linkDraft.to }); setLinkDraft(null); }}>Создать связь</button><button type="button" onClick={() => setLinkDraft(null)}>Отмена</button></div> : null}
+    <div className={`task-map-scroll ${dragKind === "link" ? "is-linking" : ""}`} ref={canvasRef} tabIndex={0} aria-label="Карта задач: колесо меняет масштаб, пустое место перемещает карту" onPointerDown={(event) => { if (event.button !== 0 || !(event.target instanceof Element) || event.target.closest(".task-map-card,button,input,select,.task-map-detail")) return; const canvas = canvasRef.current; if (!canvas) return; panRef.current = { x: event.clientX, y: event.clientY, left: canvas.scrollLeft, top: canvas.scrollTop }; canvas.setPointerCapture(event.pointerId); canvas.classList.add("is-panning"); }} onPointerMove={(event) => { const pan = panRef.current; const canvas = canvasRef.current; if (!pan || !canvas) return; canvas.scrollLeft = pan.left - (event.clientX - pan.x); canvas.scrollTop = pan.top - (event.clientY - pan.y); }} onPointerUp={() => { panRef.current = null; canvasRef.current?.classList.remove("is-panning"); }} onPointerCancel={() => { panRef.current = null; canvasRef.current?.classList.remove("is-panning"); }}><div className="task-map-plane" ref={nodesRef} style={{ zoom }}>
       <svg className="task-map-links" aria-hidden="true" width={viewport.width} height={viewport.height}><defs><marker id="task-map-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6" /></marker></defs>{paths.map((path) => <path key={path.key} d={path.d} className={path.proposed ? "is-proposed" : ""} markerEnd="url(#task-map-arrow)" />)}</svg>
-      {buckets.length ? buckets.map((bucket, index) => <div className="task-map-bucket" key={bucket.key} data-map-date={bucket.key} onDragOver={(event) => event.preventDefault()} onDrop={(event) => {
-        event.preventDefault(); const id = event.dataTransfer.getData("text/plain"); const task = allTasks.find((item) => item.id === id);
+      {buckets.length ? buckets.map((bucket, index) => <div className="task-map-bucket" key={bucket.key} data-map-date={bucket.key} onDragOver={(event) => { if (event.dataTransfer.types.includes("text/plain")) event.preventDefault(); }} onDrop={(event) => {
+        const payload = event.dataTransfer.getData("text/plain"); if (!payload.startsWith("order:")) return;
+        event.preventDefault(); setDragKind(null); const id = payload.slice(6); const task = allTasks.find((item) => item.id === id);
         if (!task || !mine(task, currentUserId, personalBoard) || bucket.key === "unscheduled" || keyFor(task.deadline, scale) === bucket.key) return;
         const suggestedDate = scale === "month" ? `${bucket.key}-01` : bucket.key;
         setMoveDraft({ taskId: id, date: suggestedDate }); setMoveReason(""); setDetailId(id);
@@ -281,6 +322,6 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
         <div className="task-map-stack">{bucket.tasks.map((task) => renderTask(task))}</div>
       </div>) : <div className="task-map-empty"><Link2 size={32} /><h3>Пока нет задач для карты</h3><p>Назначенные вам задачи появятся здесь вместе со связанными задачами коллег.</p></div>}
     </div></div>
-    <footer className="task-map-footer"><span><ZoomOut size={15} /> Масштаб</span><span>{scale === "day" ? "Дни" : scale === "week" ? "Недели" : "Месяцы"}</span><ZoomIn size={15} /><button type="button" onClick={() => { setExpanded([]); setDetailId(null); canvasRef.current?.scrollTo({ left: 0, behavior: "smooth" }); }}><RotateCcw size={15} /> Сбросить вид</button></footer>
+    <footer className="task-map-footer"><button type="button" onClick={() => changeZoom(zoom - .1)} aria-label="Уменьшить масштаб"><ZoomOut size={16} /></button><output aria-label="Масштаб карты">{Math.round(zoom * 100)}%</output><button type="button" onClick={() => changeZoom(zoom + .1)} aria-label="Увеличить масштаб"><ZoomIn size={16} /></button><button type="button" onClick={() => { const canvas = canvasRef.current; if (canvas && nodesRef.current) changeZoom(Math.max(.5, Math.min(1.5, canvas.clientWidth / nodesRef.current.scrollWidth))); }} >Уместить всё</button><button type="button" onClick={() => { setExpanded([]); setDetailId(null); changeZoom(1); canvasRef.current?.scrollTo({ left: 0, top: 0, behavior: "smooth" }); }}><RotateCcw size={15} /> Сбросить вид</button></footer>
   </section>;
 }
