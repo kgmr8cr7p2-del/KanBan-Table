@@ -1748,16 +1748,6 @@
   :root[data-interface-mode="new"] .board-lane-nav { display: flex; }
 }
 
-/* One continuous rounded work surface across the application. */
-@media (min-width: 961px) {
-  :root[data-interface-mode="new"] .app > .main,
-  :root[data-interface-mode="new"] .main:has(> .workspace-header) {
-    block-size: calc(100dvh - 24px);
-    margin: 12px 12px 12px 0;
-    border-radius: 28px;
-  }
-}
-
 /* The board toolbar consumes the available width instead of capping search. */
 :root[data-interface-mode="new"] .topbar.board-topbar.workspace-toolbar {
   display: grid;
@@ -2009,10 +1999,9 @@
 :root[data-interface-mode="new"] :is(button,a,input,textarea,select,summary):focus-visible { outline: 3px solid #b8861b; outline-offset: 3px; }
 
 /* A single staged arrival makes the workspace feel assembled, not delayed. */
-@keyframes taskora-shell-arrive { from { opacity: .25; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes taskora-surface-arrive { from { opacity: .35; } to { opacity: 1; } }
 @keyframes taskora-content-arrive { from { opacity: .35; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-:root[data-interface-mode="new"] .sidebar { animation: taskora-shell-arrive 640ms cubic-bezier(.16,1,.3,1) both; }
+:root[data-interface-mode="new"] .sidebar { animation: taskora-surface-arrive 640ms cubic-bezier(.16,1,.3,1) both; }
 :root[data-interface-mode="new"] .main { animation: taskora-surface-arrive 720ms 80ms cubic-bezier(.16,1,.3,1) both; }
 :root[data-interface-mode="new"] .main > :is(.content,.workspace-header,.board-topbar,.topbar) { animation: taskora-content-arrive 650ms 150ms cubic-bezier(.16,1,.3,1) both; }
 :root[data-interface-mode="new"] .main > :is(.board-topbar,.topbar) { animation-name: taskora-surface-arrive; }
@@ -2028,10 +2017,10 @@
   :root[data-interface-mode="new"] .workspace-board .task-card:hover { transform: none; }
 }
 @media (min-width: 961px) {
-  :root[data-interface-mode="new"] .app { grid-template-columns: 220px minmax(0,1fr); gap: 0; padding: 20px; background: var(--ds-bg); }
-  :root[data-interface-mode="new"] .sidebar { block-size: calc(100dvh - 40px); max-block-size: none; border-radius: 22px 0 0 22px; padding: 24px 14px; }
-  :root[data-interface-mode="new"] .main { block-size: calc(100dvh - 40px); margin: 0; border-radius: 0 22px 22px 0; }
-  :root[data-interface-mode="new"] .main:has(> .workspace-header) { block-size: calc(100dvh - 40px); border-radius: 0 22px 22px 0; }
+  :root[data-interface-mode="new"] .app { grid-template-columns: 214px minmax(0,1fr); gap: 0; inline-size: 100%; margin: 0; padding: 0; background: var(--ds-bg); }
+  :root[data-interface-mode="new"] .sidebar { block-size: 100dvh; max-block-size: none; border-radius: 0; padding: 24px 14px; box-shadow: none; }
+  :root[data-interface-mode="new"] .app > .main,
+  :root[data-interface-mode="new"] .main:has(> .workspace-header) { block-size: 100dvh; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
 }
 @media (max-width: 960px) {
   :root[data-interface-mode="new"] .app { background: var(--ds-bg); }
@@ -2044,43 +2033,6 @@
   :root[data-interface-mode="new"] .mobile-nav-more[open] > summary { background: var(--taskora-accent); color: var(--taskora-accent-ink); }
 }
 
-/* Reference composition: one framed work surface, a result ledger and a route panel. */
-@media (min-width: 961px) {
-  :root[data-interface-mode="new"] .app {
-    --frame-pad: clamp(24px, 3.2vw, 48px);
-    position: relative;
-    grid-template-columns: 214px minmax(0, 1fr);
-    inline-size: min(100%, 1600px);
-    margin-inline: auto;
-    padding: var(--frame-pad);
-    isolation: isolate;
-  }
-  :root[data-interface-mode="new"] .app::before {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    inset-block-start: -104px;
-    inset-inline-start: -100px;
-    inline-size: 290px;
-    block-size: 290px;
-    border-radius: 50%;
-    background: #dba915;
-    pointer-events: none;
-  }
-  :root[data-interface-mode="new"] .sidebar {
-    block-size: calc(100dvh - 2 * var(--frame-pad));
-    max-block-size: none;
-    border-radius: 22px 0 0 22px;
-    box-shadow: 0 26px 36px rgb(31 68 63 / 16%);
-  }
-  :root[data-interface-mode="new"] .app > .main,
-  :root[data-interface-mode="new"] .main:has(> .workspace-header) {
-    block-size: calc(100dvh - 2 * var(--frame-pad));
-    margin: 0;
-    border-radius: 0 22px 22px 0;
-    box-shadow: 20px 30px 44px rgb(31 68 63 / 17%);
-  }
-}
 :root[data-interface-mode="new"] .sidebar .nav-desktop { gap: 12px; }
 :root[data-interface-mode="new"] .sidebar .sidebar-profile-top {
   display: flex;
@@ -2252,7 +2204,6 @@
   --taskora-accent: #e9ff43;
   --taskora-accent-ink: #22251d;
 }
-:root[data-interface-mode="new"] .app::before { background: var(--taskora-accent); opacity: .95; }
 :root[data-interface-mode="new"] .sidebar .nav-section a svg { display: block; color: #d1d5c9; }
 :root[data-interface-mode="new"] .sidebar .nav-section a[aria-current="page"] { background: var(--taskora-accent); color: var(--taskora-accent-ink); }
 :root[data-interface-mode="new"] .sidebar .nav-section a[aria-current="page"] svg { color: var(--taskora-accent-ink); }

@@ -23,6 +23,30 @@ before(async () => {
 });
 after(async () => { await browser?.close(); server?.kill(); });
 
+test('desktop app shell fills the browser viewport',async()=>{
+  const page=await browser.newPage();
+  try {
+    for(const width of [961,1024,1440,2560]) {
+      await page.setViewportSize({width,height:900});
+      await page.goto(baseURL+'/board');
+      const layout=await page.evaluate(()=>{
+        const app=document.querySelector('.app').getBoundingClientRect();
+        const sidebar=document.querySelector('.sidebar').getBoundingClientRect();
+        const main=document.querySelector('.main').getBoundingClientRect();
+        return {app:{x:app.x,y:app.y,width:app.width,height:app.height},sidebar:{x:sidebar.x,y:sidebar.y,height:sidebar.height},main:{right:main.right,y:main.y,height:main.height},scrollWidth:document.documentElement.scrollWidth};
+      });
+      assert.ok(Math.abs(layout.app.x)<=1&&Math.abs(layout.app.y)<=1&&Math.abs(layout.app.width-width)<=1&&Math.abs(layout.app.height-900)<=1,JSON.stringify(layout));
+      assert.ok(Math.abs(layout.sidebar.x)<=1&&Math.abs(layout.sidebar.y)<=1&&Math.abs(layout.sidebar.height-900)<=1,JSON.stringify(layout));
+      assert.ok(Math.abs(layout.main.right-width)<=1&&Math.abs(layout.main.y)<=1&&Math.abs(layout.main.height-900)<=1,JSON.stringify(layout));
+      assert.ok(layout.scrollWidth<=width+1,JSON.stringify(layout));
+      if(width===1440) await page.screenshot({path:'.local/responsive/fullscreen-shell.png'});
+    }
+    await page.getByRole('button',{name:'Свернуть навигацию'}).click();
+    const rail=await page.locator('.sidebar').boundingBox();
+    assert.ok(rail.width<90&&rail.x===0&&rail.y===0&&Math.abs(rail.height-900)<=1,'Collapsed icon rail must still touch viewport edges');
+  } finally {await page.close();}
+});
+
 test('wide board columns fill the available workspace and depots align across owners',async()=>{
   const page=await browser.newPage();
   try {
