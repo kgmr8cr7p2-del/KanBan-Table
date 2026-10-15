@@ -7,6 +7,7 @@ import { isCompletedColumn } from "@/lib/task-deadline";
 type MapTask = {
   id: string; taskNumber: number; title: string; description: string; deadline: string | null; parentId: string | null;
   assigneeId: string | null; assignees?: Array<{ userId: string }>;
+  oilDepotId?: string | null; oilDepot?: { id?: string; name: string } | null;
   column?: { name: string }; checklists?: Array<{ id: string; title: string; items: Array<{ id: string; text: string; completed: boolean }> }>;
 };
 type Link = { id?: string; predecessorId: string; successorId: string };
@@ -18,6 +19,10 @@ const monthFormatter = new Intl.DateTimeFormat("ru-RU", { month: "long", year: "
 
 function mine(task: MapTask, userId: string, personalBoard = false) {
   return personalBoard || task.assigneeId === userId || Boolean(task.assignees?.some((item) => item.userId === userId));
+}
+
+function depotKey(task: MapTask) {
+  return task.oilDepotId || task.oilDepot?.id || (task.oilDepot?.name ? `name:${task.oilDepot.name}` : "none");
 }
 
 function keyFor(dateValue: string | null, scale: Scale) {
@@ -162,6 +167,11 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     return [...map].sort(([a], [b]) => a === "unscheduled" ? 1 : b === "unscheduled" ? -1 : a.localeCompare(b))
       .map(([key, value]) => ({ key, tasks: value.sort((a, b) => (order.indexOf(a.id) < 0 ? 99999 : order.indexOf(a.id)) - (order.indexOf(b.id) < 0 ? 99999 : order.indexOf(b.id))) }));
   }, [roots, scale, order]);
+  const lanes = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const task of roots) map.set(depotKey(task), task.oilDepot?.name ?? (personalBoard ? "Личные задачи" : "Без нефтебазы"));
+    return [...map].sort(([a, nameA], [b, nameB]) => a === "none" ? 1 : b === "none" ? -1 : nameA.localeCompare(nameB, "ru")).map(([key, name]) => ({ key, name }));
+  }, [roots, personalBoard]);
   const bucketKeys = buckets.map((bucket) => bucket.key).join("|");
   const bucketsRef = useRef(buckets);
   bucketsRef.current = buckets;
@@ -174,7 +184,7 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
       const currentBuckets = bucketsRef.current;
       const target = currentBuckets.find((bucket) => bucket.key !== "unscheduled" && bucket.key >= today) ?? [...currentBuckets].reverse().find((bucket) => bucket.key !== "unscheduled");
       const element = target ? [...canvas.querySelectorAll<HTMLElement>("[data-map-date]")].find((item) => item.dataset.mapDate === target.key) : null;
-      if (element) canvas.scrollLeft = Math.max(0, element.offsetLeft - 28);
+      if (element) canvas.scrollLeft = Math.max(0, element.offsetLeft - (window.innerWidth <= 600 ? 156 : 214));
     });
     return () => cancelAnimationFrame(frame);
   }, [boardId, scale, bucketKeys]);
@@ -256,6 +266,15 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     return { width: Math.max(252, ...extents.map((item) => item.right)), height: Math.max(250, ...extents.map((item) => item.bottom)) };
   }
 
+  const laneHeights = new Map(lanes.map((lane) => [lane.key, Math.max(194, ...buckets.map((bucket) => {
+    const tasks = bucket.tasks.filter((task) => depotKey(task) === lane.key);
+    return tasks.length ? bucketSpace(tasks).height : 194;
+  }))]));
+
+  function bucketWidth(bucketTasks: MapTask[]) {
+    return Math.max(252, ...lanes.map((lane) => bucketSpace(bucketTasks.filter((task) => depotKey(task) === lane.key)).width));
+  }
+
   async function saveDeadline(taskId: string, date: string, reason: string) {
     if (!date || !reason.trim()) { setError("Укажите новую дату и причину переноса"); return; }
     setBusy(true); setError("");
@@ -277,7 +296,7 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     const items = task.checklists?.flatMap((list) => list.items) ?? [];
     const done = items.filter((item) => item.completed).length;
     const sameDateDependency = !child && dependencies.some((link) => link.successorId === task.id && visible.some((candidate) => candidate.id === link.predecessorId && keyFor(candidate.deadline, scale) === keyFor(task.deadline, scale)));
-    const bucketTasks = buckets.find((bucket) => bucket.key === keyFor(task.deadline, scale))?.tasks ?? [];
+    const bucketTasks = buckets.find((bucket) => bucket.key === keyFor(task.deadline, scale))?.tasks.filter((candidate) => depotKey(candidate) === depotKey(task)) ?? [];
     return <div className={`task-map-branch ${child ? "is-child" : ""} ${sameDateDependency ? "is-same-date-dependent" : ""}`} key={task.id}>
       <article className={`task-map-card ${own ? "is-own" : "is-context"} ${detail ? "is-selected" : ""}`} data-map-task={task.id}
         onPointerDown={(event) => { if (!own || child || event.button !== 0 || (event.target instanceof Element && event.target.closest("button,input,select,.task-map-link-handle"))) return; const point = placement(task.id, bucketTasks); cardDragRef.current = { id: task.id, startX: event.clientX, startY: event.clientY, x: point.x, y: point.y }; event.currentTarget.setPointerCapture(event.pointerId); }}
@@ -321,10 +340,11 @@ export function TaskMap({ tasks, allTasks, dependencies, currentUserId, boardId,
     {linkDraft ? <div className="task-map-link-confirm" role="dialog" aria-label="Подтвердить зависимость"><span>#{allTasks.find((task) => task.id === linkDraft.from)?.taskNumber} → #{allTasks.find((task) => task.id === linkDraft.to)?.taskNumber}<small>Вторая задача зависит от первой</small></span><button type="button" disabled={busy} onClick={() => { void command({ action: "connect", predecessorId: linkDraft.from, successorId: linkDraft.to }); setLinkDraft(null); }}>Создать связь</button><button type="button" onClick={() => setLinkDraft(null)}>Отмена</button></div> : null}
     <div className={`task-map-scroll ${dragKind === "link" ? "is-linking" : ""}`} ref={canvasRef} tabIndex={0} aria-label="Карта задач: колесо — вертикальная прокрутка, Shift — горизонтальная, Ctrl — масштаб" onPointerDown={(event) => { if (event.button !== 0 || !(event.target instanceof Element) || event.target.closest(".task-map-card,button,input,select,.task-map-detail")) return; const canvas = canvasRef.current; if (!canvas) return; panRef.current = { x: event.clientX, y: event.clientY, left: canvas.scrollLeft, top: canvas.scrollTop }; canvas.setPointerCapture(event.pointerId); canvas.classList.add("is-panning"); }} onPointerMove={(event) => { const pan = panRef.current; const canvas = canvasRef.current; if (!pan || !canvas) return; canvas.scrollLeft = pan.left - (event.clientX - pan.x); canvas.scrollTop = pan.top - (event.clientY - pan.y); }} onPointerUp={() => { panRef.current = null; canvasRef.current?.classList.remove("is-panning"); }} onPointerCancel={() => { panRef.current = null; canvasRef.current?.classList.remove("is-panning"); }}><div className="task-map-plane" ref={nodesRef} style={{ zoom }}>
       <svg className="task-map-links" aria-hidden="true" width={viewport.width} height={viewport.height}><defs><marker id="task-map-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0 0L6 3L0 6" /></marker></defs>{paths.map((path) => <path key={path.key} d={path.d} className={path.proposed ? "is-proposed" : ""} markerEnd="url(#task-map-arrow)" />)}</svg>
-      {buckets.length ? buckets.map((bucket, index) => <div className="task-map-bucket" key={bucket.key} data-map-date={bucket.key}>
+      {buckets.length ? <div className="task-map-lane-rail" aria-label="Нефтебазы"><div className="task-map-rail-head">Нефтебазы</div>{lanes.map((lane) => <div className="task-map-lane-label" key={lane.key} style={{ height: laneHeights.get(lane.key) }} title={lane.name}><span>{lane.name}</span></div>)}</div> : null}
+      {buckets.length ? buckets.map((bucket, index) => <div className="task-map-bucket" key={bucket.key} data-map-date={bucket.key} style={{ width: bucketWidth(bucket.tasks) }}>
         {index && buckets[index - 1].key !== "unscheduled" && bucket.key !== "unscheduled" && gapLabel(buckets[index - 1].key, bucket.key, scale) ? <span className="task-map-gap">{gapLabel(buckets[index - 1].key, bucket.key, scale)}</span> : null}
         <div className="task-map-date"><span>{bucketLabel(bucket.key, scale)}</span><small>{bucket.tasks.length}</small></div>
-        <div className="task-map-stack" style={bucketSpace(bucket.tasks)}>{bucket.tasks.map((task) => { const point = placement(task.id, bucket.tasks); return <div className="task-map-node" key={task.id} style={{ transform: `translate(${point.x}px, ${point.y}px)` }}>{renderTask(task)}</div>; })}</div>
+        <div className="task-map-bucket-lanes">{lanes.map((lane) => { const laneTasks = bucket.tasks.filter((task) => depotKey(task) === lane.key); return <div className="task-map-lane" key={lane.key} data-map-lane={lane.key} style={{ height: laneHeights.get(lane.key) }}><div className="task-map-stack" style={{ width: bucketWidth(bucket.tasks), height: laneHeights.get(lane.key) }}>{laneTasks.map((task) => { const point = placement(task.id, laneTasks); return <div className="task-map-node" key={task.id} style={{ transform: `translate(${point.x}px, ${point.y}px)` }}>{renderTask(task)}</div>; })}</div></div>; })}</div>
       </div>) : <div className="task-map-empty"><Link2 size={32} /><h3>Активных задач пока нет</h3><p>Завершённые задачи остаются на доске, но не занимают место на карте.</p></div>}
     </div></div>
     <footer className="task-map-footer"><button type="button" onClick={() => changeZoom(zoom - .1)} aria-label="Уменьшить масштаб"><ZoomOut size={16} /></button><output aria-label="Масштаб карты">{Math.round(zoom * 100)}%</output><button type="button" onClick={() => changeZoom(zoom + .1)} aria-label="Увеличить масштаб"><ZoomIn size={16} /></button><button type="button" onClick={() => { const canvas = canvasRef.current; if (canvas && nodesRef.current) changeZoom(Math.max(.5, Math.min(1.5, canvas.clientWidth / nodesRef.current.scrollWidth))); }} >Уместить всё</button><button type="button" onClick={() => { setExpanded([]); setDetailId(null); changeZoom(1); canvasRef.current?.scrollTo({ left: 0, top: 0, behavior: "smooth" }); }}><RotateCcw size={15} /> Сбросить вид</button></footer>
